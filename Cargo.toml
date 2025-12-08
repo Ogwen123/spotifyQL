@@ -5,5 +5,5 @@ edition = "2024"
 
 [dependencies]
 base64 = "0.22.1"
+open = "5.3.3"
 ring = "0.17.14"
-webbrowser = "1.0.6"

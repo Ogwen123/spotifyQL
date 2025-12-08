@@ -1,9 +1,9 @@
-use std::env;
+use crate::config::app_config::AppContext;
 use crate::{
     commands::{login::login, logout::logout},
     config::args::{Command, RunContext},
 };
-use crate::config::app_config::AppContext;
+use crate::utils::logger::fatal;
 
 mod auth;
 mod commands;
@@ -16,8 +16,12 @@ fn main() {
     let mut cx = AppContext::new();
 
     if rc.command == Command::Login {
-        login(&mut cx);
+        if let Err(err) = login(&mut cx) {
+            fatal!("{}", err)
+        }
     } else if rc.command == Command::Logout {
         logout();
+    } else {
+        println!("command line WIP")
     }
 }
