@@ -1,9 +1,10 @@
 use crate::config::app_config::AppContext;
+use crate::utils::logger::fatal;
 use crate::{
     commands::{login::login, logout::logout},
     config::args::{Command, RunContext},
 };
-use crate::utils::logger::fatal;
+use tokio::runtime::Runtime;
 
 mod auth;
 mod commands;
