@@ -1,15 +1,15 @@
 use std::env::home_dir;
-use std::fs::{create_dir_all, OpenOptions};
-use std::io::Write;
+use std::fs::{OpenOptions, create_dir_all};
+use std::io::{Read, Write};
 use std::path::PathBuf;
 
 pub enum File {
     Auth,
-    Config
+    Config,
 }
 
 impl File {
-    fn path(&self) -> Result<PathBuf, String> {
+    fn folder_path() -> Result<PathBuf, String> {
         let mut home = match home_dir() {
             Some(res) => res,
             None => {
@@ -18,7 +18,7 @@ impl File {
         };
         let os = std::env::consts::OS;
 
-        if os == "linux" || os == "macos"{
+        if os == "linux" || os == "macos" {
             home.push(".config");
             home.push("spotifyQL");
         } else if os == "windows" {
@@ -26,29 +26,38 @@ impl File {
             home.push("Local");
             home.push("spotifyQL")
         } else {
-            return Err(String::from("Unsupported OS"))
-        }
-
-        match self {
-            File::Auth => home.push("auth.json"),
-            File::Config => home.push("config.json")
+            return Err(String::from("Unsupported OS"));
         }
 
         Ok(home)
+    }
+
+    fn path(&self) -> Result<PathBuf, String> {
+        let mut folder = File::folder_path().map_err(|x| x)?;
+
+        match self {
+            File::Auth => folder.push("auth.json"),
+            File::Config => folder.push("config.json"),
+        }
+
+        Ok(folder)
+    }
+
+    fn create_parent() -> Result<(), String> {
+        create_dir_all(File::folder_path().map_err(|x| x)?).map_err(|e| e.to_string())
     }
 }
 
 pub enum WriteMode {
     Overwrite,
-    Append
+    Append,
 }
 
 pub fn write_file(file: File, content: String, write_mode: WriteMode) -> Result<(), String> {
-
     let path = file.path().map_err(|e| e)?;
 
-    let _ = create_dir_all(path.clone()).map_err(|e| e.to_string());
-    
+    File::create_parent().map_err(|x| x)?; // make sure the parent folders exist
+
     println!("{}", path.display());
     let mut file = OpenOptions::new()
         .create(true)
@@ -59,10 +68,22 @@ pub fn write_file(file: File, content: String, write_mode: WriteMode) -> Result<
             return "Could not open file in write mode (write, create, truncate).";
         })?;
 
-    file.write_all(content.as_bytes()).map_err(|e| e.to_string()).map_err(|x| x.to_string());
+    file.write_all(content.as_bytes())
+        .map_err(|e| e.to_string())?;
+
     Ok(())
 }
 
-pub fn read_file(file: File) -> String {
-    String::new()
+pub fn read_file(file: File) -> Result<String, String> {
+    let path = file.path().map_err(|e| e)?;
+    
+    println!("{}", path.display());
+    let mut file = OpenOptions::new().read(true).open(path).map_err(|_| {
+        return "Could not open file in read mode (read).";
+    })?;
+
+    let mut content: String = String::new();
+    file.read_to_string(&mut content)
+        .map_err(|x| x.to_string())?;
+    Ok(content)
 }
