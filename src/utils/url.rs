@@ -1,6 +1,6 @@
-type Params<T> = Vec<(T, T)>;
+type Params<K, V> = Vec<(K, V)>;
 
-pub fn build_url<T: AsRef<str>, S: ToString>(base: S, params: Params<T>) -> String {
+pub fn build_url<K: AsRef<str>, V: AsRef<str>, S: ToString>(base: S, params: Params<K, V>) -> String {
     let mut res = base.to_string() + "?";
 
     for (index, (k, v)) in params.iter().enumerate() {

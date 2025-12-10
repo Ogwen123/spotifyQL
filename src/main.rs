@@ -5,11 +5,13 @@ use crate::{
     config::args::{Command, RunContext},
 };
 use tokio::runtime::Runtime;
+use crate::commands::input::input_loop;
 
 mod auth;
 mod commands;
 mod config;
 mod utils;
+mod api;
 
 fn main() {
     let rc = RunContext::new();
@@ -22,7 +24,7 @@ fn main() {
         }
     } else if rc.command == Command::Logout {
         logout();
-    } else {
-        println!("command line WIP")
+    } else if rc.command == Command::CLI {
+        input_loop()
     }
 }

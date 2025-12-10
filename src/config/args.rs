@@ -20,13 +20,17 @@ impl RunContext {
 
         let command: Command;
 
-        if args[0] == "login" {
-            command = Command::Login
-        } else if args[0] == "logout" {
-            command = Command::Logout
-        } else {
-            // otherwise ignore args and just enter CLI
+        if args.len() == 0 {
             command = Command::CLI
+        } else {
+            if args[0] == "login" {
+                command = Command::Login
+            } else if args[0] == "logout" {
+                command = Command::Logout
+            } else {
+                // otherwise ignore args and just enter CLI
+                command = Command::CLI
+            }
         }
 
         Self { command }
