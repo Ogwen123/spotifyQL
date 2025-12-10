@@ -1,43 +1,13 @@
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::channel;
-use std::thread;
+use crate::auth::auth_listener::redirect_listener;
+use crate::auth::code::{code_verifier, create_file_content, sha256};
 use crate::config::app_config::AppContext;
-use crate::utils::logger::fatal;
+use crate::utils::file::File;
+use crate::utils::file::WriteMode::Overwrite;
+use crate::utils::file::write_file;
 use crate::utils::url::{build_url, parameterise_list};
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
-use ring::digest::{Digest, SHA256, digest};
-use ring::rand::SecureRandom;
-use tokio::runtime::Runtime;
-use warp::Filter;
-
-pub fn sha256(code: String) -> Result<Digest, String> {
-    let sha = digest(&SHA256, code.as_bytes());
-
-    Ok(sha)
-}
-
-pub fn code_verifier() -> String {
-    let binding = String::from("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
-    let possible = binding.split("").collect::<Vec<&str>>();
-
-    let pl: u8 = possible.len() as u8;
-
-    let mut values = String::new();
-
-    let mut buf = vec![0; 128];
-
-    let rng = ring::rand::SystemRandom::new();
-    rng.fill(&mut buf)
-        .expect("Could not rng buffer in code verifier.");
-
-    for num in buf {
-        values += possible[(num % pl) as usize];
-    }
-
-    values
-}
+use std::sync::mpsc::channel;
 
 /// Login to spotify using the PKCE auth flow
 pub fn login(cx: &mut AppContext) -> Result<(), String> {
@@ -48,28 +18,13 @@ pub fn login(cx: &mut AppContext) -> Result<(), String> {
 
     let (tx, rx) = channel::<String>();
 
-    // open webserver to listen for auth response
-    thread::spawn(move || {
-        let rt = Runtime::new().expect("Could not init tokio runtime");
-        rt.block_on(async move {
-            let redirect_listener = warp::filters::query::raw()
-                .map(move |params: String| {
-                    if let Err(err) = tx.send(params.clone()) {
-                        println!("{}", err);
-                        fatal!("Could not send params to channel, see reason above")
-                    }
-                    params
-                });
-
-            warp::serve(redirect_listener).run(([127, 0, 0, 1], 5907)).await;
-        });
-    });
+    redirect_listener(tx);
 
     /* scopes
-   playlist-read-private
-   user-library-read
-   user-follow-read
-   */
+    playlist-read-private - read all of a users playlists
+    user-library-read - find all the playlists in a users library
+    user-follow-read - read all the followers a user has
+    */
 
     let scope = vec![
         "playlist-read-private",
@@ -115,12 +70,17 @@ pub fn login(cx: &mut AppContext) -> Result<(), String> {
     }
 
     if !params.starts_with("code=") {
-        return Err("Invalid redirect parameters".to_string())
+        return Err("Invalid redirect parameters".to_string());
     }
 
     let code = params.split("code=").collect::<Vec<&str>>()[1].to_string();
 
-
+    write_file(
+        File::Auth,
+        create_file_content(code).map_err(|x| x)?,
+        Overwrite,
+    )
+    .map_err(|x| x)?;
 
     Ok(())
 }

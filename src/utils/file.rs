@@ -1,4 +1,6 @@
 use std::env::home_dir;
+use std::fs::{create_dir_all, OpenOptions};
+use std::io::Write;
 use std::path::PathBuf;
 
 pub enum File {
@@ -42,6 +44,22 @@ pub enum WriteMode {
 }
 
 pub fn write_file(file: File, content: String, write_mode: WriteMode) -> Result<(), String> {
+
+    let path = file.path().map_err(|e| e)?;
+
+    let _ = create_dir_all(path.clone()).map_err(|e| e.to_string());
+    
+    println!("{}", path.display());
+    let mut file = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .open(path)
+        .map_err(|_| {
+            return "Could not open file in write mode (write, create, truncate).";
+        })?;
+
+    file.write_all(content.as_bytes()).map_err(|e| e.to_string()).map_err(|x| x.to_string());
     Ok(())
 }
 
