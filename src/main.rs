@@ -12,6 +12,7 @@ mod commands;
 mod config;
 mod utils;
 mod api;
+mod query;
 
 fn main() {
     let rc = RunContext::new();
