@@ -1,3 +1,4 @@
+use crate::commands::input::input_loop;
 use crate::config::app_config::AppContext;
 use crate::utils::logger::fatal;
 use crate::{
@@ -5,14 +6,13 @@ use crate::{
     config::args::{Command, RunContext},
 };
 use tokio::runtime::Runtime;
-use crate::commands::input::input_loop;
 
+mod api;
 mod auth;
 mod commands;
 mod config;
-mod utils;
-mod api;
 mod query;
+mod utils;
 
 fn main() {
     let rc = RunContext::new();
@@ -26,6 +26,8 @@ fn main() {
     } else if rc.command == Command::Logout {
         logout();
     } else if rc.command == Command::CLI {
-        input_loop()
+        if let Err(err) = input_loop() {
+            fatal!("{}", err)
+        }
     }
 }
