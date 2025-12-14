@@ -1,10 +1,12 @@
 use crate::utils::url::build_url;
 
-struct APIQuery {
+#[derive(Debug)]
+pub struct APIQuery {
     query: String,
     types: Vec<QueryType>,
 }
 
+#[derive(Debug)]
 pub enum QueryType {
     Artist,
     Playlist,
