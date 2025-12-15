@@ -15,7 +15,7 @@ impl RunContext {
     pub fn new() -> Self {
         let mut args = env::args().collect::<Vec<String>>();
         println!("{:?}", args);
-        args.retain(|x| !x.ends_with("spotifyQL")); // remove the binary's name from the args
+        args.retain(|x| !x.ends_with("spotifyQL") && !x.ends_with("spotifyQL.exe")); // remove the binary's name from the args
         println!("{:?}", args);
 
         let command: Command;

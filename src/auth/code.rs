@@ -31,10 +31,11 @@ pub fn code_verifier() -> String {
 }
 
 #[derive(Serialize, Deserialize)]
-struct AuthFileContent {
-    code: String,
+pub struct AuthFileContent {
+    pub(crate) code: String,
+    pub(crate) code_verifier: String
 }
 
-pub fn create_file_content(code: String) -> Result<String, String> {
-    Ok(serde_json::to_string(&AuthFileContent { code }).map_err(|x| x.to_string())?)
+pub fn create_file_content(code: String, code_verifier: String) -> Result<String, String> {
+    Ok(serde_json::to_string(&AuthFileContent { code, code_verifier }).map_err(|x| x.to_string())?)
 }

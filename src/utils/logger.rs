@@ -12,7 +12,7 @@ macro_rules! info {
         $crate::print!("\n")
     };
     ($($arg:tt)*) => {{
-        const INFO_NAME: &str = "aocrunner";
+        const INFO_NAME: &str = "spotifyQL";
         println!("\x1b[34m[{}]\x1b[0m {}", INFO_NAME, format!($($arg)*));
     }};
 }

@@ -2,8 +2,9 @@ use regex::Regex;
 use std::fmt::{Display, Formatter, write};
 use std::ops::Add;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Attribute {
+    Id,
     Name,
     Artist,
 }
@@ -11,6 +12,7 @@ pub enum Attribute {
 impl Attribute {
     fn _match(s: &String) -> Result<Self, ()> {
         match s.as_str() {
+            "id" => Ok(Attribute::Id),
             "name" => Ok(Attribute::Name),
             "artist" => Ok(Attribute::Artist),
             _ => Err(()),
@@ -24,6 +26,7 @@ impl Display for Attribute {
             f,
             "{}",
             match self {
+                Attribute::Id => "Attribute(Id)",
                 Attribute::Name => "Attribute(Name)",
                 Attribute::Artist => "Attribute(Artist)",
             }
@@ -31,26 +34,26 @@ impl Display for Attribute {
     }
 }
 
-#[derive(Clone)]
-pub enum DataType {
+#[derive(Clone, PartialEq)]
+pub enum DataSource {
     Playlist(String),
-    Album(String),
+    SavedAlbums(String),
 }
 
-impl Display for DataType {
+impl Display for DataSource {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                DataType::Playlist(res) => format!("Playlist({})", res),
-                DataType::Album(res) => format!("Playlist({})", res),
+                DataSource::Playlist(res) => format!("Playlist({})", res),
+                DataSource::SavedAlbums(res) => format!("Playlist({})", res),
             }
         )
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Operator {
     Equals,
     Like,
@@ -71,7 +74,7 @@ impl Display for Operator {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Token {
     SELECT,
     COUNT(Attribute),
@@ -79,7 +82,7 @@ pub enum Token {
     WHERE,
     Attribute(Attribute),
     Operator(Operator),
-    Type(DataType),
+    Source(DataSource),
     Str(String),
 }
 
@@ -93,9 +96,9 @@ impl Display for Token {
                 Token::COUNT(res) => format!("COUNT({})", res),
                 Token::FROM => "FROM".to_string(),
                 Token::WHERE => "WHERE".to_string(),
-                Token::Attribute(res) => res.to_string(),
-                Token::Operator(res) => res.to_string(),
-                Token::Type(res) => res.to_string(),
+                Token::Attribute(res) => format!("Attribute({})", res),
+                Token::Operator(res) => format!("Operator({})", res),
+                Token::Source(res) => format!("Source({})", res),
                 Token::Str(res) => format!("Str({})", res),
             }
         )
@@ -133,12 +136,12 @@ impl RawToken {
             "!=" => return Ok(Token::Operator(Operator::NotEquals)),
             "LIKE" => return Ok(Token::Operator(Operator::Like)),
             "PLAYLIST" => {
-                return Ok(Token::Type(DataType::Playlist(
+                return Ok(Token::Source(DataSource::Playlist(
                     self.content.unwrap_or("".to_string()),
                 )));
             }
             "ALBUM" => {
-                return Ok(Token::Type(DataType::Album(
+                return Ok(Token::Source(DataSource::SavedAlbums(
                     self.content.unwrap_or("".to_string()),
                 )));
             }
@@ -245,7 +248,7 @@ pub fn tokenise(input: String) -> Result<Vec<Token>, String> {
     let mut tokens: Vec<Token> = Vec::new();
 
     while let Some(elem) = split_iter.next() {
-        let token: Token = split_token(elem).build_token().map_err(|x| x)?;
+        let token: Token = split_token(elem).build_token()?;
 
         tokens.push(token);
     }

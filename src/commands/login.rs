@@ -11,8 +11,8 @@ use std::sync::mpsc::channel;
 
 /// Login to spotify using the PKCE auth flow
 pub fn login(cx: &mut AppContext) -> Result<(), String> {
-    let code = code_verifier();
-    let hash = sha256(code).map_err(|x| x)?;
+    let code_verifier = code_verifier();
+    let hash = sha256(code_verifier.clone())?;
 
     let code_challenge = BASE64_STANDARD.encode(hash);
 
@@ -22,8 +22,8 @@ pub fn login(cx: &mut AppContext) -> Result<(), String> {
 
     /* scopes
     playlist-read-private - read all of a users playlists
-    user-library-read - find all the playlists in a users library
-    user-follow-read - read all the followers a user has
+    user-library-read - gives access to saved content
+    user-follow-read - check if current user follows certain artist or user, get followed artists
     */
 
     let scope = vec![
@@ -77,10 +77,12 @@ pub fn login(cx: &mut AppContext) -> Result<(), String> {
 
     write_file(
         File::Auth,
-        create_file_content(code).map_err(|x| x)?,
+        create_file_content(code.clone(), code_verifier)?,
         Overwrite,
     )
-    .map_err(|x| x)?;
+    ?;
+
+    cx.code = code;
 
     Ok(())
 }

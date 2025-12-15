@@ -33,7 +33,7 @@ impl File {
     }
 
     fn path(&self) -> Result<PathBuf, String> {
-        let mut folder = File::folder_path().map_err(|x| x)?;
+        let mut folder = File::folder_path()?;
 
         match self {
             File::Auth => folder.push("auth.json"),
@@ -44,7 +44,7 @@ impl File {
     }
 
     fn create_parent() -> Result<(), String> {
-        create_dir_all(File::folder_path().map_err(|x| x)?).map_err(|e| e.to_string())
+        create_dir_all(File::folder_path()?).map_err(|e| e.to_string())
     }
 }
 
@@ -56,7 +56,7 @@ pub enum WriteMode {
 pub fn write_file(file: File, content: String, write_mode: WriteMode) -> Result<(), String> {
     let path = file.path().map_err(|e| e)?;
 
-    File::create_parent().map_err(|x| x)?; // make sure the parent folders exist
+    File::create_parent()?; // make sure the parent folders exist
 
     println!("{}", path.display());
     let mut file = OpenOptions::new()
