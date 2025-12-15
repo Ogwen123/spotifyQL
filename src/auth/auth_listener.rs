@@ -1,4 +1,4 @@
-use crate::utils::logger::fatal;
+use crate::utils::logger::{fatal, success};
 use std::sync::mpsc::Sender;
 use std::thread;
 use tokio::runtime::Runtime;
@@ -20,6 +20,7 @@ pub fn redirect_listener(tx: Sender<String>) {
                         println!("{}", err);
                         fatal!("Could not send params to channel, see reason above")
                     }
+                    success!("Received auth code.");
                     // reply with code to immediately close the window on redirect
                     "
                     <!DOCTYPE html>

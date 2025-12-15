@@ -17,11 +17,19 @@ mod utils;
 fn main() {
     let rc = RunContext::new();
 
+    if rc.command == Command::Logout {
+        if let Err(err) = logout() {
+            fatal!("{}", err);
+        }
+        return;
+    }
+
     let mut cx = match AppContext::new() {
         Ok(res) => res,
         Err(err) => {
-            fatal!("{}", err);
-            return
+            warning!("{}", err);
+            fatal!("Could not load app context, run 'spotifyQL logout' before trying again.");
+            return;
         }
     };
 
@@ -29,17 +37,17 @@ fn main() {
         if let Err(err) = login(&mut cx) {
             fatal!("{}", err)
         }
-    } else if rc.command == Command::Logout {
-        logout();
     } else if rc.command == Command::CLI {
-        if cx.code.len() == 0 {
+        if cx.token.len() == 0 {
             warning!("You are not logged in and are being automatically sent to the login flow.");
 
             if let Err(err) = login(&mut cx) {
                 fatal!("{}", err);
-                return
+                return;
             }
         }
+
+        // TODO check if token is expired and refresh it if so
 
         if let Err(err) = input_loop(&mut cx) {
             fatal!("{}", err)

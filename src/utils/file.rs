@@ -1,5 +1,5 @@
 use std::env::home_dir;
-use std::fs::{OpenOptions, create_dir_all};
+use std::fs::{OpenOptions, create_dir_all, remove_file};
 use std::io::{Read, Write};
 use std::path::PathBuf;
 
@@ -86,4 +86,14 @@ pub fn read_file(file: File) -> Result<String, String> {
     file.read_to_string(&mut content)
         .map_err(|x| x.to_string())?;
     Ok(content)
+}
+
+pub fn delete_file(file: File) -> Result<(), String> {
+    let path = file.path().map_err(|e| e)?;
+
+    if path.exists() {
+        remove_file(path).map_err(|x| x.to_string())?
+    }
+
+    Ok(())
 }

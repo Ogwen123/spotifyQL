@@ -71,12 +71,13 @@ impl<'a> APIQuery {
         Ok(ResultParser::parse_playlists(raw_data))
     }
 
-    /// Spawns a thread to send the API request async
+    /// Spawns a thread to send the API request async, returns data using a channel
     fn send_async(url: String, tx: Sender<Result<String, String>>, token: String) {
         thread::spawn(move || {
             let rt = Runtime::new().expect("Could not init tokio runtime");
             rt.block_on(async move {
-
+                println!("{}", token);
+                println!("{}", url);
                 let client = reqwest::Client::new();
                 let resp_result = client
                     .get(url)
@@ -104,7 +105,8 @@ impl<'a> APIQuery {
                     }
                 };
 
-                tx.send(Ok(body)).expect("Failed to send success response down request channel.");
+                tx.send(Ok(body))
+                    .expect("Failed to send success response down request channel. (1)");
             });
         });
     }
@@ -124,7 +126,7 @@ impl<'a> APIQuery {
 
         let (tx, rx) = channel::<Result<String, String>>();
 
-        Self::send_async(final_url, tx, cx.code.clone());
+        Self::send_async(final_url, tx, cx.token.clone());
 
         let res = rx.recv().expect("API request thread stopped unexpectedly.");
 

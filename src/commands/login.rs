@@ -1,9 +1,10 @@
 use crate::auth::auth_listener::redirect_listener;
-use crate::auth::code::{code_verifier, create_file_content, sha256};
+use crate::auth::code::{AccessTokenRequestParams, code_verifier, create_file_content, sha256, fetch_access_token, parse_access_token_res};
 use crate::config::app_config::AppContext;
 use crate::utils::file::File;
 use crate::utils::file::WriteMode::Overwrite;
 use crate::utils::file::write_file;
+use crate::utils::logger::{info, success};
 use crate::utils::url::{build_url, parameterise_list};
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
@@ -15,6 +16,8 @@ pub fn login(cx: &mut AppContext) -> Result<(), String> {
     let hash = sha256(code_verifier.clone())?;
 
     let code_challenge = BASE64_STANDARD.encode(hash);
+
+    success!("Generated code challenge.");
 
     let (tx, rx) = channel::<String>();
 
@@ -60,6 +63,7 @@ pub fn login(cx: &mut AppContext) -> Result<(), String> {
     }
 
     // wait for auth code
+    info!("Listening for auth code response.");
     let mut params = rx.recv().expect("Web server thread stopped unexpectedly");
 
     //extract code
@@ -75,14 +79,23 @@ pub fn login(cx: &mut AppContext) -> Result<(), String> {
 
     let code = params.split("code=").collect::<Vec<&str>>()[1].to_string();
 
+    info!("Fetching access token.");
+    let (tx, rx) = channel::<Result<String, String>>();
+
+    fetch_access_token(tx, cx, code.clone(), code_verifier.clone(), redirect.to_string());
+
+    let access_token_res = rx.recv().expect("Access token request thread stopped unexpectedly.")?;
+    success!("Received access token channel response.");
+    println!("{}", access_token_res);
+    let access_token_data = parse_access_token_res(access_token_res)?;
+    success!("Parsed access token.");
     write_file(
         File::Auth,
-        create_file_content(code.clone(), code_verifier)?,
+        create_file_content(access_token_data.clone())?,
         Overwrite,
-    )
-    ?;
+    )?;
 
-    cx.code = code;
+    cx.token = access_token_data.access_token;
 
     Ok(())
 }
