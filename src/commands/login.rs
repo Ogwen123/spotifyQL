@@ -1,7 +1,8 @@
-use std::io;
-use std::io::Write;
 use crate::auth::auth_listener::redirect_listener;
-use crate::auth::code::{AccessTokenRequestParams, code_verifier, create_file_content, sha256, fetch_access_token, parse_access_token_res, b64};
+use crate::auth::code::{
+    AccessTokenRequestParams, b64, code_verifier, create_file_content, fetch_access_token,
+    parse_access_token_res, sha256,
+};
 use crate::config::app_config::AppContext;
 use crate::utils::file::File;
 use crate::utils::file::WriteMode::Overwrite;
@@ -10,6 +11,8 @@ use crate::utils::logger::{info, info_nnl, success};
 use crate::utils::url::{build_url, parameterise_list};
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
+use std::io;
+use std::io::Write;
 use std::sync::mpsc::channel;
 
 /// Login to spotify using the PKCE auth flow
@@ -86,9 +89,17 @@ pub fn login(cx: &mut AppContext) -> Result<(), String> {
     info_nnl!("Fetching access token.");
     let (tx, rx) = channel::<Result<String, String>>();
 
-    fetch_access_token(tx, cx, code.clone(), code_verifier.clone(), redirect.to_string());
+    fetch_access_token(
+        tx,
+        cx,
+        code.clone(),
+        code_verifier.clone(),
+        redirect.to_string(),
+    );
 
-    let access_token_res = rx.recv().expect("Access token request thread stopped unexpectedly.")?;
+    let access_token_res = rx
+        .recv()
+        .expect("Access token request thread stopped unexpectedly.")?;
     success!("Received access token response.");
     stdout.flush().unwrap();
     info_nnl!("Parsing access token response.");

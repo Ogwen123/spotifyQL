@@ -1,4 +1,4 @@
-use crate::utils::file::{delete_file, File};
+use crate::utils::file::{File, delete_file};
 
 pub fn logout() -> Result<(), String> {
     // delete auth file

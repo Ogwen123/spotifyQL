@@ -58,7 +58,6 @@ pub fn write_file(file: File, content: String, write_mode: WriteMode) -> Result<
 
     File::create_parent()?; // make sure the parent folders exist
 
-    println!("{}", path.display());
     let mut file = OpenOptions::new()
         .create(true)
         .write(true)

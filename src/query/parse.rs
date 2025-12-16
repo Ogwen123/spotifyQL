@@ -6,11 +6,11 @@ pub fn parse(tokens: Vec<Token>) -> SelectStatement {
 
     let mut aggregation = Aggregation::None;
     let targets: Vec<Attribute> = Vec::new();
-    
+
     SelectStatement {
         aggregation: Aggregation::None,
         targets: vec![Attribute::Id],
         source: DataSource::Playlist(String::new()),
-        condition: Some((Attribute::Id, Operator::Equals, String::new()))
+        condition: Some((Attribute::Id, Operator::Equals, String::new())),
     }
 }

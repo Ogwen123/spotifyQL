@@ -1,16 +1,16 @@
-use std::{io, thread};
-use std::io::Write;
-use std::time::Duration;
+use crate::auth::token_refresh::refresh_token;
 use crate::commands::input::input_loop;
 use crate::config::app_config::AppContext;
 use crate::utils::logger::{fatal, info_nnl, success, warning};
+use crate::utils::utils::secs_now;
 use crate::{
     commands::{login::login, logout::logout},
     config::args::{Command, RunContext},
 };
+use std::io::Write;
+use std::time::Duration;
+use std::{io, thread};
 use tokio::runtime::Runtime;
-use crate::auth::token_refresh::refresh_token;
-use crate::utils::utils::secs_now;
 
 mod api;
 mod auth;
@@ -51,7 +51,7 @@ fn main() {
                 fatal!("{}", err);
             }
             success!("Logged out.");
-            
+
             if let Err(err) = login(&mut cx) {
                 fatal!("{}", err);
                 return;

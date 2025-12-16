@@ -1,26 +1,28 @@
-use std::sync::mpsc::channel;
-use std::thread;
+use crate::auth::code::{
+    AccessTokenRequestParams, AccessTokenResponse, create_file_content, parse_access_token_res,
+};
+use crate::config::app_config::AppContext;
+use crate::utils::file::WriteMode::Overwrite;
+use crate::utils::file::{File, write_file};
+use crate::utils::utils::secs_now;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
+use std::sync::mpsc::channel;
+use std::thread;
 use tokio::runtime::Runtime;
-use crate::auth::code::{create_file_content, parse_access_token_res, AccessTokenRequestParams, AccessTokenResponse};
-use crate::config::app_config::AppContext;
-use crate::utils::file::{write_file, File};
-use crate::utils::file::WriteMode::Overwrite;
-use crate::utils::utils::secs_now;
 
 #[derive(Serialize)]
 pub struct RefreshTokenRequestParams {
     grant_type: String,
     refresh_token: String,
-    client_id: String
+    client_id: String,
 }
 
 pub fn refresh_token(_cx: &mut AppContext) -> Result<(), String> {
     // request token refresh
-    
+
     let (tx, rx) = channel::<Result<String, String>>();
-    
+
     let cx = _cx.clone();
     thread::spawn(move || {
         let rt = Runtime::new().expect("Could not init tokio runtime");
@@ -68,24 +70,31 @@ pub fn refresh_token(_cx: &mut AppContext) -> Result<(), String> {
             };
 
             if status != StatusCode::OK {
-                tx.send(Err(format!("Received error from access token request. \n{}", body).to_string())).expect("Failed to send error down request channel. (5)");
-                return
+                tx.send(Err(format!(
+                    "Received error from access token request. \n{}",
+                    body
+                )
+                .to_string()))
+                    .expect("Failed to send error down request channel. (5)");
+                return;
             }
 
             tx.send(Ok(body))
                 .expect("Failed to send success response down request channel. (3)");
         });
     });
-    
-    let res = rx.recv().expect("Refresh token request thread stopped unexpectedly.")?;
-    
+
+    let res = rx
+        .recv()
+        .expect("Refresh token request thread stopped unexpectedly.")?;
+
     let refresh_token_data = parse_access_token_res(res)?;
 
-        write_file(
-            File::Auth,
-            create_file_content(refresh_token_data.clone())?,
-            Overwrite,
-        )?;
+    write_file(
+        File::Auth,
+        create_file_content(refresh_token_data.clone())?,
+        Overwrite,
+    )?;
 
     _cx.token = refresh_token_data.access_token;
     _cx.refresh_token = refresh_token_data.refresh_token;

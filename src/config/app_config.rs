@@ -41,7 +41,7 @@ impl AppContext {
 
         let auth_file_contents = match read_file(File::Auth) {
             Ok(res) => res,
-            Err(_) => return Ok(Self::default())
+            Err(_) => return Ok(Self::default()),
         };
 
         let auth_data: AuthFileContent =

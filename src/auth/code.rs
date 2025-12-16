@@ -1,15 +1,15 @@
 use crate::config::app_config::AppContext;
+use crate::utils::logger::{info, success};
+use crate::utils::utils::secs_now;
+use base64::Engine;
+use base64::prelude::BASE64_STANDARD;
+use reqwest::StatusCode;
 use ring::digest::{Digest, SHA256, digest};
 use ring::rand::SecureRandom;
 use serde::{Deserialize, Serialize};
 use std::sync::mpsc::Sender;
 use std::thread;
-use base64::Engine;
-use base64::prelude::BASE64_STANDARD;
-use reqwest::StatusCode;
 use tokio::runtime::Runtime;
-use crate::utils::logger::{info, success};
-use crate::utils::utils::secs_now;
 
 #[derive(Serialize)]
 pub struct AccessTokenRequestParams {
@@ -21,7 +21,11 @@ pub struct AccessTokenRequestParams {
 }
 
 pub fn b64(hash: Digest) -> String {
-    BASE64_STANDARD.encode(hash).replace("=", "").replace("+", "-").replace("/", "_")
+    BASE64_STANDARD
+        .encode(hash)
+        .replace("=", "")
+        .replace("+", "-")
+        .replace("/", "_")
 }
 
 pub fn sha256(code: String) -> Result<Digest, String> {
@@ -58,9 +62,7 @@ pub struct AuthFileContent {
     pub expires_after: u64,
 }
 
-pub fn create_file_content(
-    atd: AccessTokenResponse
-) -> Result<String, String> {
+pub fn create_file_content(atd: AccessTokenResponse) -> Result<String, String> {
     Ok(serde_json::to_string(&AuthFileContent {
         token: atd.access_token,
         refresh_token: atd.refresh_token,
@@ -126,8 +128,13 @@ pub fn fetch_access_token(
             };
 
             if status != StatusCode::OK {
-                tx.send(Err(format!("Received error from access token request. \n{}", body).to_string())).expect("Failed to send error down request channel. (5)");
-                return
+                tx.send(Err(format!(
+                    "Received error from access token request. \n{}",
+                    body
+                )
+                .to_string()))
+                    .expect("Failed to send error down request channel. (5)");
+                return;
             }
 
             tx.send(Ok(body))
