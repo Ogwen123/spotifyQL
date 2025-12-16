@@ -220,8 +220,6 @@ pub fn tokenise(input: String) -> Result<Vec<Token>, String> {
     let mut buffer: String = String::new();
 
     while let Some(letter) = letters.next() {
-        println!("{}", letter);
-
         if letter == ' ' {
             if group == false {
                 split.push(buffer);

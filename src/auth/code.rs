@@ -4,6 +4,8 @@ use ring::rand::SecureRandom;
 use serde::{Deserialize, Serialize};
 use std::sync::mpsc::Sender;
 use std::thread;
+use base64::Engine;
+use base64::prelude::BASE64_STANDARD;
 use reqwest::StatusCode;
 use tokio::runtime::Runtime;
 use crate::utils::logger::{info, success};
@@ -16,6 +18,10 @@ pub struct AccessTokenRequestParams {
     pub client_id: String,
     pub redirect_uri: String,
     pub code_verifier: String,
+}
+
+pub fn b64(hash: Digest) -> String {
+    BASE64_STANDARD.encode(hash).replace("=", "").replace("+", "-").replace("/", "_")
 }
 
 pub fn sha256(code: String) -> Result<Digest, String> {
@@ -49,7 +55,7 @@ pub fn code_verifier() -> String {
 pub struct AuthFileContent {
     pub token: String,
     pub refresh_token: String,
-    pub expires_at: u64,
+    pub expires_after: u64,
 }
 
 pub fn create_file_content(
@@ -58,7 +64,7 @@ pub fn create_file_content(
     Ok(serde_json::to_string(&AuthFileContent {
         token: atd.access_token,
         refresh_token: atd.refresh_token,
-        expires_at: secs_now() + atd.expires_in,
+        expires_after: secs_now() + atd.expires_in,
     })
     .map_err(|x| x.to_string())?)
 }
@@ -107,7 +113,6 @@ pub fn fetch_access_token(
                     return;
                 }
             };
-            info!("Received access token fetch response.");
             let status = resp.status();
             let body_result = resp.text().await;
 
@@ -125,7 +130,6 @@ pub fn fetch_access_token(
                 return
             }
 
-            info!("Extracted access token fetch response body.");
             tx.send(Ok(body))
                 .expect("Failed to send success response down request channel. (2)");
         });
@@ -136,11 +140,13 @@ pub fn fetch_access_token(
 pub struct AccessTokenResponse {
     pub access_token: String,
     pub token_type: String,
-    pub scope: String,
     pub expires_in: u64,
     pub refresh_token: String,
+    pub scope: String,
 }
 
 pub fn parse_access_token_res(res: String) -> Result<AccessTokenResponse, String> {
-    serde_json::from_str(res.as_str()).map_err(|x| x.to_string())?
+    let res: AccessTokenResponse = serde_json::from_str(res.as_str()).map_err(|x| x.to_string())?;
+
+    Ok(res)
 }

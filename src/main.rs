@@ -1,11 +1,16 @@
+use std::{io, thread};
+use std::io::Write;
+use std::time::Duration;
 use crate::commands::input::input_loop;
 use crate::config::app_config::AppContext;
-use crate::utils::logger::{fatal, warning};
+use crate::utils::logger::{fatal, info_nnl, success, warning};
 use crate::{
     commands::{login::login, logout::logout},
     config::args::{Command, RunContext},
 };
 use tokio::runtime::Runtime;
+use crate::auth::token_refresh::refresh_token;
+use crate::utils::utils::secs_now;
 
 mod api;
 mod auth;
@@ -41,13 +46,25 @@ fn main() {
         if cx.token.len() == 0 {
             warning!("You are not logged in and are being automatically sent to the login flow.");
 
+            info_nnl!("Logging out.");
+            if let Err(err) = logout() {
+                fatal!("{}", err);
+            }
+            success!("Logged out.");
+            
             if let Err(err) = login(&mut cx) {
                 fatal!("{}", err);
                 return;
             }
         }
 
-        // TODO check if token is expired and refresh it if so
+        if secs_now() > cx.expires_after {
+            info_nnl!("Refreshing token.");
+            if let Err(err) = refresh_token(&mut cx) {
+                fatal!("{}", err)
+            }
+            success!("Refreshed token.");
+        }
 
         if let Err(err) = input_loop(&mut cx) {
             fatal!("{}", err)

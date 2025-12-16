@@ -1,10 +1,12 @@
+use std::io;
+use std::io::Write;
 use crate::auth::auth_listener::redirect_listener;
-use crate::auth::code::{AccessTokenRequestParams, code_verifier, create_file_content, sha256, fetch_access_token, parse_access_token_res};
+use crate::auth::code::{AccessTokenRequestParams, code_verifier, create_file_content, sha256, fetch_access_token, parse_access_token_res, b64};
 use crate::config::app_config::AppContext;
 use crate::utils::file::File;
 use crate::utils::file::WriteMode::Overwrite;
 use crate::utils::file::write_file;
-use crate::utils::logger::{info, success};
+use crate::utils::logger::{info, info_nnl, success};
 use crate::utils::url::{build_url, parameterise_list};
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
@@ -12,12 +14,16 @@ use std::sync::mpsc::channel;
 
 /// Login to spotify using the PKCE auth flow
 pub fn login(cx: &mut AppContext) -> Result<(), String> {
+    let mut stdout = io::stdout();
+    info!("Logging in");
+    info_nnl!("Generating code challenge.");
     let code_verifier = code_verifier();
     let hash = sha256(code_verifier.clone())?;
 
-    let code_challenge = BASE64_STANDARD.encode(hash);
+    let code_challenge = b64(hash);
 
     success!("Generated code challenge.");
+    stdout.flush().unwrap();
 
     let (tx, rx) = channel::<String>();
 
@@ -49,10 +55,7 @@ pub fn login(cx: &mut AppContext) -> Result<(), String> {
     );
 
     match open::that(url.as_str()) {
-        Ok(_) => {
-            println!("{}", url);
-            println!("opened")
-        }
+        Ok(_) => {}
         Err(err) => {
             println!("{}", err);
             return Err(
@@ -63,9 +66,10 @@ pub fn login(cx: &mut AppContext) -> Result<(), String> {
     }
 
     // wait for auth code
-    info!("Listening for auth code response.");
+    info_nnl!("Listening for auth code response.");
     let mut params = rx.recv().expect("Web server thread stopped unexpectedly");
-
+    success!("Received auth code response.");
+    stdout.flush().unwrap();
     //extract code
 
     // params will have a code param and could have a state param
@@ -79,16 +83,18 @@ pub fn login(cx: &mut AppContext) -> Result<(), String> {
 
     let code = params.split("code=").collect::<Vec<&str>>()[1].to_string();
 
-    info!("Fetching access token.");
+    info_nnl!("Fetching access token.");
     let (tx, rx) = channel::<Result<String, String>>();
 
     fetch_access_token(tx, cx, code.clone(), code_verifier.clone(), redirect.to_string());
 
     let access_token_res = rx.recv().expect("Access token request thread stopped unexpectedly.")?;
-    success!("Received access token channel response.");
-    println!("{}", access_token_res);
+    success!("Received access token response.");
+    stdout.flush().unwrap();
+    info_nnl!("Parsing access token response.");
     let access_token_data = parse_access_token_res(access_token_res)?;
-    success!("Parsed access token.");
+    success!("Parsed access token response.");
+    stdout.flush().unwrap();
     write_file(
         File::Auth,
         create_file_content(access_token_data.clone())?,
