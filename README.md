@@ -18,6 +18,6 @@ would could the number of arctic monkeys songs in the playlist pl1
 fetched data is cached in-memory so if the program is restarted all data needs to be refreshed, in-memory cached data has a TTL of 30 minutes.
 
 ## TODO
- - [ ] fix api query returning invalid access token
- - [ ] code verifier must be hashed incorrectly
- - [ ] implement token refreshing
+ - [x] fix api query returning invalid access token
+ - [x] code verifier must be hashed incorrectly
+ - [x] implement token refreshing
