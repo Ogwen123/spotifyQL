@@ -94,6 +94,27 @@ impl Display for Bitwise {
     }
 }
 
+#[derive(Clone, PartialEq, Debug)]
+pub enum Value {
+    Str(String),
+    Int(i32),
+    Float(f32)
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Value::Str(res) => format!("Str({})", res),
+                Value::Int(res) => format!("Int({})", res),
+                Value::Float(res) => format!("Float({})", res)
+            }
+        )
+    }
+}
+
 #[derive(Clone, PartialEq)]
 pub enum Token {
     SELECT,
@@ -105,9 +126,7 @@ pub enum Token {
     Operator(Operator),
     Bitwise(Bitwise),
     Source(DataSource),
-    Str(String),
-    Int(i32),
-    Float(f32)
+    Value(Value)
 }
 
 impl Display for Token {
@@ -125,9 +144,7 @@ impl Display for Token {
                 Token::Operator(res) => format!("Operator({})", res),
                 Token::Bitwise(res) => format!("Bitwise({})", res),
                 Token::Source(res) => format!("Source({})", res),
-                Token::Str(res) => format!("Str({})", res),
-                Token::Int(res) => format!("Int({})", res),
-                Token::Float(res) => format!("Float({})", res),
+                Token::Value(res) => format!("Value({})", res)
             }
         )
     }
@@ -194,11 +211,11 @@ impl RawToken {
                 let float_regex = Regex::new(r"^-?\d+.\d+$").map_err(|x| x.to_string())?;
                 if int_regex.is_match(self.identifier.as_str()) {
                     println!("{:?}", self.identifier);
-                    return Ok(Token::Int(i32::from_str(self.identifier.as_str()).map_err(|x| format!("INT ERROR: {}", x.to_string()))?)); // remove the quotes from the string
+                    return Ok(Token::Value(Value::Int(i32::from_str(self.identifier.as_str()).map_err(|x| format!("INT ERROR: {}", x.to_string()))?))); // remove the quotes from the string
                 }
 
                 if float_regex.is_match(self.identifier.as_str()) {
-                    return Ok(Token::Float(f32::from_str(self.identifier.as_str()).map_err(|x| format!("FLOAT ERROR: {}", x.to_string()))?)); // remove the quotes from the string
+                    return Ok(Token::Value(Value::Float(f32::from_str(self.identifier.as_str()).map_err(|x| format!("FLOAT ERROR: {}", x.to_string()))?))); // remove the quotes from the string
                 }
 
                 if self.content.is_some() && self.identifier.len() == 0 {
@@ -208,7 +225,7 @@ impl RawToken {
                     let str_regex = Regex::new(r"^[\w\s]+$").map_err(|x| x.to_string())?;
 
                     if str_regex.is_match(cont.as_str()) {
-                        return Ok(Token::Str(cont)); // remove the quotes from the string
+                        return Ok(Token::Value(Value::Str(cont))); // remove the quotes from the string
                     }
                 }
             }

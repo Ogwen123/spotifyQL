@@ -1,4 +1,4 @@
-use crate::query::tokenise::{Attribute, DataSource, Operator};
+use crate::query::tokenise::{Attribute, DataSource, Operator, Value};
 
 #[derive(Debug)]
 pub enum Aggregation {
@@ -7,10 +7,12 @@ pub enum Aggregation {
     None,
 }
 
+pub type Condition = (Attribute, Operator, Value);
+
 #[derive(Debug)]
 pub struct SelectStatement {
     pub aggregation: Aggregation,
     pub targets: Vec<Attribute>,
     pub source: DataSource,
-    pub conditions: Vec<(Attribute, Operator, String)>,
+    pub conditions: Vec<Condition>,
 }
