@@ -3,6 +3,7 @@ use std::fmt::{Display, Formatter, write};
 use std::ops::Add;
 use std::str::FromStr;
 
+// TOKEN ENUMS
 #[derive(Clone, PartialEq, Debug)]
 pub enum Attribute {
     Id,
@@ -150,6 +151,7 @@ impl Display for Token {
     }
 }
 
+// TOKEN PROCESSING
 #[derive(Clone, Debug)]
 struct RawToken {
     identifier: String,
@@ -282,7 +284,7 @@ pub fn tokenise(input: String) -> Result<Vec<Token>, String> {
     let mut letters = input.chars();
 
     // split
-    let mut group: bool = false; // n = nothing, b = bracket, q = quote
+    let mut group: bool = false;
     let mut split: Vec<String> = Vec::new();
     let mut buffer: String = String::new();
     let mut terminated: bool = false;

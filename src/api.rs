@@ -1,4 +1,4 @@
-use crate::config::app_config::AppContext;
+use crate::app_context::{AlbumData, AppContext, PlaylistData, TrackData};
 use crate::utils::logger::fatal;
 use crate::utils::url::build_url;
 use reqwest::Response;
@@ -15,6 +15,7 @@ pub struct APIQuery {
     url: String,
     limit: Option<u32>,
     offset: Option<u32>,
+    fields: Option<String>
 }
 
 #[derive(Debug, PartialEq)]
@@ -40,14 +41,28 @@ impl QueryType {
     }
 }
 
-pub struct PlaylistsResult {}
 
 struct ResultParser;
 
 impl ResultParser {
-    fn parse_playlists(str_data: String) -> Vec<PlaylistsResult> {
+    fn parse_playlists(str_data: String) -> Result<Vec<PlaylistData>, String> {
         println!("{}", str_data);
-        Vec::new()
+
+        let val: serde_json::Value = serde_json::from_str(str_data.as_str()).map_err(|x| x.to_string())?;
+
+        println!("{}", val);
+
+        Ok(Vec::new())
+    }
+
+    fn parse_albums(str_data: String) -> Result<Vec<AlbumData>, String> {
+        println!("{}", str_data);
+        Ok(Vec::new())
+    }
+
+    fn parse_tracks(str_data: String) -> Result<Vec<TrackData>, String> {
+        println!("{}", str_data);
+        Ok(Vec::new())
     }
 }
 
@@ -61,28 +76,41 @@ impl<'a> APIQuery {
         cx: &AppContext,
         limit: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<Vec<PlaylistsResult>, String> {
+    ) -> Result<Vec<PlaylistData>, String> {
         let url = QueryType::UserPlaylist.make_endpoint(Self::API_ENDPOINT);
 
-        let query = APIQuery { url, limit, offset };
+        let query = APIQuery { url, limit, offset, fields: None };
 
         let raw_data = query.send(cx)?;
 
-        Ok(ResultParser::parse_playlists(raw_data))
+        Ok(ResultParser::parse_playlists(raw_data)?)
     }
 
     pub fn get_saved_albums(
         cx: &AppContext,
         limit: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<Vec<PlaylistsResult>, String> {
+    ) -> Result<Vec<AlbumData>, String> {
         let url = QueryType::UserSavedAlbums.make_endpoint(Self::API_ENDPOINT);
 
-        let query = APIQuery { url, limit, offset };
+        let query = APIQuery { url, limit, offset, fields: None };
 
         let raw_data = query.send(cx)?;
 
-        Ok(ResultParser::parse_playlists(raw_data))
+        Ok(ResultParser::parse_albums(raw_data)?)
+    }
+
+    pub fn get_playlist_tracks(
+        cx: &AppContext,
+        playlist_id: String
+    ) -> Result<Vec<TrackData>, String> {
+        let url = QueryType::UserSavedAlbums.make_endpoint(Self::API_ENDPOINT);
+
+        let query = APIQuery { url, limit: None, offset: None, fields: Some(String::from("")) };
+
+        let raw_data = query.send(cx)?;
+
+        Ok(ResultParser::parse_tracks(raw_data)?)
     }
 
     /// Spawns a thread to send the API request async, returns data using a channel

@@ -1,7 +1,7 @@
 use crate::auth::code::{
     AccessTokenRequestParams, AccessTokenResponse, create_file_content, parse_access_token_res,
 };
-use crate::config::app_config::AppContext;
+use crate::app_context::AppContext;
 use crate::utils::file::WriteMode::Overwrite;
 use crate::utils::file::{File, write_file};
 use crate::utils::utils::secs_now;

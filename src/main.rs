@@ -1,6 +1,6 @@
 use crate::auth::token_refresh::refresh_token;
 use crate::commands::input::input_loop;
-use crate::config::app_config::AppContext;
+use app_context::AppContext;
 use crate::utils::logger::{fatal, info_nnl, success, warning};
 use crate::utils::utils::secs_now;
 use crate::{
@@ -8,16 +8,13 @@ use crate::{
     config::args::{Command, RunContext},
 };
 use std::io::Write;
-use std::time::Duration;
-use std::{io, thread};
-use tokio::runtime::Runtime;
-
 mod api;
 mod auth;
 mod commands;
 mod config;
 mod query;
 mod utils;
+pub mod app_context;
 
 fn main() {
     let rc = RunContext::new();

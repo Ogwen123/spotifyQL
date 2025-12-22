@@ -2,8 +2,16 @@ use crate::auth::code::AuthFileContent;
 use crate::utils::file::{File, read_file};
 
 #[derive(Clone)]
+pub struct TrackData {
+    pub name: String,
+    pub artist_id: String,
+    pub artist_name: String
+}
+
+#[derive(Clone)]
 pub struct PlaylistData {
     pub name: String,
+    pub tracks: Vec<TrackData>
 }
 
 #[derive(Clone)]

@@ -1,5 +1,5 @@
 use crate::api::APIQuery;
-use crate::config::app_config::AppContext;
+use crate::app_context::AppContext;
 use crate::query::run::run_query;
 use crate::query::tokenise::{Token, tokenise};
 use crate::utils::logger::info;
