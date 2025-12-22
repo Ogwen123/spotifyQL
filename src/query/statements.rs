@@ -16,3 +16,12 @@ pub struct SelectStatement {
     pub source: DataSource,
     pub conditions: Vec<Condition>,
 }
+
+impl SelectStatement {
+    pub fn run() -> Result<(), String> {
+        
+        // check if we need to fetch the data source
+        
+        Ok(())
+    }
+}

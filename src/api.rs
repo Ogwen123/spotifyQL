@@ -71,6 +71,20 @@ impl<'a> APIQuery {
         Ok(ResultParser::parse_playlists(raw_data))
     }
 
+    pub fn get_saved_albums(
+        cx: &AppContext,
+        limit: Option<u32>,
+        offset: Option<u32>,
+    ) -> Result<Vec<PlaylistsResult>, String> {
+        let url = QueryType::UserSavedAlbums.make_endpoint(Self::API_ENDPOINT);
+
+        let query = APIQuery { url, limit, offset };
+
+        let raw_data = query.send(cx)?;
+
+        Ok(ResultParser::parse_playlists(raw_data))
+    }
+
     /// Spawns a thread to send the API request async, returns data using a channel
     fn send_async(url: String, tx: Sender<Result<String, String>>, token: String) {
         thread::spawn(move || {

@@ -13,15 +13,21 @@ pub struct AlbumData {
 
 #[derive(Clone)]
 pub struct Data {
+    /// Creation time of the playlist data
+    pub playlist_data_ct: u64,
     pub playlist_data: Option<Vec<PlaylistData>>,
-    pub album_data: Option<Vec<AlbumData>>,
+    /// Creation time of the saved album data
+    pub saved_album_data_ct: u64,
+    pub saved_album_data: Option<Vec<AlbumData>>,
 }
 
 impl Default for Data {
     fn default() -> Self {
         Self {
+            playlist_data_ct: 0,
             playlist_data: None,
-            album_data: None,
+            saved_album_data_ct: 0,
+            saved_album_data: None,
         }
     }
 }
