@@ -1,4 +1,4 @@
-use crate::app_context::{AlbumData, AppContext, PlaylistData, TrackData};
+use crate::app_context::{AppContext};
 use crate::utils::logger::fatal;
 use crate::utils::url::build_url;
 use reqwest::Response;
@@ -6,9 +6,11 @@ use reqwest::header::{HeaderMap, HeaderValue};
 use std::cmp::PartialEq;
 use std::sync::mpsc::{Sender, channel};
 use std::thread;
+use serde_json::Value;
 use tokio::runtime::Runtime;
 use warp::Filter;
 use warp::trace::request;
+use crate::query::data::{AlbumData, PlaylistData, TrackData};
 
 #[derive(Debug)]
 pub struct APIQuery {
@@ -47,12 +49,83 @@ struct ResultParser;
 impl ResultParser {
     fn parse_playlists(str_data: String) -> Result<Vec<PlaylistData>, String> {
         println!("{}", str_data);
+        let mut playlists: Vec<PlaylistData> = Vec::new();
+        let val: Value = serde_json::from_str(str_data.as_str()).map_err(|x| x.to_string())?;
 
-        let val: serde_json::Value = serde_json::from_str(str_data.as_str()).map_err(|x| x.to_string())?;
 
-        println!("{}", val);
+        let raw_playlists: Vec<Value>;
 
-        Ok(Vec::new())
+        if let Value::Array(pl) = &val["items"] {
+            raw_playlists = pl.clone();
+        } else {
+            return Err("'items' field in response data is an unexpected type. (1)".to_string())
+        }
+
+
+        for i in raw_playlists {
+            match i {
+                Value::Object(obj) => {
+                    let id = match &obj["id"] {
+                        Value::String(res) => res.clone(),
+                        _ => {
+                            return Err("Value in field 'items' in response data is an unexpected type. (id)".to_string())
+                        }
+                    };
+                    let name = match &obj["name"] {
+                        Value::String(res) => res.clone(),
+                        _ => {
+                            return Err("Value in field 'items' in response data is an unexpected type. (name)".to_string())
+                        }
+                    };
+                    let track_data = match &obj["tracks"] {
+                        Value::Object(tracks_obj) => {
+                            let api = match &tracks_obj["href"] {
+                                Value::String(res) => res.clone(),
+                                _ => {
+                                    return Err(format!("Value in field 'tracks' of playlist {} in response data is an unexpected type. (href)", name))
+                                }
+                            };
+                            let total = match &tracks_obj["total"] {
+                                Value::Number(res) => {
+                                    if res.is_u64() {
+                                        res.as_u64().expect("You shouldn't see this error message")
+                                    } else {
+                                        return Err(format!("Value in field 'tracks' of playlist {} in response data is not a positive integer. (total)", name))
+                                    }
+                                },
+                                _ => {
+                                    return Err(format!("Value in field 'tracks' of playlist {} in response data is an unexpected type. (total)", name))
+                                }
+                            };
+                            (api, total)
+                        },
+                        _ => {
+                            return Err(format!("Value of field 'tracks' of playlist {} in response data is an unexpected type. (1)", name))
+                        }
+                    };
+
+
+
+                    playlists.push(PlaylistData {
+                        id,
+                        name,
+                        tracks: Vec::new(),
+                        tracks_api: track_data.0,
+                        track_count: track_data.1
+                    })
+                },
+                _ => {
+                    return Err("Value in field 'items' in response data is an unexpected type. (1)".to_string())
+                }
+            }
+            
+            
+            // fetch track data
+        }
+
+        println!("{:?}", playlists);
+
+        Ok(playlists)
     }
 
     fn parse_albums(str_data: String) -> Result<Vec<AlbumData>, String> {

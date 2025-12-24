@@ -1,33 +1,8 @@
 use crate::auth::code::AuthFileContent;
+use crate::query::data::Data;
 use crate::utils::file::{File, read_file};
 
-#[derive(Clone)]
-pub struct TrackData {
-    pub name: String,
-    pub artist_id: String,
-    pub artist_name: String
-}
 
-#[derive(Clone)]
-pub struct PlaylistData {
-    pub name: String,
-    pub tracks: Vec<TrackData>
-}
-
-#[derive(Clone)]
-pub struct AlbumData {
-    pub name: String,
-}
-
-#[derive(Clone)]
-pub struct Data {
-    /// Creation time of the playlist data
-    pub playlist_data_ct: u64,
-    pub playlist_data: Option<Vec<PlaylistData>>,
-    /// Creation time of the saved album data
-    pub saved_album_data_ct: u64,
-    pub saved_album_data: Option<Vec<AlbumData>>,
-}
 
 impl Default for Data {
     fn default() -> Self {
