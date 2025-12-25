@@ -6,11 +6,12 @@ use reqwest::header::{HeaderMap, HeaderValue};
 use std::cmp::PartialEq;
 use std::sync::mpsc::{Sender, channel};
 use std::thread;
+use regex::Regex;
 use serde_json::Value;
 use tokio::runtime::Runtime;
 use warp::Filter;
 use warp::trace::request;
-use crate::query::data::{AlbumData, PlaylistData, TrackData};
+use crate::query::data::{AlbumData, PlaylistData, ResultParser, TrackData};
 
 #[derive(Debug)]
 pub struct APIQuery {
@@ -23,6 +24,7 @@ pub struct APIQuery {
 #[derive(Debug, PartialEq)]
 pub enum QueryType {
     UserPlaylist,
+    UserPlaylistTracks,
     UserFollowing,
     UserSavedAlbums,
     UserSavedTracks,
@@ -31,113 +33,32 @@ pub enum QueryType {
 }
 
 impl QueryType {
-    fn make_endpoint(&self, start: &str) -> String {
-        match self {
+    fn make_endpoint(&self, start: &str, id: Option<String>) -> String {
+        let mut url = match self {
             QueryType::UserPlaylist => start.to_string() + "/me/playlists",
+            QueryType::UserPlaylistTracks => start.to_string() + "/playlists/{id}/tracks",
             QueryType::UserFollowing => start.to_string() + "/me/following",
             QueryType::UserSavedAlbums => start.to_string() + "/me/albums",
             QueryType::UserSavedTracks => start.to_string() + "/me/tracks",
             QueryType::Search => start.to_string() + "/search",
             QueryType::None => start.to_string(),
-        }
-    }
-}
+        };
 
+        if id.is_some() {
+            // verify the url can accept an id
+            let id_url = Regex::new(r"[/\w]+\/\{id\}\/[/\w]+").expect("id_url Regex failed to init.");
 
-struct ResultParser;
-
-impl ResultParser {
-    fn parse_playlists(str_data: String) -> Result<Vec<PlaylistData>, String> {
-        println!("{}", str_data);
-        let mut playlists: Vec<PlaylistData> = Vec::new();
-        let val: Value = serde_json::from_str(str_data.as_str()).map_err(|x| x.to_string())?;
-
-
-        let raw_playlists: Vec<Value>;
-
-        if let Value::Array(pl) = &val["items"] {
-            raw_playlists = pl.clone();
-        } else {
-            return Err("'items' field in response data is an unexpected type. (1)".to_string())
-        }
-
-
-        for i in raw_playlists {
-            match i {
-                Value::Object(obj) => {
-                    let id = match &obj["id"] {
-                        Value::String(res) => res.clone(),
-                        _ => {
-                            return Err("Value in field 'items' in response data is an unexpected type. (id)".to_string())
-                        }
-                    };
-                    let name = match &obj["name"] {
-                        Value::String(res) => res.clone(),
-                        _ => {
-                            return Err("Value in field 'items' in response data is an unexpected type. (name)".to_string())
-                        }
-                    };
-                    let track_data = match &obj["tracks"] {
-                        Value::Object(tracks_obj) => {
-                            let api = match &tracks_obj["href"] {
-                                Value::String(res) => res.clone(),
-                                _ => {
-                                    return Err(format!("Value in field 'tracks' of playlist {} in response data is an unexpected type. (href)", name))
-                                }
-                            };
-                            let total = match &tracks_obj["total"] {
-                                Value::Number(res) => {
-                                    if res.is_u64() {
-                                        res.as_u64().expect("You shouldn't see this error message")
-                                    } else {
-                                        return Err(format!("Value in field 'tracks' of playlist {} in response data is not a positive integer. (total)", name))
-                                    }
-                                },
-                                _ => {
-                                    return Err(format!("Value in field 'tracks' of playlist {} in response data is an unexpected type. (total)", name))
-                                }
-                            };
-                            (api, total)
-                        },
-                        _ => {
-                            return Err(format!("Value of field 'tracks' of playlist {} in response data is an unexpected type. (1)", name))
-                        }
-                    };
-
-
-
-                    playlists.push(PlaylistData {
-                        id,
-                        name,
-                        tracks: Vec::new(),
-                        tracks_api: track_data.0,
-                        track_count: track_data.1
-                    })
-                },
-                _ => {
-                    return Err("Value in field 'items' in response data is an unexpected type. (1)".to_string())
-                }
+            if id_url.is_match(url.as_str()) {
+                url = url.replace("{id}", id.unwrap().as_str());
+            } else {
+                fatal!("Could not insert id into URL.")
             }
-            
-            
-            // fetch track data
         }
 
-        println!("{:?}", playlists);
-
-        Ok(playlists)
-    }
-
-    fn parse_albums(str_data: String) -> Result<Vec<AlbumData>, String> {
-        println!("{}", str_data);
-        Ok(Vec::new())
-    }
-
-    fn parse_tracks(str_data: String) -> Result<Vec<TrackData>, String> {
-        println!("{}", str_data);
-        Ok(Vec::new())
+        url
     }
 }
+
 
 impl<'a> APIQuery {
     const API_ENDPOINT: &'a str = "https://api.spotify.com/v1";
@@ -150,13 +71,22 @@ impl<'a> APIQuery {
         limit: Option<u32>,
         offset: Option<u32>,
     ) -> Result<Vec<PlaylistData>, String> {
-        let url = QueryType::UserPlaylist.make_endpoint(Self::API_ENDPOINT);
+        let url = QueryType::UserPlaylist.make_endpoint(Self::API_ENDPOINT, None);
 
         let query = APIQuery { url, limit, offset, fields: None };
 
         let raw_data = query.send(cx)?;
 
-        Ok(ResultParser::parse_playlists(raw_data)?)
+        let mut playlists = ResultParser::parse_playlists(raw_data)?;
+
+        // get playlist data
+        for i in playlists.iter_mut() {
+            let tracks = APIQuery::get_playlist_tracks(cx, i.id.clone())?;
+            
+            i.tracks = tracks;
+        }
+
+        Ok(playlists)
     }
 
     pub fn get_saved_albums(
@@ -164,7 +94,7 @@ impl<'a> APIQuery {
         limit: Option<u32>,
         offset: Option<u32>,
     ) -> Result<Vec<AlbumData>, String> {
-        let url = QueryType::UserSavedAlbums.make_endpoint(Self::API_ENDPOINT);
+        let url = QueryType::UserSavedAlbums.make_endpoint(Self::API_ENDPOINT, None);
 
         let query = APIQuery { url, limit, offset, fields: None };
 
@@ -177,7 +107,7 @@ impl<'a> APIQuery {
         cx: &AppContext,
         playlist_id: String
     ) -> Result<Vec<TrackData>, String> {
-        let url = QueryType::UserSavedAlbums.make_endpoint(Self::API_ENDPOINT);
+        let url = QueryType::UserPlaylistTracks.make_endpoint(Self::API_ENDPOINT, Some(playlist_id));
 
         let query = APIQuery { url, limit: None, offset: None, fields: Some(String::from("")) };
 
@@ -191,8 +121,6 @@ impl<'a> APIQuery {
         thread::spawn(move || {
             let rt = Runtime::new().expect("Could not init tokio runtime");
             rt.block_on(async move {
-                println!("{}", token);
-                println!("{}", url);
                 let client = reqwest::Client::new();
                 let resp_result = client
                     .get(url)

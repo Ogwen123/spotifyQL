@@ -212,7 +212,6 @@ impl RawToken {
                 let int_regex = Regex::new(r"^-?\d+$").map_err(|x| x.to_string())?;
                 let float_regex = Regex::new(r"^-?\d+.\d+$").map_err(|x| x.to_string())?;
                 if int_regex.is_match(self.identifier.as_str()) {
-                    println!("{:?}", self.identifier);
                     return Ok(Token::Value(Value::Int(i32::from_str(self.identifier.as_str()).map_err(|x| format!("INT ERROR: {}", x.to_string()))?))); // remove the quotes from the string
                 }
 
@@ -233,7 +232,6 @@ impl RawToken {
             }
         };
 
-        println!("{:?}", self);
         Err("Found unknown token in input.".to_string())
     }
 
@@ -292,7 +290,6 @@ pub fn tokenise(input: String) -> Result<Vec<Token>, String> {
     let mut end_on = '.';
 
     while let Some(letter) = letters.next() {
-        print!("{:?}", letter);
 
         if letter == ';' {
             terminated = true;
@@ -326,14 +323,12 @@ pub fn tokenise(input: String) -> Result<Vec<Token>, String> {
         } else {
             buffer.push(letter);
         }
-        println!("{}", group);
     }
 
     if terminated == false {
         return Err("Input must be terminated with ';'.".to_string())
     }
 
-    println!("{:?}", split);
     let mut split_iter = split.iter();
 
     let mut tokens: Vec<Token> = Vec::new();
@@ -344,7 +339,6 @@ pub fn tokenise(input: String) -> Result<Vec<Token>, String> {
         tokens.push(token);
     }
 
-    tokens.clone().iter().for_each(|x| println!("{}", x));
 
     Ok(tokens)
 }

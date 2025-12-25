@@ -40,10 +40,10 @@ pub fn input_loop(cx: &mut AppContext) -> Result<(), String> {
 
             }
             "/testf" => run_query(
-                cx,
-                "SELECT COUNT(name) FROM playlist(\"all\") WHERE artist == \"Arctic Monkeys\";"
-                    .to_string(),
-            )?,
+                    cx,
+                    "SELECT COUNT(name) FROM playlist(\"all\") WHERE artist == \"Arctic Monkeys\";"
+                        .to_string(),
+                )?,
             "/testd" => run_query( // test double attributes
                 cx,
                 "SELECT id, name FROM playlist(\"all\");"
