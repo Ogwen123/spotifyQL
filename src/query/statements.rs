@@ -18,9 +18,13 @@ pub struct SelectStatement {
 }
 
 impl SelectStatement {
-    pub fn run() -> Result<(), String> {
-        
-        // check if we need to fetch the data source
+    pub fn run(&self) -> Result<(), String> {
+        // gather targets
+
+
+        // apply conditions
+        // apply aggregations
+
         
         Ok(())
     }
