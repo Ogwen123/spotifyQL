@@ -26,6 +26,15 @@ macro_rules! warning {
     }};
 }
 
+macro_rules! error {
+    () => {
+        $crate::print!("\n")
+    };
+    ($($arg:tt)*) => {{
+        println!("\x1b[2K\r\x1b[31m\x1b[1m[ERROR]\x1b[0m {}", format!($($arg)*));
+    }};
+}
+
 macro_rules! fatal {
     () => {
         $crate::print!("\n")
@@ -76,6 +85,7 @@ pub(crate) use fatal;
 pub(crate) use info;
 pub(crate) use success;
 pub(crate) use warning;
+pub(crate) use error;
 
 pub(crate) use fatal_nnl;
 pub(crate) use info_nnl;

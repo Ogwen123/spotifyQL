@@ -123,7 +123,7 @@ impl<'a> APIQuery {
             limit: None,
             offset: None,
             fields: Some(String::from(
-                "items(added_by.id,track(id,name,duration_ms,popularity,album(name,href),(artists(id,name))",
+                "items(added_at,track(id,name,duration_ms,popularity,album(id,name),artists(id,name))",
             )),
         };
 
@@ -138,6 +138,7 @@ impl<'a> APIQuery {
             let rt = Runtime::new().expect("Could not init tokio runtime");
             rt.block_on(async move {
                 let client = reqwest::Client::new();
+                println!("{}", url);
                 let resp_result = client
                     .get(url)
                     .header("Authorization", format!("Bearer {}", token))
@@ -179,6 +180,9 @@ impl<'a> APIQuery {
         }
         if self.offset.is_some() {
             params.push(("offset", self.offset.unwrap().to_string()));
+        }
+        if self.fields.is_some() {
+            params.push(("fields", self.fields.unwrap()))
         }
 
         let final_url = build_url(self.url, params);
