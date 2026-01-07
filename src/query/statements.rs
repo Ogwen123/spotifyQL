@@ -1,4 +1,7 @@
 use crate::query::tokenise::{Attribute, DataSource, Operator, Value};
+use std::collections::HashMap;
+
+struct GeneralData {}
 
 #[derive(Debug)]
 pub enum Aggregation {
@@ -20,12 +23,11 @@ pub struct SelectStatement {
 impl SelectStatement {
     pub fn run(&self) -> Result<(), String> {
         // gather targets
-
+        //let targets: HashMap<String, >
 
         // apply conditions
         // apply aggregations
 
-        
         Ok(())
     }
 }

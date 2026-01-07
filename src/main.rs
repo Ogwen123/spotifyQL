@@ -1,20 +1,20 @@
 use crate::auth::token_refresh::refresh_token;
 use crate::commands::input::input_loop;
-use app_context::AppContext;
 use crate::utils::logger::{fatal, info_nnl, success, warning};
 use crate::utils::utils::secs_now;
 use crate::{
     commands::{login::login, logout::logout},
     config::args::{Command, RunContext},
 };
+use app_context::AppContext;
 use std::io::Write;
 mod api;
+pub mod app_context;
 mod auth;
 mod commands;
 mod config;
 mod query;
 mod utils;
-pub mod app_context;
 
 fn main() {
     let rc = RunContext::new();

@@ -2,19 +2,6 @@ use crate::auth::code::AuthFileContent;
 use crate::query::data::Data;
 use crate::utils::file::{File, read_file};
 
-
-
-impl Default for Data {
-    fn default() -> Self {
-        Self {
-            playlist_data_ct: 0,
-            playlist_data: None,
-            saved_album_data_ct: 0,
-            saved_album_data: None,
-        }
-    }
-}
-
 #[derive(Clone)]
 pub struct AppContext {
     pub client_id: String,

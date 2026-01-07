@@ -62,7 +62,11 @@ pub fn write_file(file: File, content: String, write_mode: WriteMode) -> Result<
     let mut file = OpenOptions::new()
         .create(true)
         .write(true)
-        .truncate(if write_mode == WriteMode::Overwrite {true} else {false})
+        .truncate(if write_mode == WriteMode::Overwrite {
+            true
+        } else {
+            false
+        })
         .open(path)
         .map_err(|_| {
             return "Could not open file in write mode (write, create, truncate).";

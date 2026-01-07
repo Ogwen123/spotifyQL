@@ -22,7 +22,8 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
     if statement_type == Token::SELECT {
         let mut aggregation = Aggregation::None;
         let mut targets: Vec<Attribute> = Vec::new();
-
+        
+        let mut reached_from = false;
         loop {
             // collect attributes
             let attr = match tokens.next() {
@@ -61,7 +62,11 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                 }
                 Token::Attribute(res) => {
                     targets.push(res);
-                }
+                },
+                Token::FROM => {
+                    reached_from = true;
+                    break;
+                },
                 _ => return Err(format!("SYNTAX ERROR: Invalid token at {}", attr)),
             }
         }
@@ -70,10 +75,12 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
             return Err("SYNTAX ERROR: No attributes defined after SELECT".to_string());
         }
 
-        let fr = safe_next(&mut tokens)?;
+        if !reached_from {
+            let fr = safe_next(&mut tokens)?;
 
-        if fr != Token::FROM {
-            return Err(format!("SYNTAX ERROR: Token at {} should be FROM.", fr));
+            if fr != Token::FROM {
+                return Err(format!("SYNTAX ERROR: Token at {} should be FROM.", fr));
+            }
         }
 
         let source: DataSource;
@@ -154,19 +161,18 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
             };
 
             conditions.push((attr, op, val));
-            
+
             match tokens.next() {
-                Some(res) => {
-                    match res {
-                        Token::Bitwise(_) => {},
-                        _ => {
-                            return Err(format!("SYNTAX ERROR: Only a bitwise operator (AND, OR) can come after a condition, error at {}", res))
-                        }
+                Some(res) => match res {
+                    Token::Logical(_) => {}
+                    _ => {
+                        return Err(format!(
+                            "SYNTAX ERROR: Only a bitwise operator (AND, OR) can come after a condition, error at {}",
+                            res
+                        ));
                     }
                 },
-                None => {
-                    break
-                }
+                None => break,
             }
         }
 

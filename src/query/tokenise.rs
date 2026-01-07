@@ -49,7 +49,7 @@ impl Display for DataSource {
             "{}",
             match self {
                 DataSource::Playlist(res) => format!("Playlist({})", res),
-                DataSource::SavedAlbums(res) => format!("Playlist({})", res),
+                DataSource::SavedAlbums(res) => format!("SavedAlbum({})", res),
             }
         )
     }
@@ -77,19 +77,19 @@ impl Display for Operator {
 }
 
 #[derive(Clone, PartialEq)]
-pub enum Bitwise {
+pub enum Logical {
     And,
-    Or
+    Or,
 }
 
-impl Display for Bitwise {
+impl Display for Logical {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                Bitwise::And => "And",
-                Bitwise::Or => "Or",
+                Logical::And => "And",
+                Logical::Or => "Or",
             }
         )
     }
@@ -99,7 +99,7 @@ impl Display for Bitwise {
 pub enum Value {
     Str(String),
     Int(i32),
-    Float(f32)
+    Float(f32),
 }
 
 impl Display for Value {
@@ -110,7 +110,7 @@ impl Display for Value {
             match self {
                 Value::Str(res) => format!("Str({})", res),
                 Value::Int(res) => format!("Int({})", res),
-                Value::Float(res) => format!("Float({})", res)
+                Value::Float(res) => format!("Float({})", res),
             }
         )
     }
@@ -125,9 +125,9 @@ pub enum Token {
     WHERE,
     Attribute(Attribute),
     Operator(Operator),
-    Bitwise(Bitwise),
+    Logical(Logical),
     Source(DataSource),
-    Value(Value)
+    Value(Value),
 }
 
 impl Display for Token {
@@ -143,9 +143,9 @@ impl Display for Token {
                 Token::WHERE => "WHERE".to_string(),
                 Token::Attribute(res) => format!("Attribute({})", res),
                 Token::Operator(res) => format!("Operator({})", res),
-                Token::Bitwise(res) => format!("Bitwise({})", res),
+                Token::Logical(res) => format!("Logical({})", res),
                 Token::Source(res) => format!("Source({})", res),
-                Token::Value(res) => format!("Value({})", res)
+                Token::Value(res) => format!("Value({})", res),
             }
         )
     }
@@ -176,7 +176,7 @@ impl RawToken {
                 };
 
                 return Ok(Token::COUNT(attr));
-            },
+            }
             "AVERAGE" => {
                 let attr = match Attribute::_match(&self.content.unwrap_or("".to_string())) {
                     Ok(res) => res,
@@ -190,8 +190,8 @@ impl RawToken {
             "==" => return Ok(Token::Operator(Operator::Equals)),
             "!=" => return Ok(Token::Operator(Operator::NotEquals)),
             "LIKE" => return Ok(Token::Operator(Operator::Like)),
-            "AND" => return Ok(Token::Bitwise(Bitwise::And)),
-            "OR" => return Ok(Token::Bitwise(Bitwise::Or)),
+            "AND" => return Ok(Token::Logical(Logical::And)),
+            "OR" => return Ok(Token::Logical(Logical::Or)),
             "PLAYLIST" => {
                 return Ok(Token::Source(DataSource::Playlist(
                     self.content.unwrap_or("".to_string()),
@@ -212,11 +212,17 @@ impl RawToken {
                 let int_regex = Regex::new(r"^-?\d+$").map_err(|x| x.to_string())?;
                 let float_regex = Regex::new(r"^-?\d+.\d+$").map_err(|x| x.to_string())?;
                 if int_regex.is_match(self.identifier.as_str()) {
-                    return Ok(Token::Value(Value::Int(i32::from_str(self.identifier.as_str()).map_err(|x| format!("INT ERROR: {}", x.to_string()))?))); // remove the quotes from the string
+                    return Ok(Token::Value(Value::Int(
+                        i32::from_str(self.identifier.as_str())
+                            .map_err(|x| format!("INT ERROR: {}", x.to_string()))?,
+                    ))); // remove the quotes from the string
                 }
 
                 if float_regex.is_match(self.identifier.as_str()) {
-                    return Ok(Token::Value(Value::Float(f32::from_str(self.identifier.as_str()).map_err(|x| format!("FLOAT ERROR: {}", x.to_string()))?))); // remove the quotes from the string
+                    return Ok(Token::Value(Value::Float(
+                        f32::from_str(self.identifier.as_str())
+                            .map_err(|x| format!("FLOAT ERROR: {}", x.to_string()))?,
+                    ))); // remove the quotes from the string
                 }
 
                 if self.content.is_some() && self.identifier.len() == 0 {
@@ -290,12 +296,11 @@ pub fn tokenise(input: String) -> Result<Vec<Token>, String> {
     let mut end_on = '.';
 
     while let Some(letter) = letters.next() {
-
         if letter == ';' {
             terminated = true;
             // clean up buffer contents
             split.push(buffer);
-            break
+            break;
         }
 
         if letter == ' ' {
@@ -305,7 +310,8 @@ pub fn tokenise(input: String) -> Result<Vec<Token>, String> {
             } else {
                 buffer.push(letter)
             }
-        } else if letter == ',' { // only add a comma if it is part of a string
+        } else if letter == ',' {
+            // only add a comma if it is part of a string
             if group {
                 buffer.push(letter)
             }
@@ -326,7 +332,7 @@ pub fn tokenise(input: String) -> Result<Vec<Token>, String> {
     }
 
     if terminated == false {
-        return Err("Input must be terminated with ';'.".to_string())
+        return Err("Input must be terminated with ';'.".to_string());
     }
 
     let mut split_iter = split.iter();
@@ -338,7 +344,6 @@ pub fn tokenise(input: String) -> Result<Vec<Token>, String> {
 
         tokens.push(token);
     }
-
 
     Ok(tokens)
 }

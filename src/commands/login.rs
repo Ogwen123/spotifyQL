@@ -1,9 +1,9 @@
+use crate::app_context::AppContext;
 use crate::auth::auth_listener::redirect_listener;
 use crate::auth::code::{
     AccessTokenRequestParams, b64, code_verifier, create_file_content, fetch_access_token,
     parse_access_token_res, sha256,
 };
-use crate::app_context::AppContext;
 use crate::utils::file::File;
 use crate::utils::file::WriteMode::Overwrite;
 use crate::utils::file::write_file;

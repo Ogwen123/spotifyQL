@@ -1,24 +1,24 @@
-use crate::app_context::{AppContext};
+use crate::app_context::AppContext;
+use crate::query::data::{AlbumData, PlaylistData, ResultParser, TrackData};
 use crate::utils::logger::fatal;
 use crate::utils::url::build_url;
+use regex::Regex;
 use reqwest::Response;
 use reqwest::header::{HeaderMap, HeaderValue};
+use serde_json::Value;
 use std::cmp::PartialEq;
 use std::sync::mpsc::{Sender, channel};
 use std::thread;
-use regex::Regex;
-use serde_json::Value;
 use tokio::runtime::Runtime;
 use warp::Filter;
 use warp::trace::request;
-use crate::query::data::{AlbumData, PlaylistData, ResultParser, TrackData};
 
 #[derive(Debug)]
 pub struct APIQuery {
     url: String,
     limit: Option<u32>,
     offset: Option<u32>,
-    fields: Option<String>
+    fields: Option<String>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -46,7 +46,8 @@ impl QueryType {
 
         if id.is_some() {
             // verify the url can accept an id
-            let id_url = Regex::new(r"[/\w]+\/\{id\}\/[/\w]+").expect("id_url Regex failed to init.");
+            let id_url =
+                Regex::new(r"[/\w]+\/\{id\}\/[/\w]+").expect("id_url Regex failed to init.");
 
             if id_url.is_match(url.as_str()) {
                 url = url.replace("{id}", id.unwrap().as_str());
@@ -59,11 +60,8 @@ impl QueryType {
     }
 }
 
-
 impl<'a> APIQuery {
     const API_ENDPOINT: &'a str = "https://api.spotify.com/v1";
-
-    pub fn new() {}
 
     /// Get all of a users playlists
     pub fn get_playlists(
@@ -73,7 +71,12 @@ impl<'a> APIQuery {
     ) -> Result<Vec<PlaylistData>, String> {
         let url = QueryType::UserPlaylist.make_endpoint(Self::API_ENDPOINT, None);
 
-        let query = APIQuery { url, limit, offset, fields: None };
+        let query = APIQuery {
+            url,
+            limit,
+            offset,
+            fields: None,
+        };
 
         let raw_data = query.send(cx)?;
 
@@ -82,7 +85,7 @@ impl<'a> APIQuery {
         // get playlist data
         for i in playlists.iter_mut() {
             let tracks = APIQuery::get_playlist_tracks(cx, i.id.clone())?;
-            
+
             i.tracks = tracks;
         }
 
@@ -96,7 +99,12 @@ impl<'a> APIQuery {
     ) -> Result<Vec<AlbumData>, String> {
         let url = QueryType::UserSavedAlbums.make_endpoint(Self::API_ENDPOINT, None);
 
-        let query = APIQuery { url, limit, offset, fields: None };
+        let query = APIQuery {
+            url,
+            limit,
+            offset,
+            fields: None,
+        };
 
         let raw_data = query.send(cx)?;
 
@@ -105,15 +113,23 @@ impl<'a> APIQuery {
 
     pub fn get_playlist_tracks(
         cx: &AppContext,
-        playlist_id: String
+        playlist_id: String,
     ) -> Result<Vec<TrackData>, String> {
-        let url = QueryType::UserPlaylistTracks.make_endpoint(Self::API_ENDPOINT, Some(playlist_id));
+        let url = QueryType::UserPlaylistTracks
+            .make_endpoint(Self::API_ENDPOINT, Some(playlist_id.clone()));
 
-        let query = APIQuery { url, limit: None, offset: None, fields: Some(String::from("")) };
+        let query = APIQuery {
+            url,
+            limit: None,
+            offset: None,
+            fields: Some(String::from(
+                "items(added_by.id,track(id,name,duration_ms,popularity,album(name,href),(artists(id,name))",
+            )),
+        };
 
         let raw_data = query.send(cx)?;
 
-        Ok(ResultParser::parse_tracks(raw_data)?)
+        Ok(ResultParser::parse_tracks(raw_data, playlist_id)?)
     }
 
     /// Spawns a thread to send the API request async, returns data using a channel
