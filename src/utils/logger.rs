@@ -81,11 +81,11 @@ macro_rules! fatal_nnl {
     }};
 }
 
+pub(crate) use error;
 pub(crate) use fatal;
 pub(crate) use info;
 pub(crate) use success;
 pub(crate) use warning;
-pub(crate) use error;
 
 pub(crate) use fatal_nnl;
 pub(crate) use info_nnl;

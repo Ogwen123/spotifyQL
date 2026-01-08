@@ -31,7 +31,12 @@ pub struct PlaylistData {
 
 #[derive(Clone)]
 pub struct AlbumData {
+    pub id: String,
     pub name: String,
+    pub track_count: u64,
+    pub popularity: u8, // value between 0 and 100
+    pub album_type: String,
+    pub release_date: String,
 }
 
 #[derive(Clone)]
@@ -108,7 +113,7 @@ impl ResultParser {
         if let Value::Array(pl) = &val["items"] {
             raw_playlists = pl.clone();
         } else {
-            return Err("'items' field in response data is an unexpected type. (1)".to_string());
+            return Err("'items' field in response data is an unexpected type.".to_string());
         }
 
         for i in raw_playlists {
@@ -161,7 +166,7 @@ impl ResultParser {
                         }
                         _ => {
                             return Err(format!(
-                                "Value of field 'tracks' of playlist {} in response data is an unexpected type. (1)",
+                                "Value of field 'tracks' of playlist {} in response data is an unexpected type.",
                                 name
                             ));
                         }
@@ -177,7 +182,7 @@ impl ResultParser {
                 }
                 _ => {
                     return Err(
-                        "Value in field 'items' in response data is an unexpected type. (1)"
+                        "Value in field 'items' in response data is an unexpected type."
                             .to_string(),
                     );
                 }
@@ -187,9 +192,132 @@ impl ResultParser {
     }
 
     pub fn parse_albums(str_data: String) -> Result<Vec<AlbumData>, String> {
-        println!("{}", str_data);
+        let mut albums: Vec<AlbumData> = Vec::new();
+        let val: Value = serde_json::from_str(str_data.as_str()).map_err(|x| x.to_string())?;
 
-        Ok(Vec::new())
+        let raw_albums: Vec<Value>;
+
+        if let Value::Array(pl) = &val["items"] {
+            raw_albums = pl.clone();
+        } else {
+            return Err("'items' field in response data is an unexpected type. (1)".to_string());
+        }
+
+        for i in raw_albums {
+            match i {
+                Value::Object(obj) => {
+                    let added_at = match &obj["added_at"] {
+                        Value::String(res) => res.clone(),
+                        _ => return Err(
+                            "Value 'added_at' in field 'items' in response data is an unexpected type."
+                                .to_string(),
+                        ),
+                    };
+                    let album_data = match &obj["album"] {
+                        Value::Object(album_obj) => {
+                            let name = match &album_obj["name"] {
+                                Value::String(res) => res.clone(),
+                                _ => {
+                                    return Err(
+                                        "Value 'name' in field 'tracks' of album response data is an unexpected type.".to_string()
+                                    );
+                                }
+                            };
+                            let id = match &album_obj["id"] {
+                                Value::String(res) => res.clone(),
+                                _ => {
+                                    return Err(format!(
+                                        "Value 'id' in field 'album' of album {} in response data is an unexpected type.",
+                                        name
+                                    ));
+                                }
+                            };
+
+                            let track_count = match &album_obj["total_tracks"] {
+                                Value::Number(res) => {
+                                    if res.is_u64() {
+                                        res.as_u64().expect("You shouldn't see this error message")
+                                    } else {
+                                        return Err(format!(
+                                            "Value 'total' in field 'tracks' of playlist {} in response data is not a positive integer.",
+                                            name
+                                        ));
+                                    }
+                                },
+                                _ => {
+                                    return Err(format!(
+                                        "Value 'total_tracks' in field 'album' of album {} in response data is an unexpected type.",
+                                        name
+                                    ));
+                                }
+                            };
+                            let popularity = match &album_obj["popularity"] {
+                                Value::Number(res) => {
+                                    if res.is_u64() {
+                                        let temp = res
+                                            .as_u64()
+                                            .expect("You shouldn't see this error message");
+
+                                        temp as u8 // this should be fine as popularity must be between 0 and 100
+                                    } else {
+                                        return Err(format!(
+                                            "Value 'popularity' in field 'album' of album {} in response data is not a positive integer.", name
+                                        ));
+                                    }
+                                },
+                                _ => {
+                                    return Err(format!(
+                                        "Value 'popularity' in field 'album' of album {} in response data is an unexpected type.",
+                                        name
+                                    ));
+                                }
+                            };
+                            let album_type = match &album_obj["album_type"] {
+                                Value::String(res) => res.clone(),
+                                _ => {
+                                    return Err(format!(
+                                        "Value 'album_type' in field 'album' of album {} in response data is an unexpected type.",
+                                        name
+                                    ));
+                                }
+                            };
+                            let release_date = match &album_obj["release_date"] {
+                                Value::String(res) => res.clone(),
+                                _ => {
+                                    return Err(format!(
+                                        "Value 'release_date' in field 'album' of album {} in response data is an unexpected type.",
+                                        name
+                                    ));
+                                }
+                            };
+                            (id, name, track_count, popularity, album_type, release_date)
+                        }
+                        _ => {
+                            return Err(
+                                "Value of field 'tracks' of album response data is an unexpected type.".to_string(),
+                                
+                            );
+                        }
+                    };
+
+                    albums.push(AlbumData {
+                        id: album_data.0,
+                        name: album_data.1,
+                        track_count: album_data.2,
+                        popularity: album_data.3,
+                        album_type: album_data.4,
+                        release_date: album_data.5,
+                    })
+                }
+                _ => {
+                    return Err(
+                        "Value in field 'items' in response data is an unexpected type."
+                            .to_string(),
+                    );
+                }
+            }
+        }
+        Ok(albums)
     }
 
     pub fn parse_tracks(
@@ -204,7 +332,7 @@ impl ResultParser {
         if let Value::Array(pl) = &val["items"] {
             raw_tracks = pl.clone();
         } else {
-            return Err("'items' field in response data is an unexpected type. (2)".to_string());
+            return Err("'items' field in response data is an unexpected type.".to_string());
         }
 
         for i in raw_tracks {
@@ -223,7 +351,7 @@ impl ResultParser {
                                 Value::String(res) => res.clone(),
                                 _ => {
                                     return Err(format!(
-                                        "Value 'total' in field 'tracks' of playlist {} in response data is not a positive integer.",
+                                        "Value 'id' in field 'track' of tracks '{}' in response data is an unexpected type.",
                                         _debug_playlist_id
                                     ));
                                 }
@@ -232,7 +360,7 @@ impl ResultParser {
                                 Value::String(res) => res.clone(),
                                 _ => {
                                     return Err(format!(
-                                        "Value 'total' in field 'tracks' of playlist {} in response data is not a positive integer.",
+                                        "Value 'name' in field 'track' of tracks '{}' in response data is an unexpected type.",
                                         _debug_playlist_id
                                     ));
                                 }
@@ -243,14 +371,14 @@ impl ResultParser {
                                         res.as_u64().expect("You shouldn't see this error message")
                                     } else {
                                         return Err(format!(
-                                            "Value 'total' in field 'tracks' of playlist {} in response data is not a positive integer.",
+                                            "Value 'duration_ms' in field 'track' of tracks '{}' in response data is not a positive integer.",
                                             _debug_playlist_id
                                         ));
                                     }
                                 }
                                 _ => {
                                     return Err(format!(
-                                        "Value 'total' in field 'tracks' of playlist {} in response data is an unexpected type.",
+                                        "Value 'duration_ms' in field 'track' of playlist {} in response data is an unexpected type.",
                                         _debug_playlist_id
                                     ));
                                 }
@@ -265,14 +393,14 @@ impl ResultParser {
                                         temp as u8 // this should be fine as popularity must be between 0 and 100
                                     } else {
                                         return Err(format!(
-                                            "Value 'total' in field 'tracks' of playlist {} in response data is not a positive integer.",
+                                            "Value 'popularity' in field 'track' of tracks '{}' in response data is not a positive integer.",
                                             _debug_playlist_id
                                         ));
                                     }
                                 }
                                 _ => {
                                     return Err(format!(
-                                        "Value 'total' in field 'tracks' of playlist {} in response data is an unexpected type.",
+                                        "Value 'popularity' in field 'track' of tracks '{}' in response data is an unexpected type.",
                                         _debug_playlist_id
                                     ));
                                 }
@@ -283,20 +411,16 @@ impl ResultParser {
                                     let id = match &album["id"] {
                                         Value::String(res) => res.clone(),
                                         _ => {
-                                            return Err(format!(
-                                                "Value 'id' in field 'album' of track {} in response data is an unexpected type.",
-                                                name
-                                            ));
+                                            return Err(
+                                                "Value 'id' in field 'album' of field 'track' is an unexpected type.".to_string(),
+                                            );
                                         }
                                     };
 
                                     let name = match &album["name"] {
                                         Value::String(res) => res.clone(),
                                         _ => {
-                                            return Err(format!(
-                                                "Value 'name' in field 'album' of track {} in response data is an unexpected type.",
-                                                name
-                                            ));
+                                            return Err("Value 'name' in field 'album' of field 'track' is an unexpected type.".to_string());
                                         }
                                     };
 
@@ -319,7 +443,7 @@ impl ResultParser {
                                             Value::String(res) => res.clone(),
                                             _ => {
                                                 return Err(format!(
-                                                    "Value 'id' in field 'album' of track {} in response data is an unexpected type.",
+                                                    "Value 'id' in field 'artists' of track {} in response data is an unexpected type.",
                                                     name
                                                 ));
                                             }
@@ -329,7 +453,7 @@ impl ResultParser {
                                             Value::String(res) => res.clone(),
                                             _ => {
                                                 return Err(format!(
-                                                    "Value 'name' in field 'album' of track {} in response data is an unexpected type.",
+                                                    "Value 'name' in field 'artists' of track {} in response data is an unexpected type.",
                                                     name
                                                 ));
                                             }

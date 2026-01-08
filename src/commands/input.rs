@@ -72,8 +72,8 @@ pub fn input_loop(cx: &mut AppContext) -> Result<(), String> {
         let parsed_input = input.trim();
 
         match input_inner(cx, parsed_input) {
-            Ok(_) => {},
-            Err(err) => error!("{}", err)
+            Ok(_) => {}
+            Err(err) => error!("{}", err),
         };
     }
 }

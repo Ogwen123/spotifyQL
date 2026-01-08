@@ -22,7 +22,7 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
     if statement_type == Token::SELECT {
         let mut aggregation = Aggregation::None;
         let mut targets: Vec<Attribute> = Vec::new();
-        
+
         let mut reached_from = false;
         loop {
             // collect attributes
@@ -62,11 +62,11 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                 }
                 Token::Attribute(res) => {
                     targets.push(res);
-                },
+                }
                 Token::FROM => {
                     reached_from = true;
                     break;
-                },
+                }
                 _ => return Err(format!("SYNTAX ERROR: Invalid token at {}", attr)),
             }
         }

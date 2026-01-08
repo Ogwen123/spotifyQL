@@ -4,7 +4,7 @@ type Params<K, V> = Vec<(K, V)>;
 
 pub fn url_encode(unencoded: String) -> String {
     let mut str: String = String::new();
-    
+
     for c in unencoded.split("") {
         str += match c {
             "!" => "%21",
@@ -25,10 +25,10 @@ pub fn url_encode(unencoded: String) -> String {
             "@" => "%40",
             "[" => "%5B",
             "]" => "%5D",
-            _ => c
+            _ => c,
         }
     }
-    
+
     str
 }
 
@@ -36,8 +36,10 @@ pub fn build_url<K: AsRef<str>, V: AsRef<str>, S: ToString>(
     base: S,
     params: Params<K, V>,
 ) -> String {
-    if params.len() == 0 {return base.to_string()}
-    
+    if params.len() == 0 {
+        return base.to_string();
+    }
+
     let mut res = base.to_string() + "?";
 
     for (index, (k, v)) in params.iter().enumerate() {

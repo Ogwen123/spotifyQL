@@ -60,16 +60,16 @@ impl QueryType {
     }
 }
 
-impl<'a> APIQuery {
-    const API_ENDPOINT: &'a str = "https://api.spotify.com/v1";
+static API_ENDPOINT: &str = "https://api.spotify.com/v1";
 
+impl<'a> APIQuery {
     /// Get all of a users playlists
     pub fn get_playlists(
         cx: &AppContext,
         limit: Option<u32>,
         offset: Option<u32>,
     ) -> Result<Vec<PlaylistData>, String> {
-        let url = QueryType::UserPlaylist.make_endpoint(Self::API_ENDPOINT, None);
+        let url = QueryType::UserPlaylist.make_endpoint(API_ENDPOINT, None);
 
         let query = APIQuery {
             url,
@@ -97,7 +97,7 @@ impl<'a> APIQuery {
         limit: Option<u32>,
         offset: Option<u32>,
     ) -> Result<Vec<AlbumData>, String> {
-        let url = QueryType::UserSavedAlbums.make_endpoint(Self::API_ENDPOINT, None);
+        let url = QueryType::UserSavedAlbums.make_endpoint(API_ENDPOINT, None);
 
         let query = APIQuery {
             url,
@@ -115,8 +115,8 @@ impl<'a> APIQuery {
         cx: &AppContext,
         playlist_id: String,
     ) -> Result<Vec<TrackData>, String> {
-        let url = QueryType::UserPlaylistTracks
-            .make_endpoint(Self::API_ENDPOINT, Some(playlist_id.clone()));
+        let url =
+            QueryType::UserPlaylistTracks.make_endpoint(API_ENDPOINT, Some(playlist_id.clone()));
 
         let query = APIQuery {
             url,
