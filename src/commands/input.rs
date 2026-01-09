@@ -2,7 +2,7 @@ use crate::api::APIQuery;
 use crate::app_context::AppContext;
 use crate::query::parse::parse;
 use crate::query::run::run_query;
-use crate::query::tokenise::{Token, tokenise};
+use crate::query::tokenise::tokenise;
 use crate::utils::logger::{error, info, success};
 use std::io;
 use std::io::Write;

@@ -1,6 +1,5 @@
 use regex::Regex;
-use std::fmt::{Display, Formatter, write};
-use std::ops::Add;
+use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
 // TOKEN ENUMS

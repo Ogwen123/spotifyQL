@@ -4,14 +4,10 @@ use crate::utils::logger::fatal;
 use crate::utils::url::build_url;
 use regex::Regex;
 use reqwest::Response;
-use reqwest::header::{HeaderMap, HeaderValue};
-use serde_json::Value;
 use std::cmp::PartialEq;
 use std::sync::mpsc::{Sender, channel};
 use std::thread;
 use tokio::runtime::Runtime;
-use warp::Filter;
-use warp::trace::request;
 
 #[derive(Debug)]
 pub struct APIQuery {

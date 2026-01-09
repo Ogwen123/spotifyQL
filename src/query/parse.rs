@@ -1,5 +1,5 @@
 use crate::query::statements::{Aggregation, Condition, SelectStatement};
-use crate::query::tokenise::{Attribute, DataSource, Operator, Token};
+use crate::query::tokenise::{Attribute, DataSource, Token};
 
 fn safe_next(iter: &mut dyn Iterator<Item = Token>) -> Result<Token, String> {
     match iter.next() {

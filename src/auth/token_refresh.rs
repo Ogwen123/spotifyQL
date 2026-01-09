@@ -1,12 +1,10 @@
 use crate::app_context::AppContext;
-use crate::auth::code::{
-    AccessTokenRequestParams, AccessTokenResponse, create_file_content, parse_access_token_res,
-};
+use crate::auth::code::{create_file_content, parse_access_token_res};
 use crate::utils::file::WriteMode::Overwrite;
 use crate::utils::file::{File, write_file};
 use crate::utils::utils::secs_now;
 use reqwest::StatusCode;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::sync::mpsc::channel;
 use std::thread;
 use tokio::runtime::Runtime;

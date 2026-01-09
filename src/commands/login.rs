@@ -1,16 +1,13 @@
 use crate::app_context::AppContext;
 use crate::auth::auth_listener::redirect_listener;
 use crate::auth::code::{
-    AccessTokenRequestParams, b64, code_verifier, create_file_content, fetch_access_token,
-    parse_access_token_res, sha256,
+    b64, code_verifier, create_file_content, fetch_access_token, parse_access_token_res, sha256,
 };
 use crate::utils::file::File;
 use crate::utils::file::WriteMode::Overwrite;
 use crate::utils::file::write_file;
 use crate::utils::logger::{info, info_nnl, success};
 use crate::utils::url::{build_url, parameterise_list};
-use base64::Engine;
-use base64::prelude::BASE64_STANDARD;
 use std::io;
 use std::io::Write;
 use std::sync::mpsc::channel;

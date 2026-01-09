@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 type Params<K, V> = Vec<(K, V)>;
 
 pub fn url_encode(unencoded: String) -> String {

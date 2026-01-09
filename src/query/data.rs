@@ -1,10 +1,9 @@
 use crate::api::APIQuery;
 use crate::app_context::AppContext;
-use crate::query::tokenise::{DataSource, Token};
+use crate::query::tokenise::DataSource;
 use crate::utils::utils::secs_now;
 use serde_json::Value;
 use std::collections::HashMap;
-use std::iter::Map;
 
 pub const DATA_TTL: u64 = 60 * 30;
 
@@ -37,6 +36,7 @@ pub struct AlbumData {
     pub popularity: u8, // value between 0 and 100
     pub album_type: String,
     pub release_date: String,
+    pub saved_at: String,
 }
 
 #[derive(Clone)]
@@ -243,7 +243,7 @@ impl ResultParser {
                                             name
                                         ));
                                     }
-                                },
+                                }
                                 _ => {
                                     return Err(format!(
                                         "Value 'total_tracks' in field 'album' of album {} in response data is an unexpected type.",
@@ -261,10 +261,11 @@ impl ResultParser {
                                         temp as u8 // this should be fine as popularity must be between 0 and 100
                                     } else {
                                         return Err(format!(
-                                            "Value 'popularity' in field 'album' of album {} in response data is not a positive integer.", name
+                                            "Value 'popularity' in field 'album' of album {} in response data is not a positive integer.",
+                                            name
                                         ));
                                     }
-                                },
+                                }
                                 _ => {
                                     return Err(format!(
                                         "Value 'popularity' in field 'album' of album {} in response data is an unexpected type.",
@@ -307,6 +308,7 @@ impl ResultParser {
                         popularity: album_data.3,
                         album_type: album_data.4,
                         release_date: album_data.5,
+                        saved_at: added_at,
                     })
                 }
                 _ => {

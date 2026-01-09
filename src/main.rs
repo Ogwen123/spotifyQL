@@ -7,7 +7,6 @@ use crate::{
     config::args::{Command, RunContext},
 };
 use app_context::AppContext;
-use std::io::Write;
 mod api;
 pub mod app_context;
 mod auth;

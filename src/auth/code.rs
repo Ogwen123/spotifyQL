@@ -1,5 +1,4 @@
 use crate::app_context::AppContext;
-use crate::utils::logger::{info, success};
 use crate::utils::utils::secs_now;
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;

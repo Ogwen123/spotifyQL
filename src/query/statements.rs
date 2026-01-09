@@ -1,5 +1,4 @@
 use crate::query::tokenise::{Attribute, DataSource, Operator, Value};
-use std::collections::HashMap;
 
 struct GeneralData {}
 

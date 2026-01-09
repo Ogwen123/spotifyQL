@@ -1,10 +1,9 @@
-use crate::utils::logger::{fatal, success};
+use crate::utils::logger::fatal;
 use std::sync::mpsc::Sender;
 use std::thread;
 use tokio::runtime::Runtime;
 use warp::Filter;
 use warp::http::{HeaderMap, HeaderValue};
-use warp::reply::with::headers;
 
 pub fn redirect_listener(tx: Sender<String>) {
     // open webserver to listen for auth response
@@ -27,9 +26,11 @@ pub fn redirect_listener(tx: Sender<String>) {
                      <head>
                      <title>spotifyQL Authentication</title>
                      <script>
+                     setTimeout(()=>{}, 1000)
                      window.close()
                      </script>
                      </head>
+                       <body>Authenticated Successfully</body>
                      </html>
                      "
                 })
