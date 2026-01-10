@@ -52,6 +52,11 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
             cx,
             "SELECT name FROM playlist(\"all\");".to_string(),
         )?,
+        "/testa" => run_query(
+            // test fetching album data
+            cx,
+            "SELECT name FROM album;".to_string(),
+        )?,
         _ => {
             println!("{}", parsed_input);
             run_query(cx, parsed_input.to_string())?

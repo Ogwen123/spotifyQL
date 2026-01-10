@@ -21,4 +21,8 @@ fetched data is cached in-memory so if the program is restarted all data needs t
  - [x] fix api query returning invalid access token
  - [x] code verifier must be hashed incorrectly
  - [x] implement token refreshing
+ - [ ] gathering targets
+ - [ ] applying conditions
+ - [ ] displaying data
  - [ ] make a date struct and change all current dates stored in strings to use it
+ - [ ] output to a file?

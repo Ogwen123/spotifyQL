@@ -28,7 +28,7 @@ pub struct PlaylistData {
     pub track_count: u64,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct AlbumData {
     pub id: String,
     pub name: String,
@@ -63,7 +63,7 @@ impl Default for Data {
 pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), String> {
     //check playlist data
     match source {
-        DataSource::Playlist(_) => {
+        DataSource::Playlist(_)| DataSource::Playlists => {
             let mut load = false;
 
             if cx.data.playlist_data.is_some() {
@@ -79,7 +79,7 @@ pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), S
                 cx.data.playlist_data_ct = secs_now();
             }
         }
-        DataSource::SavedAlbums(_) => {
+        DataSource::SavedAlbum(_) | DataSource::SavedAlbums => {
             let mut load = false;
 
             if cx.data.saved_album_data.is_some() {

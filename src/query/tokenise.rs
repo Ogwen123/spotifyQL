@@ -38,7 +38,9 @@ impl Display for Attribute {
 #[derive(Clone, PartialEq, Debug)]
 pub enum DataSource {
     Playlist(String),
-    SavedAlbums(String),
+    Playlists, // all playlists
+    SavedAlbum(String),
+    SavedAlbums, // all saved albums
 }
 
 impl Display for DataSource {
@@ -48,7 +50,9 @@ impl Display for DataSource {
             "{}",
             match self {
                 DataSource::Playlist(res) => format!("Playlist({})", res),
-                DataSource::SavedAlbums(res) => format!("SavedAlbum({})", res),
+                DataSource::Playlists => "Playlists".to_string(),
+                DataSource::SavedAlbum(res) => format!("SavedAlbum({})", res),
+                DataSource::SavedAlbums => "SavedAlbums".to_string(),
             }
         )
     }
@@ -192,14 +196,22 @@ impl RawToken {
             "AND" => return Ok(Token::Logical(Logical::And)),
             "OR" => return Ok(Token::Logical(Logical::Or)),
             "PLAYLIST" => {
-                return Ok(Token::Source(DataSource::Playlist(
-                    self.content.unwrap_or("".to_string()),
-                )));
+                return if self.content.is_some() {
+                    Ok(Token::Source(DataSource::Playlist(
+                        self.content.unwrap_or("".to_string()),
+                    )))
+                } else {
+                    Ok(Token::Source(DataSource::Playlists))
+                }
             }
             "ALBUM" => {
-                return Ok(Token::Source(DataSource::SavedAlbums(
-                    self.content.unwrap_or("".to_string()),
-                )));
+                return if self.content.is_some() {
+                    Ok(Token::Source(DataSource::SavedAlbum(
+                        self.content.unwrap_or("".to_string()),
+                    )))
+                } else {
+                    Ok(Token::Source(DataSource::SavedAlbums))
+                };
             }
             _ => {
                 // check if it matches an attribute
