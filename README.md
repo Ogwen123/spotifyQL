@@ -1,12 +1,19 @@
 # spotifyQL
 A SQL like query language for your spotify statistics
 
-e.g.
+### Examples
 ```SQL
-SELECT COUNT(name) FROM PLAYLIST("pl1") WHERE artist == "Arctic Monkeys";
+SELECT COUNT(name) FROM PLAYLIST(pl1) WHERE artist == "Arctic Monkeys";
+```
+would could the number of arctic monkeys songs in the playlist pl1
+
+```SQL
+SELECT id, name FROM ALBUM(Whatever people say ...) WHERE popularity > 50 && release_date < 2014-01-01;
 ```
 
-would could the number of arctic monkeys songs in the playlist pl1
+```SQL
+SELECT COUNT(name) FROM PLAYLIST;
+```
 
 ## Process
 1. tokenise input
@@ -26,3 +33,4 @@ fetched data is cached in-memory so if the program is restarted all data needs t
  - [ ] displaying data
  - [ ] make a date struct and change all current dates stored in strings to use it
  - [ ] output to a file?
+ - [ ] make into a tui app?

@@ -1,4 +1,4 @@
-use crate::query::tokenise::{Attribute, DataSource, Operator, Value};
+use crate::query::tokenise::{Attribute, DataSource, Logical, Operator, Value};
 
 struct GeneralData {}
 
@@ -9,14 +9,43 @@ pub enum Aggregation {
     None,
 }
 
-pub type Condition = (Attribute, Operator, Value);
+pub type NextCondition = (Logical, Box<Condition>);
+
+#[derive(Debug, Clone)]
+pub struct Condition {
+    pub attribute: Attribute,
+    pub operation: Operator,
+    pub value: Value,
+    pub next: Option<NextCondition>
+}
+
+impl Condition {
+    pub fn add_next_condition(&mut self, logical: Logical, condition: Condition) {
+        let mut next: Box<Condition>;
+
+        if self.next.is_none() {
+            self.next = Some((logical, Box::new(condition)));
+            return
+        } else {
+            next = self.next.clone().unwrap().1;
+            loop {
+                if next.next.is_none() {
+                    next.next = Some((logical, Box::new(condition)));
+                    break
+                } else {
+                    next = next.next.unwrap().1;
+                }
+            }
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct SelectStatement {
     pub aggregation: Aggregation,
     pub targets: Vec<Attribute>,
     pub source: DataSource,
-    pub conditions: Vec<Condition>,
+    pub conditions: Option<Condition>,
 }
 
 impl SelectStatement {

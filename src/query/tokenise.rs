@@ -80,6 +80,7 @@ impl Display for Operator {
 }
 
 #[derive(Clone, PartialEq)]
+#[derive(Debug)]
 pub enum Logical {
     And,
     Or,

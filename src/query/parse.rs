@@ -1,5 +1,7 @@
 use crate::query::statements::{Aggregation, Condition, SelectStatement};
-use crate::query::tokenise::{Attribute, DataSource, Token};
+use crate::query::tokenise::{Attribute, DataSource, Logical, Token};
+
+
 
 fn safe_next(iter: &mut dyn Iterator<Item = Token>) -> Result<Token, String> {
     match iter.next() {
@@ -105,7 +107,7 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                         aggregation,
                         targets,
                         source,
-                        conditions: Vec::new(),
+                        conditions: None,
                     });
                 }
             },
@@ -114,13 +116,19 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                     aggregation,
                     targets,
                     source,
-                    conditions: Vec::new(),
+                    conditions: None,
                 });
             }
         }
 
         // get conditions
-        let mut conditions: Vec<Condition> = Vec::new();
+        let mut tl_condition: Option<Condition> = None;
+        let mut next_logical_op: Logical = Logical::Or; // should never get used, just to avoid uninitialised error below
+        /*
+        order of operation should go OR -> AND and is read left to right using associative law
+        so true && false || false || true && false
+        is evaluated as true && (false && (false || (false || true)))
+        */
 
         loop {
             // every condition should be made up of 3 tokens
@@ -160,11 +168,22 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                 }
             };
 
-            conditions.push((attr, op, val));
+            let temp = Condition {
+                attribute: attr,
+                operation: op,
+                value: val,
+                next: None
+            };
+
+            if tl_condition.is_some() {
+                tl_condition.as_mut().unwrap().add_next_condition(next_logical_op, temp);
+            } else {
+                tl_condition = Some(temp);
+            }
 
             match tokens.next() {
                 Some(res) => match res {
-                    Token::Logical(_) => {}
+                    Token::Logical(res) => next_logical_op = res,
                     _ => {
                         return Err(format!(
                             "SYNTAX ERROR: Only a bitwise operator (AND, OR) can come after a condition, error at {}",
@@ -180,7 +199,7 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
             aggregation,
             targets,
             source,
-            conditions,
+            conditions: tl_condition
         })
     } else {
         Err(format!("SYNTAX ERROR: Invalid token at {}", statement_type))

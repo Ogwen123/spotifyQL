@@ -24,7 +24,7 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
 
             info!("testing tokeniser");
             let tokens = tokenise(
-                "SELECT COUNT(name) FROM playlist(\"all\") WHERE artist == \"Arctic Monkeys\";"
+                "SELECT COUNT(name) FROM playlist(all) WHERE artist == \"Arctic Monkeys\";"
                     .to_string(),
             )?;
 
@@ -33,35 +33,32 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
         }
         "/testf" => run_query(
             cx,
-            "SELECT COUNT(name) FROM playlist(\"all\") WHERE artist == \"Arctic Monkeys\";"
+            "SELECT COUNT(name) FROM playlist(all) WHERE artist == \"Arctic Monkeys\";"
                 .to_string(),
         )?,
         "/testd" => run_query(
             // test double attributes
             cx,
-            "SELECT id, name FROM playlist(\"all\");".to_string(),
+            "SELECT id, name FROM playlist(all);".to_string(),
         )?,
         "/testl" => run_query(
             // test logical operators
             cx,
-            "SELECT id, name FROM playlist(\"all\") WHERE name == \"test\" AND id == 1;"
+            "SELECT id, name FROM playlist(all) WHERE name == \"test\" AND id == 1;"
                 .to_string(),
         )?,
         "/tests" => run_query(
             // test double attributes
             cx,
-            "SELECT name FROM playlist(\"all\");".to_string(),
+            "SELECT name FROM playlist(all);".to_string(),
         )?,
-        "/testa" => run_query(
-            // test fetching album data
-            cx,
-            "SELECT name FROM album;".to_string(),
-        )?,
+        "/testa" => println!("{:?}", parse(tokenise("SELECT name FROM album;".to_string())?)?),// test fetching album data,
         _ => {
             println!("{}", parsed_input);
             run_query(cx, parsed_input.to_string())?
         }
     }
+
 
     Ok(())
 }
