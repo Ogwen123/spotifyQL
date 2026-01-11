@@ -15,6 +15,41 @@ SELECT id, name FROM ALBUM(Whatever people say ...) WHERE popularity > 50 && rel
 SELECT COUNT(name) FROM PLAYLIST;
 ```
 
+## Attributes
+the data available is the following
+
+### Track Data
+ - id: String
+ - name: String
+ - duration: Int
+ - album_name: String
+ - album_id: String
+ - artists: List of String
+ - added_at: String
+ - popularity: Int
+
+Track data is used when the data source is a specific playlist or saved album e.g. `PLAYLIST(pl1)`
+
+### Playlist Data
+ - id: String
+ - name: String
+ - tracks_api: String
+ - track_count: Int
+
+Playlist data is used when the data source is just `PLAYLIST`
+
+### Album Data
+ - id: String
+ - name: String
+ - track_count: u64
+ - popularity: u8
+ - album_type: String
+ - release_date: String
+ - artists: List of String
+ - saved_at: String
+
+Album data is used when the data source is just `ALBUM`
+
 ## Process
 1. tokenise input
 2. parse tokens into a struct

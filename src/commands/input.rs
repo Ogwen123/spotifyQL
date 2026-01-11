@@ -31,7 +31,7 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
             info!("testing token parsing");
             println!("{:?}", parse(tokens)?);
         }
-        "/testf" => run_query(
+        "/testf" => run_query( // test full run through
             cx,
             "SELECT COUNT(name) FROM playlist(all) WHERE artist == \"Arctic Monkeys\";"
                 .to_string(),
@@ -48,11 +48,12 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
                 .to_string(),
         )?,
         "/tests" => run_query(
-            // test double attributes
+            // test simple query
             cx,
             "SELECT name FROM playlist(all);".to_string(),
         )?,
         "/testa" => println!("{:?}", parse(tokenise("SELECT name FROM album;".to_string())?)?),// test fetching album data,
+        "/testb" => println!("{:?}", parse(tokenise("SELECT name FROM album WHERE name == true;".to_string())?)?),// test booleans in conditions,
         _ => {
             println!("{}", parsed_input);
             run_query(cx, parsed_input.to_string())?

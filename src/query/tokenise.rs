@@ -79,8 +79,7 @@ impl Display for Operator {
     }
 }
 
-#[derive(Clone, PartialEq)]
-#[derive(Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Logical {
     And,
     Or,
@@ -102,8 +101,9 @@ impl Display for Logical {
 #[derive(Clone, PartialEq, Debug)]
 pub enum Value {
     Str(String),
-    Int(i32),
+    Int(i64),
     Float(f32),
+    Bool(bool),
 }
 
 impl Display for Value {
@@ -115,6 +115,7 @@ impl Display for Value {
                 Value::Str(res) => format!("Str({})", res),
                 Value::Int(res) => format!("Int({})", res),
                 Value::Float(res) => format!("Float({})", res),
+                Value::Bool(res) => format!("Bool({})", res),
             }
         )
     }
@@ -203,7 +204,7 @@ impl RawToken {
                     )))
                 } else {
                     Ok(Token::Source(DataSource::Playlists))
-                }
+                };
             }
             "ALBUM" => {
                 return if self.content.is_some() {
@@ -223,18 +224,24 @@ impl RawToken {
 
                 let int_regex = Regex::new(r"^-?\d+$").map_err(|x| x.to_string())?;
                 let float_regex = Regex::new(r"^-?\d+.\d+$").map_err(|x| x.to_string())?;
+                let bool_regex = Regex::new(r"^true|false$").map_err(|x| x.to_string())?;
+
+                if bool_regex.is_match(&self.identifier.as_str()) {
+                    return Ok(Token::Value(Value::Bool(self.identifier == "true")));
+                }
+
                 if int_regex.is_match(self.identifier.as_str()) {
                     return Ok(Token::Value(Value::Int(
-                        i32::from_str(self.identifier.as_str())
+                        i64::from_str(self.identifier.as_str())
                             .map_err(|x| format!("INT ERROR: {}", x.to_string()))?,
-                    ))); // remove the quotes from the string
+                    )));
                 }
 
                 if float_regex.is_match(self.identifier.as_str()) {
                     return Ok(Token::Value(Value::Float(
                         f32::from_str(self.identifier.as_str())
                             .map_err(|x| format!("FLOAT ERROR: {}", x.to_string()))?,
-                    ))); // remove the quotes from the string
+                    )));
                 }
 
                 if self.content.is_some() && self.identifier.len() == 0 {
@@ -352,7 +359,8 @@ pub fn tokenise(input: String) -> Result<Vec<Token>, String> {
     let mut tokens: Vec<Token> = Vec::new();
 
     while let Some(elem) = split_iter.next() {
-        let token: Token = split_token(elem).build_token()?;
+        let temp = split_token(elem);
+        let token: Token = temp.build_token()?;
 
         tokens.push(token);
     }

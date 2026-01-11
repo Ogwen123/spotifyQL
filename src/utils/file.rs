@@ -81,7 +81,6 @@ pub fn write_file(file: File, content: String, write_mode: WriteMode) -> Result<
 pub fn read_file(file: File) -> Result<String, String> {
     let path = file.path().map_err(|e| e)?;
 
-    println!("{}", path.display());
     let mut file = OpenOptions::new().read(true).open(path).map_err(|_| {
         return "Could not open file in read mode (read).";
     })?;

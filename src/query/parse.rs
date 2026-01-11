@@ -168,6 +168,10 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                 }
             };
 
+            // validate conditions have correct types, e.g. name can not equal a number so should throw an error, types are string, int, float, bool
+
+            // when it comes to evaluating the conditions on each row, convert each condition into a boolean value of true or false and simplify it down to a single boolean using boolean algebra rules
+
             let temp = Condition {
                 attribute: attr,
                 operation: op,

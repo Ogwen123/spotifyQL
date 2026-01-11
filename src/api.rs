@@ -134,7 +134,6 @@ impl<'a> APIQuery {
             let rt = Runtime::new().expect("Could not init tokio runtime");
             rt.block_on(async move {
                 let client = reqwest::Client::new();
-                println!("{}", url);
                 let resp_result = client
                     .get(url)
                     .header("Authorization", format!("Bearer {}", token))

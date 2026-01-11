@@ -1,11 +1,25 @@
 use crate::api::APIQuery;
 use crate::app_context::AppContext;
-use crate::query::tokenise::DataSource;
+use crate::query::tokenise::{Attribute, DataSource};
 use crate::utils::utils::secs_now;
 use serde_json::Value;
 use std::collections::HashMap;
 
 pub const DATA_TTL: u64 = 60 * 30;
+
+pub enum DataValue {
+    Str(String),
+    Int(i64),
+    Float(f32),
+    Bool(bool),
+    Strings(Vec<String>),
+    Tracks(Vec<TrackData>)
+}
+
+pub trait KeyAccess {
+    fn access(&self, key: String) -> DataValue;
+}
+
 
 #[derive(Clone, Debug)]
 pub struct TrackData {
@@ -14,10 +28,26 @@ pub struct TrackData {
     pub duration: u64,
     pub album_name: String,
     pub album_id: String,
-    pub artists: HashMap<String, String>,
+    pub artists: Vec<String>,
     pub added_at: String,
     pub popularity: u8, // value between 0 and 100
 }
+
+// impl KeyAccess for TrackData {
+//     fn access(&self, key: Attribute) -> DataValue {
+//         match key.as_str() {
+//              => DataValue::Str(self.id),
+//             "name" => DataValue::Str(self.name),
+//             "duration" => DataValue::Int(self.duration.parse()),
+//             "album_name" => DataValue::Str(self.album_name),
+//             "album_id" => DataValue::Str(self.album_id),
+//             "artists" => DataValue::Strings(self.artists),
+//             "added_at" => DataValue::Str(self.added_at,
+//             "popularity" => DataValue::Int(self.popularity.parse),
+//                 _ =>
+//         }
+//     }
+// }
 
 #[derive(Clone, Debug)]
 pub struct PlaylistData {
@@ -36,6 +66,7 @@ pub struct AlbumData {
     pub popularity: u8, // value between 0 and 100
     pub album_type: String,
     pub release_date: String,
+    pub artists: Vec<String>,
     pub saved_at: String,
 }
 
@@ -282,6 +313,34 @@ impl ResultParser {
                                     ));
                                 }
                             };
+
+                            let artists = match &album_obj["artists"] {
+                                Value::Array(res) => {
+                                    let mut map: Vec<String> = Vec::new();
+
+                                    for artist in res {
+                                        let name = match &artist["name"] {
+                                            Value::String(res) => res.clone(),
+                                            _ => {
+                                                return Err(format!(
+                                                    "Value 'name' in field 'artists' of track {} in response data is an unexpected type.",
+                                                    name
+                                                ));
+                                            }
+                                        };
+
+                                        map.push(name);
+                                    }
+
+                                    map
+                                }
+                                _ => {
+                                    return Err(format!(
+                                        "Value of field 'artists' of track {} in response data is an unexpected type.",
+                                        name
+                                    ));
+                                }
+                            };
                             let release_date = match &album_obj["release_date"] {
                                 Value::String(res) => res.clone(),
                                 _ => {
@@ -291,7 +350,7 @@ impl ResultParser {
                                     ));
                                 }
                             };
-                            (id, name, track_count, popularity, album_type, release_date)
+                            (id, name, track_count, popularity, album_type, release_date, artists)
                         }
                         _ => {
                             return Err(
@@ -308,6 +367,7 @@ impl ResultParser {
                         popularity: album_data.3,
                         album_type: album_data.4,
                         release_date: album_data.5,
+                        artists: album_data.6,
                         saved_at: added_at,
                     })
                 }
@@ -407,7 +467,6 @@ impl ResultParser {
                                     ));
                                 }
                             };
-
                             let album_data = match &track["album"] {
                                 Value::Object(album) => {
                                     let id = match &album["id"] {
@@ -435,22 +494,11 @@ impl ResultParser {
                                     ));
                                 }
                             };
-
                             let artists = match &track["artists"] {
                                 Value::Array(res) => {
-                                    let mut map: HashMap<String, String> = HashMap::new();
+                                    let mut map: Vec<String> = Vec::new();
 
                                     for artist in res {
-                                        let id = match &artist["id"] {
-                                            Value::String(res) => res.clone(),
-                                            _ => {
-                                                return Err(format!(
-                                                    "Value 'id' in field 'artists' of track {} in response data is an unexpected type.",
-                                                    name
-                                                ));
-                                            }
-                                        };
-
                                         let name = match &artist["name"] {
                                             Value::String(res) => res.clone(),
                                             _ => {
@@ -461,7 +509,7 @@ impl ResultParser {
                                             }
                                         };
 
-                                        map.insert(id, name);
+                                        map.push(name);
                                     }
 
                                     map
