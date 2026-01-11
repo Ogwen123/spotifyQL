@@ -3,37 +3,37 @@ use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
 // TOKEN ENUMS
-#[derive(Clone, PartialEq, Debug)]
-pub enum Attribute {
-    Id,
-    Name,
-    Artist,
-}
-
-impl Attribute {
-    fn _match(s: &String) -> Result<Self, ()> {
-        match s.as_str() {
-            "id" => Ok(Attribute::Id),
-            "name" => Ok(Attribute::Name),
-            "artist" => Ok(Attribute::Artist),
-            _ => Err(()),
-        }
-    }
-}
-
-impl Display for Attribute {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Attribute::Id => "Attribute(Id)",
-                Attribute::Name => "Attribute(Name)",
-                Attribute::Artist => "Attribute(Artist)",
-            }
-        )
-    }
-}
+// #[derive(Clone, PartialEq, Debug)]
+// pub enum Attribute {
+//     Id,
+//     Name,
+//     Artist,
+// }
+//
+// impl Attribute {
+//     fn _match(s: &String) -> Result<Self, ()> {
+//         match s.as_str() {
+//             "id" => Ok(Attribute::Id),
+//             "name" => Ok(Attribute::Name),
+//             "artist" => Ok(Attribute::Artist),
+//             _ => Err(()),
+//         }
+//     }
+// }
+//
+// impl Display for Attribute {
+//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+//         write!(
+//             f,
+//             "{}",
+//             match self {
+//                 Attribute::Id => "Attribute(Id)",
+//                 Attribute::Name => "Attribute(Name)",
+//                 Attribute::Artist => "Attribute(Artist)",
+//             }
+//         )
+//     }
+// }
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum DataSource {
@@ -124,11 +124,11 @@ impl Display for Value {
 #[derive(Clone, PartialEq)]
 pub enum Token {
     SELECT,
-    COUNT(Attribute),
-    AVERAGE(Attribute),
+    COUNT(String),
+    AVERAGE(String),
     FROM,
     WHERE,
-    Attribute(Attribute),
+    Attribute(String),
     Operator(Operator),
     Logical(Logical),
     Source(DataSource),
@@ -175,18 +175,12 @@ impl RawToken {
         match self.identifier.as_str().to_uppercase().as_str() {
             "SELECT" => return Ok(Token::SELECT),
             "COUNT" => {
-                let attr = match Attribute::_match(&self.content.unwrap_or("".to_string())) {
-                    Ok(res) => res,
-                    Err(_) => return Err("Invalid attribute in COUNT.".to_string()),
-                };
+                let attr = self.content.unwrap_or("".to_string());
 
                 return Ok(Token::COUNT(attr));
             }
             "AVERAGE" => {
-                let attr = match Attribute::_match(&self.content.unwrap_or("".to_string())) {
-                    Ok(res) => res,
-                    Err(_) => return Err("Invalid attribute in AVERAGE.".to_string()),
-                };
+                let attr = self.content.unwrap_or("".to_string());
 
                 return Ok(Token::AVERAGE(attr));
             }
@@ -216,15 +210,10 @@ impl RawToken {
                 };
             }
             _ => {
-                // check if it matches an attribute
-                match Attribute::_match(&self.identifier) {
-                    Ok(res) => return Ok(Token::Attribute(res)),
-                    Err(_) => {}
-                }
-
                 let int_regex = Regex::new(r"^-?\d+$").map_err(|x| x.to_string())?;
                 let float_regex = Regex::new(r"^-?\d+.\d+$").map_err(|x| x.to_string())?;
                 let bool_regex = Regex::new(r"^true|false$").map_err(|x| x.to_string())?;
+                let str_regex = Regex::new(r"^[\w\s]+$").map_err(|x| x.to_string())?;
 
                 if bool_regex.is_match(&self.identifier.as_str()) {
                     return Ok(Token::Value(Value::Bool(self.identifier == "true")));
@@ -244,11 +233,13 @@ impl RawToken {
                     )));
                 }
 
+                // if the identifier is a string then it is an attribute string, otherwise it is a value string
+                if str_regex.is_match(self.identifier.as_str()) {
+                    return Ok(Token::Attribute(self.identifier)); // remove the quotes from the string
+                }
+
                 if self.content.is_some() && self.identifier.len() == 0 {
                     let cont = self.clone().content.unwrap();
-
-                    // check if content is a valid string
-                    let str_regex = Regex::new(r"^[\w\s]+$").map_err(|x| x.to_string())?;
 
                     if str_regex.is_match(cont.as_str()) {
                         return Ok(Token::Value(Value::Str(cont))); // remove the quotes from the string

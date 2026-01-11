@@ -31,10 +31,10 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
             info!("testing token parsing");
             println!("{:?}", parse(tokens)?);
         }
-        "/testf" => run_query( // test full run through
+        "/testf" => run_query(
+            // test full run through
             cx,
-            "SELECT COUNT(name) FROM playlist(all) WHERE artist == \"Arctic Monkeys\";"
-                .to_string(),
+            "SELECT COUNT(name) FROM playlist(all) WHERE artist == \"Arctic Monkeys\";".to_string(),
         )?,
         "/testd" => run_query(
             // test double attributes
@@ -44,22 +44,28 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
         "/testl" => run_query(
             // test logical operators
             cx,
-            "SELECT id, name FROM playlist(all) WHERE name == \"test\" AND id == 1;"
-                .to_string(),
+            "SELECT id, name FROM playlist(all) WHERE name == \"test\" AND id == 1;".to_string(),
         )?,
         "/tests" => run_query(
             // test simple query
             cx,
             "SELECT name FROM playlist(all);".to_string(),
         )?,
-        "/testa" => println!("{:?}", parse(tokenise("SELECT name FROM album;".to_string())?)?),// test fetching album data,
-        "/testb" => println!("{:?}", parse(tokenise("SELECT name FROM album WHERE name == true;".to_string())?)?),// test booleans in conditions,
+        "/testa" => println!(
+            "{:?}",
+            parse(tokenise("SELECT name FROM album;".to_string())?)?
+        ), // test fetching album data,
+        "/testb" => println!(
+            "{:?}",
+            parse(tokenise(
+                "SELECT name FROM album WHERE name == true;".to_string()
+            )?)?
+        ), // test booleans in conditions,
         _ => {
             println!("{}", parsed_input);
             run_query(cx, parsed_input.to_string())?
         }
     }
-
 
     Ok(())
 }

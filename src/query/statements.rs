@@ -1,4 +1,4 @@
-use crate::query::tokenise::{Attribute, DataSource, Logical, Operator, Value};
+use crate::query::tokenise::{DataSource, Logical, Operator, Value};
 
 struct GeneralData {}
 
@@ -13,10 +13,10 @@ pub type NextCondition = (Logical, Box<Condition>);
 
 #[derive(Debug, Clone)]
 pub struct Condition {
-    pub attribute: Attribute,
+    pub attribute: String,
     pub operation: Operator,
     pub value: Value,
-    pub next: Option<NextCondition>
+    pub next: Option<NextCondition>,
 }
 
 impl Condition {
@@ -25,13 +25,13 @@ impl Condition {
 
         if self.next.is_none() {
             self.next = Some((logical, Box::new(condition)));
-            return
+            return;
         } else {
             next = self.next.clone().unwrap().1;
             loop {
                 if next.next.is_none() {
                     next.next = Some((logical, Box::new(condition)));
-                    break
+                    break;
                 } else {
                     next = next.next.unwrap().1;
                 }
@@ -43,7 +43,7 @@ impl Condition {
 #[derive(Debug)]
 pub struct SelectStatement {
     pub aggregation: Aggregation,
-    pub targets: Vec<Attribute>,
+    pub targets: Vec<String>,
     pub source: DataSource,
     pub conditions: Option<Condition>,
 }

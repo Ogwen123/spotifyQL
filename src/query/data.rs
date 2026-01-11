@@ -1,6 +1,6 @@
 use crate::api::APIQuery;
 use crate::app_context::AppContext;
-use crate::query::tokenise::{Attribute, DataSource};
+use crate::query::tokenise::DataSource;
 use crate::utils::utils::secs_now;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -13,13 +13,12 @@ pub enum DataValue {
     Float(f32),
     Bool(bool),
     Strings(Vec<String>),
-    Tracks(Vec<TrackData>)
+    Tracks(Vec<TrackData>),
 }
 
 pub trait KeyAccess {
-    fn access(&self, key: String) -> DataValue;
+    fn access(&self, key: String) -> Result<DataValue, String>;
 }
-
 
 #[derive(Clone, Debug)]
 pub struct TrackData {
@@ -33,21 +32,24 @@ pub struct TrackData {
     pub popularity: u8, // value between 0 and 100
 }
 
-// impl KeyAccess for TrackData {
-//     fn access(&self, key: Attribute) -> DataValue {
-//         match key.as_str() {
-//              => DataValue::Str(self.id),
-//             "name" => DataValue::Str(self.name),
-//             "duration" => DataValue::Int(self.duration.parse()),
-//             "album_name" => DataValue::Str(self.album_name),
-//             "album_id" => DataValue::Str(self.album_id),
-//             "artists" => DataValue::Strings(self.artists),
-//             "added_at" => DataValue::Str(self.added_at,
-//             "popularity" => DataValue::Int(self.popularity.parse),
-//                 _ =>
-//         }
-//     }
-// }
+impl KeyAccess for TrackData {
+    fn access(&self, key: String) -> Result<DataValue, String> {
+        match key.as_str() {
+            "id" => Ok(DataValue::Str(self.id.clone())),
+            "name" => Ok(DataValue::Str(self.name.clone())),
+            "duration" => Ok(DataValue::Int(self.duration.cast_signed())),
+            "album_name" => Ok(DataValue::Str(self.album_name.clone())),
+            "album_id" => Ok(DataValue::Str(self.album_id.clone())),
+            "artists" => Ok(DataValue::Strings(self.artists.clone())),
+            "added_at" => Ok(DataValue::Str(self.added_at.clone())),
+            "popularity" => Ok(DataValue::Int(self.popularity.cast_signed().into())),
+            _ => Err(format!(
+                "SYNTAX ERROR: {} is not a valid attribute for track data.",
+                key
+            )),
+        }
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct PlaylistData {
@@ -56,6 +58,21 @@ pub struct PlaylistData {
     pub tracks: Vec<TrackData>,
     pub tracks_api: String,
     pub track_count: u64,
+}
+
+impl KeyAccess for PlaylistData {
+    fn access(&self, key: String) -> Result<DataValue, String> {
+        match key.as_str() {
+            "id" => Ok(DataValue::Str(self.id.clone())),
+            "name" => Ok(DataValue::Str(self.name.clone())),
+            "tracks_api" => Ok(DataValue::Str(self.tracks_api.clone())),
+            "track_content" => Ok(DataValue::Int(self.track_count.clone().cast_signed())),
+            _ => Err(format!(
+                "SYNTAX ERROR: {} is not a valid attribute for playlist data.",
+                key
+            )),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -68,6 +85,25 @@ pub struct AlbumData {
     pub release_date: String,
     pub artists: Vec<String>,
     pub saved_at: String,
+}
+
+impl KeyAccess for AlbumData {
+    fn access(&self, key: String) -> Result<DataValue, String> {
+        match key.as_str() {
+            "id" => Ok(DataValue::Str(self.id.clone())),
+            "name" => Ok(DataValue::Str(self.name.clone())),
+            "track_count" => Ok(DataValue::Int(self.track_count.cast_signed())),
+            "popularity" => Ok(DataValue::Int(self.popularity.cast_signed().into())),
+            "album_type" => Ok(DataValue::Str(self.album_type.clone())),
+            "release_date" => Ok(DataValue::Str(self.release_date.clone())),
+            "artists" => Ok(DataValue::Strings(self.artists.clone())),
+            "saved_at" => Ok(DataValue::Str(self.saved_at.clone())),
+            _ => Err(format!(
+                "SYNTAX ERROR: {} is not a valid attribute for album data.",
+                key
+            )),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -94,7 +130,7 @@ impl Default for Data {
 pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), String> {
     //check playlist data
     match source {
-        DataSource::Playlist(_)| DataSource::Playlists => {
+        DataSource::Playlist(_) | DataSource::Playlists => {
             let mut load = false;
 
             if cx.data.playlist_data.is_some() {
@@ -350,7 +386,15 @@ impl ResultParser {
                                     ));
                                 }
                             };
-                            (id, name, track_count, popularity, album_type, release_date, artists)
+                            (
+                                id,
+                                name,
+                                track_count,
+                                popularity,
+                                album_type,
+                                release_date,
+                                artists,
+                            )
                         }
                         _ => {
                             return Err(

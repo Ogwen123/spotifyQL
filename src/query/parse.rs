@@ -1,7 +1,5 @@
 use crate::query::statements::{Aggregation, Condition, SelectStatement};
-use crate::query::tokenise::{Attribute, DataSource, Logical, Token};
-
-
+use crate::query::tokenise::{DataSource, Logical, Token};
 
 fn safe_next(iter: &mut dyn Iterator<Item = Token>) -> Result<Token, String> {
     match iter.next() {
@@ -23,7 +21,7 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
     let statement_type = tokens.next().unwrap();
     if statement_type == Token::SELECT {
         let mut aggregation = Aggregation::None;
-        let mut targets: Vec<Attribute> = Vec::new();
+        let mut targets: Vec<String> = Vec::new();
 
         let mut reached_from = false;
         loop {
@@ -124,6 +122,7 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
         // get conditions
         let mut tl_condition: Option<Condition> = None;
         let mut next_logical_op: Logical = Logical::Or; // should never get used, just to avoid uninitialised error below
+        
         /*
         order of operation should go OR -> AND and is read left to right using associative law
         so true && false || false || true && false
@@ -176,11 +175,14 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                 attribute: attr,
                 operation: op,
                 value: val,
-                next: None
+                next: None,
             };
 
             if tl_condition.is_some() {
-                tl_condition.as_mut().unwrap().add_next_condition(next_logical_op, temp);
+                tl_condition
+                    .as_mut()
+                    .unwrap()
+                    .add_next_condition(next_logical_op, temp);
             } else {
                 tl_condition = Some(temp);
             }
@@ -203,7 +205,7 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
             aggregation,
             targets,
             source,
-            conditions: tl_condition
+            conditions: tl_condition,
         })
     } else {
         Err(format!("SYNTAX ERROR: Invalid token at {}", statement_type))
