@@ -19,7 +19,7 @@ pub fn run_query(cx: &mut AppContext, query: String) -> Result<(), String> {
     io::stdout().flush().unwrap();
     load_data_source(cx, statement.source.clone())?;
 
-    let _ = statement.run()?;
+    let _ = statement.run(cx)?;
     success!("Loaded Data");
 
     Ok(())

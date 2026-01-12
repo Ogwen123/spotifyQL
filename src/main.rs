@@ -8,7 +8,7 @@ use crate::{
 };
 use app_context::AppContext;
 mod api;
-pub mod app_context;
+mod app_context;
 mod auth;
 mod commands;
 mod config;

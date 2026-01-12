@@ -23,9 +23,7 @@ pub enum QueryType {
     UserPlaylistTracks,
     UserFollowing,
     UserSavedAlbums,
-    UserSavedTracks,
-    Search,
-    None,
+    AlbumTracks
 }
 
 impl QueryType {
@@ -35,9 +33,7 @@ impl QueryType {
             QueryType::UserPlaylistTracks => start.to_string() + "/playlists/{id}/tracks",
             QueryType::UserFollowing => start.to_string() + "/me/following",
             QueryType::UserSavedAlbums => start.to_string() + "/me/albums",
-            QueryType::UserSavedTracks => start.to_string() + "/me/tracks",
-            QueryType::Search => start.to_string() + "/search",
-            QueryType::None => start.to_string(),
+            QueryType::AlbumTracks => start.to_string() + "/albums/{id}/tracks"
         };
 
         if id.is_some() {
@@ -103,8 +99,16 @@ impl<'a> APIQuery {
         };
 
         let raw_data = query.send(cx)?;
-
-        Ok(ResultParser::parse_albums(raw_data)?)
+        
+        let mut albums = ResultParser::parse_albums(raw_data)?;
+        
+        for i in albums.iter_mut() {
+            let tracks = APIQuery::get_album_tracks(cx, i.id.clone())?;
+            
+            i.tracks = tracks;
+        }
+        
+        Ok(albums)
     }
 
     pub fn get_playlist_tracks(
@@ -113,6 +117,27 @@ impl<'a> APIQuery {
     ) -> Result<Vec<TrackData>, String> {
         let url =
             QueryType::UserPlaylistTracks.make_endpoint(API_ENDPOINT, Some(playlist_id.clone()));
+
+        let query = APIQuery {
+            url,
+            limit: None,
+            offset: None,
+            fields: Some(String::from(
+                "items(added_at,track(id,name,duration_ms,popularity,album(id,name),artists(id,name))",
+            )),
+        };
+
+        let raw_data = query.send(cx)?;
+
+        Ok(ResultParser::parse_tracks(raw_data, playlist_id)?)
+    }
+
+    pub fn get_album_tracks(
+        cx: &AppContext,
+        playlist_id: String,
+    ) -> Result<Vec<TrackData>, String> {
+        let url =
+            QueryType::AlbumTracks.make_endpoint(API_ENDPOINT, Some(playlist_id.clone()));
 
         let query = APIQuery {
             url,

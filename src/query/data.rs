@@ -7,6 +7,7 @@ use std::collections::HashMap;
 
 pub const DATA_TTL: u64 = 60 * 30;
 
+#[derive(Debug)]
 pub enum DataValue {
     Str(String),
     Int(i64),
@@ -80,6 +81,7 @@ pub struct AlbumData {
     pub id: String,
     pub name: String,
     pub track_count: u64,
+    pub tracks: Vec<TrackData>,
     pub popularity: u8, // value between 0 and 100
     pub album_type: String,
     pub release_date: String,
@@ -408,6 +410,7 @@ impl ResultParser {
                         id: album_data.0,
                         name: album_data.1,
                         track_count: album_data.2,
+                        tracks: Vec::new(),
                         popularity: album_data.3,
                         album_type: album_data.4,
                         release_date: album_data.5,
