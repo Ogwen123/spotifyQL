@@ -12,7 +12,7 @@ SELECT id, name FROM ALBUM(Whatever people say ...) WHERE popularity > 50 && rel
 ```
 
 ```SQL
-SELECT COUNT(name) FROM PLAYLIST;
+SELECT COUNT(name) FROM PLAYLISTS;
 ```
 
 ## Attributes
@@ -36,7 +36,7 @@ Track data is used when the data source is a specific playlist or saved album e.
  - tracks_api: String
  - track_count: Int
 
-Playlist data is used when the data source is just `PLAYLIST`
+Playlist data is used when the data source is just `PLAYLISTS`
 
 ### Album Data
  - id: String
@@ -48,7 +48,7 @@ Playlist data is used when the data source is just `PLAYLIST`
  - artists: List of String
  - saved_at: String
 
-Album data is used when the data source is just `ALBUM`
+Album data is used when the data source is just `ALBUMS`
 
 ## Process
 1. tokenise input
@@ -63,6 +63,7 @@ fetched data is cached in-memory so if the program is restarted all data needs t
  - [x] fix api query returning invalid access token
  - [x] code verifier must be hashed incorrectly
  - [x] implement token refreshing
+ - [ ] check for errors on api response
  - [ ] gathering targets
  - [ ] applying conditions
  - [ ] displaying data

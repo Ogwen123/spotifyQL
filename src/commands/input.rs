@@ -20,7 +20,7 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
         }
         "/test" => {
             info!("testing api querying");
-            APIQuery::get_playlists(cx, None, None)?;
+            APIQuery::get_playlists(cx)?;
 
             info!("testing tokeniser");
             let tokens = tokenise(
@@ -49,12 +49,18 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
         "/tests" => run_query(
             // test simple query
             cx,
-            "SELECT name FROM playlist(all);".to_string(),
+            "SELECT name FROM playlist(All);".to_string(),
         )?,
         "/testa" => println!(
+            // test fetching album data
             "{:?}",
-            parse(tokenise("SELECT name FROM album;".to_string())?)?
-        ), // test fetching album data,
+            parse(tokenise("SELECT name FROM ALBUMS;".to_string())?)?
+        ),
+        "/testp" => run_query(
+            // test playlist data
+            cx,
+            "SELECT name FROM PLAYLISTS;".to_string()
+        )?,
         "/testb" => println!(
             "{:?}",
             parse(tokenise(

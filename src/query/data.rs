@@ -14,7 +14,6 @@ pub enum DataValue {
     Float(f32),
     Bool(bool),
     Strings(Vec<String>),
-    Tracks(Vec<TrackData>),
 }
 
 pub trait KeyAccess {
@@ -144,7 +143,7 @@ pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), S
             }
 
             if load {
-                cx.data.playlist_data = Some(APIQuery::get_playlists(cx, None, None)?);
+                cx.data.playlist_data = Some(APIQuery::get_playlists(cx)?);
                 cx.data.playlist_data_ct = secs_now();
             }
         }
@@ -160,7 +159,7 @@ pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), S
             }
 
             if load {
-                cx.data.saved_album_data = Some(APIQuery::get_saved_albums(cx, None, None)?);
+                cx.data.saved_album_data = Some(APIQuery::get_saved_albums(cx)?);
                 cx.data.saved_album_data_ct = secs_now();
             }
         }
@@ -182,7 +181,7 @@ impl ResultParser {
         if let Value::Array(pl) = &val["items"] {
             raw_playlists = pl.clone();
         } else {
-            return Err("'items' field in response data is an unexpected type.".to_string());
+            return Err("'items' field in response data is an unexpected type. (1)".to_string());
         }
 
         for i in raw_playlists {
@@ -269,7 +268,7 @@ impl ResultParser {
         if let Value::Array(pl) = &val["items"] {
             raw_albums = pl.clone();
         } else {
-            return Err("'items' field in response data is an unexpected type. (1)".to_string());
+            return Err("'items' field in response data is an unexpected type. (2)".to_string());
         }
 
         for i in raw_albums {
@@ -431,7 +430,7 @@ impl ResultParser {
 
     pub fn parse_tracks(
         str_data: String,
-        _debug_playlist_id: String,
+        _debug_parent_id: &String,
     ) -> Result<Vec<TrackData>, String> {
         let mut tracks: Vec<TrackData> = Vec::new();
         let val: Value = serde_json::from_str(str_data.as_str()).map_err(|x| x.to_string())?;
@@ -441,7 +440,7 @@ impl ResultParser {
         if let Value::Array(pl) = &val["items"] {
             raw_tracks = pl.clone();
         } else {
-            return Err("'items' field in response data is an unexpected type.".to_string());
+            return Err("'items' field in response data is an unexpected type. (3)".to_string());
         }
 
         for i in raw_tracks {
@@ -461,7 +460,7 @@ impl ResultParser {
                                 _ => {
                                     return Err(format!(
                                         "Value 'id' in field 'track' of tracks '{}' in response data is an unexpected type.",
-                                        _debug_playlist_id
+                                        _debug_parent_id
                                     ));
                                 }
                             };
@@ -470,7 +469,7 @@ impl ResultParser {
                                 _ => {
                                     return Err(format!(
                                         "Value 'name' in field 'track' of tracks '{}' in response data is an unexpected type.",
-                                        _debug_playlist_id
+                                        _debug_parent_id
                                     ));
                                 }
                             };
@@ -481,14 +480,14 @@ impl ResultParser {
                                     } else {
                                         return Err(format!(
                                             "Value 'duration_ms' in field 'track' of tracks '{}' in response data is not a positive integer.",
-                                            _debug_playlist_id
+                                            _debug_parent_id
                                         ));
                                     }
                                 }
                                 _ => {
                                     return Err(format!(
                                         "Value 'duration_ms' in field 'track' of playlist {} in response data is an unexpected type.",
-                                        _debug_playlist_id
+                                        _debug_parent_id
                                     ));
                                 }
                             };
@@ -503,14 +502,14 @@ impl ResultParser {
                                     } else {
                                         return Err(format!(
                                             "Value 'popularity' in field 'track' of tracks '{}' in response data is not a positive integer.",
-                                            _debug_playlist_id
+                                            _debug_parent_id
                                         ));
                                     }
                                 }
                                 _ => {
                                     return Err(format!(
                                         "Value 'popularity' in field 'track' of tracks '{}' in response data is an unexpected type.",
-                                        _debug_playlist_id
+                                        _debug_parent_id
                                     ));
                                 }
                             };

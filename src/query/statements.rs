@@ -54,18 +54,14 @@ impl SelectStatement {
     pub fn run(&self, cx: &AppContext) -> Result<(), String> {
         // gather targets
         match &self.source {
-            DataSource::Playlists => {
-                self.playlists(match &cx.data.playlist_data {
-                    Some(playlists) => playlists.clone(),
-                    None => return Err("Playlist data not fetched.".to_string())
-                })
-            },
-            DataSource::SavedAlbums => {
-                self.albums(match &cx.data.saved_album_data {
-                    Some(albums) => albums.clone(),
-                    None => return Err("Playlist data not fetched.".to_string())
-                })
-            },
+            DataSource::Playlists => self.playlists(match &cx.data.playlist_data {
+                Some(playlists) => playlists.clone(),
+                None => return Err("Playlist data not fetched.".to_string()),
+            })?,
+            DataSource::SavedAlbums => self.albums(match &cx.data.saved_album_data {
+                Some(albums) => albums.clone(),
+                None => return Err("Playlist data not fetched.".to_string()),
+            })?,
             DataSource::Playlist(res) => {
                 let mut data: Option<&Vec<TrackData>> = None;
 
@@ -74,19 +70,19 @@ impl SelectStatement {
                         for playlist in playlists {
                             if playlist.name == *res {
                                 data = Some(&playlist.tracks);
-                                break
+                                break;
                             }
                         }
-                    },
-                    None => return Err("Playlist data not fetched.".to_string())
+                    }
+                    None => return Err("Playlist data not fetched.".to_string()),
                 };
 
                 if data.is_none() {
-                    return Err(format!("No playlist with the name {}.", res))
+                    return Err(format!("No playlist with the name {}.", res));
                 }
 
                 self.tracks(data.unwrap().clone())?
-            },
+            }
             DataSource::SavedAlbum(res) => {
                 let mut data: Option<&Vec<TrackData>> = None;
 
@@ -97,12 +93,12 @@ impl SelectStatement {
                                 data = Some(&album.tracks)
                             }
                         }
-                    },
-                    None => return Err("Playlist data not fetched.".to_string())
+                    }
+                    None => return Err("Playlist data not fetched.".to_string()),
                 };
 
                 if data.is_none() {
-                    return Err(format!("No saved album with the name {}.", res))
+                    return Err(format!("No saved album with the name {}.", res));
                 }
 
                 self.tracks(data.unwrap().clone())?
@@ -116,19 +112,22 @@ impl SelectStatement {
     }
 
     fn tracks(&self, data: Vec<TrackData>) -> Result<(), String> {
-
         for i in data {
             println!("{:?}", i.access(self.targets[0].clone())?)
         }
-        
+
         Ok(())
     }
 
-    fn playlists(&self, data: Vec<PlaylistData>) {
+    fn playlists(&self, data: Vec<PlaylistData>) -> Result<(), String> {
+        for i in data {
+            println!("{:?}", i.access(self.targets[0].clone())?)
+        }
 
+        Ok(())
     }
 
-    fn albums(&self, data: Vec<AlbumData>) {
-
+    fn albums(&self, data: Vec<AlbumData>) -> Result<(), String> {
+        Ok(())
     }
 }

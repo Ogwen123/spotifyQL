@@ -12,8 +12,8 @@ use tokio::runtime::Runtime;
 #[derive(Debug)]
 pub struct APIQuery {
     url: String,
-    limit: Option<u32>,
-    offset: Option<u32>,
+    limit: usize,
+    offset: usize,
     fields: Option<String>,
 }
 
@@ -23,7 +23,7 @@ pub enum QueryType {
     UserPlaylistTracks,
     UserFollowing,
     UserSavedAlbums,
-    AlbumTracks
+    AlbumTracks,
 }
 
 impl QueryType {
@@ -33,7 +33,7 @@ impl QueryType {
             QueryType::UserPlaylistTracks => start.to_string() + "/playlists/{id}/tracks",
             QueryType::UserFollowing => start.to_string() + "/me/following",
             QueryType::UserSavedAlbums => start.to_string() + "/me/albums",
-            QueryType::AlbumTracks => start.to_string() + "/albums/{id}/tracks"
+            QueryType::AlbumTracks => start.to_string() + "/albums/{id}/tracks",
         };
 
         if id.is_some() {
@@ -53,61 +53,98 @@ impl QueryType {
 }
 
 static API_ENDPOINT: &str = "https://api.spotify.com/v1";
+static MAX_RESPONSE_ITEMS: usize = 50;
 
 impl<'a> APIQuery {
     /// Get all of a users playlists
-    pub fn get_playlists(
-        cx: &AppContext,
-        limit: Option<u32>,
-        offset: Option<u32>,
-    ) -> Result<Vec<PlaylistData>, String> {
+    pub fn get_playlists(cx: &AppContext) -> Result<Vec<PlaylistData>, String> {
         let url = QueryType::UserPlaylist.make_endpoint(API_ENDPOINT, None);
 
-        let query = APIQuery {
-            url,
-            limit,
-            offset,
-            fields: None,
-        };
+        let mut playlists: Vec<PlaylistData> = Vec::new();
 
-        let raw_data = query.send(cx)?;
+        let mut count = 0;
+        /*
+        spotify only allows for fetching 50 items per request so this loop will keep fetching 50
+        items at a time until a request returns less than 50 items and the loop will break,
+        there is a limit of 50 requests to avoid the possibility of an infinite loop
+        */
+        loop {
+            if count == 49 {
+                break;
+            } // allows for 50*MAX_RESPONSE_ITEMS playlists to be fetched
 
-        let mut playlists = ResultParser::parse_playlists(raw_data)?;
+            let query = APIQuery {
+                url: url.clone(),
+                limit: MAX_RESPONSE_ITEMS,
+                offset: MAX_RESPONSE_ITEMS * count,
+                fields: None,
+            };
 
-        // get playlist data
-        for i in playlists.iter_mut() {
-            let tracks = APIQuery::get_playlist_tracks(cx, i.id.clone())?;
+            let raw_data = query.send(cx)?;
 
-            i.tracks = tracks;
+            let mut temp_playlists = &mut ResultParser::parse_playlists(raw_data)?;
+
+            // get playlist data
+            for i in temp_playlists.iter_mut() {
+                let tracks = APIQuery::get_playlist_tracks(cx, i.id.clone())?;
+
+                i.tracks = tracks;
+            }
+
+            let loaded_playlists = temp_playlists.len();
+
+            playlists.append(&mut temp_playlists);
+
+            if loaded_playlists < MAX_RESPONSE_ITEMS {
+                break
+            }
+
+            count += 1;
         }
 
         Ok(playlists)
     }
 
-    pub fn get_saved_albums(
-        cx: &AppContext,
-        limit: Option<u32>,
-        offset: Option<u32>,
-    ) -> Result<Vec<AlbumData>, String> {
+    pub fn get_saved_albums(cx: &AppContext) -> Result<Vec<AlbumData>, String> {
         let url = QueryType::UserSavedAlbums.make_endpoint(API_ENDPOINT, None);
 
-        let query = APIQuery {
-            url,
-            limit,
-            offset,
-            fields: None,
-        };
+        let mut albums: Vec<AlbumData> = Vec::new();
 
-        let raw_data = query.send(cx)?;
-        
-        let mut albums = ResultParser::parse_albums(raw_data)?;
-        
-        for i in albums.iter_mut() {
-            let tracks = APIQuery::get_album_tracks(cx, i.id.clone())?;
-            
-            i.tracks = tracks;
+        let mut count: usize = 0;
+
+        loop {
+            if count == 49 {
+                break;
+            }
+
+            let query = APIQuery {
+                url: url.clone(),
+                limit: MAX_RESPONSE_ITEMS,
+                offset: MAX_RESPONSE_ITEMS * count,
+                fields: None,
+            };
+
+            let raw_data = query.send(cx)?;
+
+            let mut temp_albums = ResultParser::parse_albums(raw_data)?;
+
+            for i in albums.iter_mut() {
+                let tracks = APIQuery::get_album_tracks(cx, i.id.clone())?;
+
+                i.tracks = tracks;
+            }
+
+            let loaded_albums = temp_albums.len();
+
+            albums.append(&mut temp_albums);
+
+            if loaded_albums < MAX_RESPONSE_ITEMS {
+                break
+            }
+
+            count += 1;
         }
-        
+
         Ok(albums)
     }
 
@@ -118,39 +155,80 @@ impl<'a> APIQuery {
         let url =
             QueryType::UserPlaylistTracks.make_endpoint(API_ENDPOINT, Some(playlist_id.clone()));
 
-        let query = APIQuery {
-            url,
-            limit: None,
-            offset: None,
-            fields: Some(String::from(
-                "items(added_at,track(id,name,duration_ms,popularity,album(id,name),artists(id,name))",
-            )),
-        };
+        let mut tracks: Vec<TrackData> = Vec::new();
+        let mut count: usize = 0;
 
-        let raw_data = query.send(cx)?;
+        loop {
+            if count == 99 {
+                break
+            } // allows for 100*MAX_RESPONSE_ITEMS to be fetched
 
-        Ok(ResultParser::parse_tracks(raw_data, playlist_id)?)
+            let query = APIQuery {
+                url: url.clone(),
+                limit: MAX_RESPONSE_ITEMS,
+                offset: MAX_RESPONSE_ITEMS * count,
+                fields: Some(String::from(
+                    "items(added_at,track(id,name,duration_ms,popularity,album(id,name),artists(id,name))",
+                )),
+            };
+
+            let raw_data = query.send(cx)?;
+
+            let mut temp_tracks = ResultParser::parse_tracks(raw_data, &playlist_id)?;
+
+            let loaded_tracks = temp_tracks.len();
+
+            tracks.append(&mut temp_tracks);
+
+            if loaded_tracks < MAX_RESPONSE_ITEMS {
+                break
+            }
+
+            count += 1;
+        }
+
+        Ok(tracks)
     }
 
     pub fn get_album_tracks(
         cx: &AppContext,
         playlist_id: String,
     ) -> Result<Vec<TrackData>, String> {
-        let url =
-            QueryType::AlbumTracks.make_endpoint(API_ENDPOINT, Some(playlist_id.clone()));
+        let url = QueryType::AlbumTracks.make_endpoint(API_ENDPOINT, Some(playlist_id.clone()));
 
-        let query = APIQuery {
-            url,
-            limit: None,
-            offset: None,
-            fields: Some(String::from(
-                "items(added_at,track(id,name,duration_ms,popularity,album(id,name),artists(id,name))",
-            )),
-        };
+        let mut tracks: Vec<TrackData> = Vec::new();
+        let mut count: usize = 0;
 
-        let raw_data = query.send(cx)?;
+        loop {
+            if count == 99 {
+                break
+            } // allows for 100*MAX_RESPONSE_ITEMS to be fetched
 
-        Ok(ResultParser::parse_tracks(raw_data, playlist_id)?)
+            let query = APIQuery {
+                url: url.clone(),
+                limit: MAX_RESPONSE_ITEMS,
+                offset: MAX_RESPONSE_ITEMS * count,
+                fields: Some(String::from(
+                    "items(added_at,track(id,name,duration_ms,popularity,album(id,name),artists(id,name))",
+                )),
+            };
+
+            let raw_data = query.send(cx)?;
+
+            let mut temp_tracks = ResultParser::parse_tracks(raw_data, &playlist_id)?;
+
+            let loaded_tracks = temp_tracks.len();
+
+            tracks.append(&mut temp_tracks);
+
+            if loaded_tracks < MAX_RESPONSE_ITEMS {
+                break
+            }
+
+            count += 1;
+        }
+
+        Ok(tracks)
     }
 
     /// Spawns a thread to send the API request async, returns data using a channel
@@ -195,12 +273,10 @@ impl<'a> APIQuery {
     fn send(self, cx: &AppContext) -> Result<String, String> {
         let mut params: Vec<(&str, String)> = Vec::new();
         // build the param list
-        if self.limit.is_some() {
-            params.push(("limit", self.limit.unwrap().to_string()));
-        }
-        if self.offset.is_some() {
-            params.push(("offset", self.offset.unwrap().to_string()));
-        }
+        params.push(("limit", self.limit.to_string()));
+
+        params.push(("offset", self.offset.to_string()));
+
         if self.fields.is_some() {
             params.push(("fields", self.fields.unwrap()))
         }
@@ -208,7 +284,7 @@ impl<'a> APIQuery {
         let final_url = build_url(self.url, params);
 
         let (tx, rx) = channel::<Result<String, String>>();
-
+        // println!("{:?}", final_url);
         Self::send_async(final_url, tx, cx.token.clone());
 
         let res = rx.recv().expect("API request thread stopped unexpectedly.");

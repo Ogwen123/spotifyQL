@@ -192,22 +192,20 @@ impl RawToken {
             "AND" => return Ok(Token::Logical(Logical::And)),
             "OR" => return Ok(Token::Logical(Logical::Or)),
             "PLAYLIST" => {
-                return if self.content.is_some() {
-                    Ok(Token::Source(DataSource::Playlist(
-                        self.content.unwrap_or("".to_string()),
-                    )))
-                } else {
-                    Ok(Token::Source(DataSource::Playlists))
-                };
+                return Ok(Token::Source(DataSource::Playlist(
+                    self.content.unwrap_or("".to_string()),
+                )));
             }
             "ALBUM" => {
-                return if self.content.is_some() {
-                    Ok(Token::Source(DataSource::SavedAlbum(
-                        self.content.unwrap_or("".to_string()),
-                    )))
-                } else {
-                    Ok(Token::Source(DataSource::SavedAlbums))
-                };
+                return Ok(Token::Source(DataSource::SavedAlbum(
+                    self.content.unwrap_or("".to_string()),
+                )));
+            },
+            "PLAYLISTS" => {
+                return Ok(Token::Source(DataSource::Playlists));
+            }
+            "ALBUMS" => {
+                return Ok(Token::Source(DataSource::SavedAlbums));
             }
             _ => {
                 let int_regex = Regex::new(r"^-?\d+$").map_err(|x| x.to_string())?;

@@ -122,7 +122,7 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
         // get conditions
         let mut tl_condition: Option<Condition> = None;
         let mut next_logical_op: Logical = Logical::Or; // should never get used, just to avoid uninitialised error below
-        
+
         /*
         order of operation should go OR -> AND and is read left to right using associative law
         so true && false || false || true && false
