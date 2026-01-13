@@ -200,7 +200,7 @@ impl RawToken {
                 return Ok(Token::Source(DataSource::SavedAlbum(
                     self.content.unwrap_or("".to_string()),
                 )));
-            },
+            }
             "PLAYLISTS" => {
                 return Ok(Token::Source(DataSource::Playlists));
             }

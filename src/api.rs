@@ -96,7 +96,7 @@ impl<'a> APIQuery {
             playlists.append(&mut temp_playlists);
 
             if loaded_playlists < MAX_RESPONSE_ITEMS {
-                break
+                break;
             }
 
             count += 1;
@@ -139,7 +139,7 @@ impl<'a> APIQuery {
             albums.append(&mut temp_albums);
 
             if loaded_albums < MAX_RESPONSE_ITEMS {
-                break
+                break;
             }
 
             count += 1;
@@ -160,7 +160,7 @@ impl<'a> APIQuery {
 
         loop {
             if count == 99 {
-                break
+                break;
             } // allows for 100*MAX_RESPONSE_ITEMS to be fetched
 
             let query = APIQuery {
@@ -181,7 +181,7 @@ impl<'a> APIQuery {
             tracks.append(&mut temp_tracks);
 
             if loaded_tracks < MAX_RESPONSE_ITEMS {
-                break
+                break;
             }
 
             count += 1;
@@ -201,7 +201,7 @@ impl<'a> APIQuery {
 
         loop {
             if count == 99 {
-                break
+                break;
             } // allows for 100*MAX_RESPONSE_ITEMS to be fetched
 
             let query = APIQuery {
@@ -222,7 +222,7 @@ impl<'a> APIQuery {
             tracks.append(&mut temp_tracks);
 
             if loaded_tracks < MAX_RESPONSE_ITEMS {
-                break
+                break;
             }
 
             count += 1;

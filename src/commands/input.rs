@@ -59,7 +59,7 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
         "/testp" => run_query(
             // test playlist data
             cx,
-            "SELECT name FROM PLAYLISTS;".to_string()
+            "SELECT name FROM PLAYLISTS;".to_string(),
         )?,
         "/testb" => println!(
             "{:?}",

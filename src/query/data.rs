@@ -1,9 +1,11 @@
 use crate::api::APIQuery;
 use crate::app_context::AppContext;
-use crate::query::tokenise::DataSource;
+use crate::query::{
+    tokenise,
+    tokenise::{DataSource, Operator},
+};
 use crate::utils::utils::secs_now;
 use serde_json::Value;
-use std::collections::HashMap;
 
 pub const DATA_TTL: u64 = 60 * 30;
 
@@ -14,6 +16,29 @@ pub enum DataValue {
     Float(f32),
     Bool(bool),
     Strings(Vec<String>),
+}
+
+impl DataValue {
+    pub fn compare(&self, value: tokenise::Value, operator: Operator) -> Result<bool, String> {
+        match operator {
+            Operator::Equals => self.equals(value),
+            Operator::NotEquals => {
+                let res = self.equals(value)?;
+
+                Ok(!res)
+            }
+            Operator::Like => self.like(value),
+        }
+    }
+
+    // TODO: actually write comparison code
+    fn equals(&self, value: tokenise::Value) -> Result<bool, String> {
+        Ok(true)
+    }
+
+    fn like(&self, value: tokenise::Value) -> Result<bool, String> {
+        Ok(true)
+    }
 }
 
 pub trait KeyAccess {
