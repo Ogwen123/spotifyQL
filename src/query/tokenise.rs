@@ -85,6 +85,15 @@ pub enum Logical {
     Or,
 }
 
+impl Logical {
+    pub fn eval(&self, a: bool, b: bool) -> bool {
+        match self {
+            Logical::Or => a || b,
+            Logical::And => a && b,
+        }
+    }
+}
+
 impl Display for Logical {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(

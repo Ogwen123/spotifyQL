@@ -1,74 +1,13 @@
 use crate::app_context::AppContext;
-use crate::query::data::{AlbumData, DataValue, KeyAccess, PlaylistData, TrackData};
-use crate::query::tokenise::{DataSource, Logical, Operator, Value};
+use crate::query::condition::{Condition, compute_conditions};
+use crate::query::data::{AlbumData, KeyAccess, PlaylistData, TrackData};
+use crate::query::tokenise::DataSource;
 
 #[derive(Debug)]
 pub enum Aggregation {
     Count,
     Average,
     None,
-}
-
-pub type NextCondition = (Logical, Box<Condition>);
-
-#[derive(Debug, Clone)]
-pub struct Condition {
-    pub attribute: String,
-    pub operation: Operator,
-    pub value: Value,
-    pub next: Option<NextCondition>,
-}
-
-impl Condition {
-    pub fn add_next_condition(&mut self, logical: Logical, condition: Condition) {
-        let mut next: Box<Condition>;
-
-        if self.next.is_none() {
-            self.next = Some((logical, Box::new(condition)));
-            return;
-        } else {
-            next = self.next.clone().unwrap().1;
-            loop {
-                if next.next.is_none() {
-                    next.next = Some((logical, Box::new(condition)));
-                    break;
-                } else {
-                    next = next.next.unwrap().1;
-                }
-            }
-        }
-    }
-}
-
-pub type NextConditionResult = (Logical, Box<ConditionResult>);
-
-#[derive(Clone)]
-pub struct ConditionResult {
-    pub val: bool,
-    pub next: Option<NextConditionResult>,
-}
-
-impl ConditionResult {
-    pub fn add_next_condition(&mut self, logical: Logical, val: bool) {
-        let mut next: Box<ConditionResult>;
-
-        let res = Box::new(ConditionResult { val, next: None });
-
-        if self.next.is_none() {
-            self.next = Some((logical, res));
-            return;
-        } else {
-            next = self.next.clone().unwrap().1;
-            loop {
-                if next.next.is_none() {
-                    next.next = Some((logical, res));
-                    break;
-                } else {
-                    next = next.next.unwrap().1;
-                }
-            }
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -121,6 +60,7 @@ impl SelectStatement {
                 let valid = self.tracks(data.unwrap().clone())?;
 
                 for i in valid {
+                    println!("{:?}", i.access(self.targets[0].clone()))
                 }
 
                 // display results
@@ -159,43 +99,9 @@ impl SelectStatement {
         let mut valid: Vec<TrackData> = Vec::new();
 
         for i in data {
-            let is_valid = self.conditions.is_none();
-
-            let mut result_tree: ConditionResult;
-
-            if !is_valid {
-                let mut current_condition = self.conditions.clone().unwrap();
-                let mut current_op: Logical = Logical::Or;
-
-                // do the first condition outside loop to set up the tree
-                let res = i
-                    .access(current_condition.attribute)?
-                    .compare(current_condition.value, current_condition.operation)?;
-
-                result_tree = ConditionResult {
-                    val: res,
-                    next: None,
-                };
-
-                loop {
-                    if let Some(cc) = current_condition.next {
-                        current_condition = *(cc.1);
-                        current_op = cc.0;
-                    } else {
-                        break;
-                    }
-
-                    let res = i
-                        .access(current_condition.attribute)?
-                        .compare(current_condition.value, current_condition.operation)?;
-
-                    result_tree.add_next_condition(current_op, res)
-                }
-
-                // TODO: write code to collapse result tree and update is_valid
-            }
-
-            if is_valid {
+            if self.conditions.is_none()
+                || compute_conditions(&i, self.conditions.clone().unwrap())?
+            {
                 valid.push(i);
             }
         }

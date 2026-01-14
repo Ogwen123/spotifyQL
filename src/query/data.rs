@@ -22,11 +22,7 @@ impl DataValue {
     pub fn compare(&self, value: tokenise::Value, operator: Operator) -> Result<bool, String> {
         match operator {
             Operator::Equals => self.equals(value),
-            Operator::NotEquals => {
-                let res = self.equals(value)?;
-
-                Ok(!res)
-            }
+            Operator::NotEquals => Ok(!self.equals(value)?),
             Operator::Like => self.like(value),
         }
     }
@@ -37,7 +33,7 @@ impl DataValue {
     }
 
     fn like(&self, value: tokenise::Value) -> Result<bool, String> {
-        Ok(true)
+        Ok(false)
     }
 }
 
