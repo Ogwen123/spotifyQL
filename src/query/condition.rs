@@ -2,8 +2,6 @@ use crate::query::data::KeyAccess;
 use crate::query::tokenise::{Logical, Operator, Value};
 use std::fmt::Debug;
 
-pub type NextCondition = (Logical, Box<Condition>);
-
 pub fn compute_conditions<T: KeyAccess + Debug>(
     data: &T,
     conditions: Condition,
@@ -51,33 +49,67 @@ pub fn compute_conditions<T: KeyAccess + Debug>(
         let mut prev_op = Logical::Or;
         let mut current_res = Box::new(result_tree.clone());
 
-        let next: NextConditionResult;
+        let mut next: NextConditionResult;
 
         let mut new_tree: Option<ConditionResult> = None;
 
         loop {
-            let next = current_res.next.clone().unwrap();
+            next = match current_res.next.clone() {
+                Some(res) => res,
+                None => break,
+            };
             // do first condition outside the loop to set up the tree
-            if next.0 == op{
+            if next.0 == op {
                 let eval = op.eval(current_res.val, next.1.val);
 
                 if new_tree.is_none() {
                     new_tree = Some(ConditionResult {
                         val: eval,
-                        next: next.1.next
+                        next: None,
                     })
                 } else {
-                    new_tree.as_mut().unwrap().add_next_condition(prev_op.clone(), eval);
+                    new_tree
+                        .as_mut()
+                        .unwrap()
+                        .add_next_condition(prev_op.clone(), eval);
+                }
+
+                if next.1.next.is_some() {
+                    next = next.1.next.unwrap()
+                } else {
+                    break;
                 }
             } else {
+                if new_tree.is_none() {
+                    new_tree = Some(ConditionResult {
+                        val: current_res.val,
+                        next: None,
+                    })
+                } else {
+                    new_tree
+                        .as_mut()
+                        .unwrap()
+                        .add_next_condition(prev_op.clone(), current_res.val);
+                }
+                prev_op = next.0;
                 current_res = next.1;
             }
         }
 
+        println!("{:?}", new_tree);
+        result_tree = match new_tree {
+            Some(res) => res,
+            None => {
+                println!("i don't think you should be able to see this");
+                break;
+            }
+        }
     }
 
     Ok(is_valid)
 }
+
+pub type NextCondition = (Logical, Box<Condition>);
 
 #[derive(Debug, Clone)]
 pub struct Condition {
@@ -89,22 +121,13 @@ pub struct Condition {
 
 impl Condition {
     pub fn add_next_condition(&mut self, logical: Logical, condition: Condition) {
-        let mut next: Box<Condition>;
+        let mut current = self;
 
-        if self.next.is_none() {
-            self.next = Some((logical, Box::new(condition)));
-            return;
-        } else {
-            next = self.next.clone().unwrap().1;
-            loop {
-                if next.next.is_none() {
-                    next.next = Some((logical, Box::new(condition)));
-                    break;
-                } else {
-                    next = next.next.unwrap().1;
-                }
-            }
+        while let Some((_, ref mut next)) = current.next {
+            current = next;
         }
+
+        current.next = Some((logical, Box::new(condition)))
     }
 }
 
@@ -118,23 +141,14 @@ pub struct ConditionResult {
 
 impl ConditionResult {
     pub fn add_next_condition(&mut self, logical: Logical, val: bool) {
-        let mut next: Box<ConditionResult>;
-
         let res = Box::new(ConditionResult { val, next: None });
+        
+        let mut current = self;
 
-        if self.next.is_none() {
-            self.next = Some((logical, res));
-            return;
-        } else {
-            next = self.next.clone().unwrap().1;
-            loop {
-                if next.next.is_none() {
-                    next.next = Some((logical, res));
-                    break;
-                } else {
-                    next = next.next.unwrap().1;
-                }
-            }
+        while let Some((_, ref mut next)) = current.next {
+            current = next;
         }
+
+        current.next = Some((logical, res));
     }
 }

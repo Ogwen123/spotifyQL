@@ -178,7 +178,6 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                 value: val,
                 next: None,
             };
-
             if tl_condition.is_some() {
                 tl_condition
                     .as_mut()
