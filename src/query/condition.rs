@@ -6,7 +6,7 @@ pub fn compute_conditions<T: KeyAccess + Debug>(
     data: &T,
     conditions: Condition,
 ) -> Result<bool, String> {
-    let is_valid = false;
+    let mut is_valid = false;
 
     let mut current_condition = conditions.clone();
     let mut current_op: Logical = Logical::Or;
@@ -42,10 +42,10 @@ pub fn compute_conditions<T: KeyAccess + Debug>(
         return Ok(result_tree.val);
     }
 
-    // TODO: write code to collapse result tree and update is_valid
     let operators = vec![Logical::Or, Logical::And]; // order of precedence, all Or operations are collapsed, then all And operations, etc
 
     for op in operators {
+        println!("doing {}", op);
         let mut prev_op = Logical::Or;
         let mut current_res = Box::new(result_tree.clone());
 
@@ -56,7 +56,21 @@ pub fn compute_conditions<T: KeyAccess + Debug>(
         loop {
             next = match current_res.next.clone() {
                 Some(res) => res,
-                None => break,
+                None => {
+                    if new_tree.is_none() {
+                        new_tree = Some(ConditionResult {
+                            val: current_res.val,
+                            next: None,
+                        })
+                    } else {
+                        new_tree
+                            .as_mut()
+                            .unwrap()
+                            .add_next_condition(prev_op.clone(), current_res.val);
+                    }
+
+                    break
+                },
             };
             // do first condition outside the loop to set up the tree
             if next.0 == op {
@@ -74,8 +88,11 @@ pub fn compute_conditions<T: KeyAccess + Debug>(
                         .add_next_condition(prev_op.clone(), eval);
                 }
 
-                if next.1.next.is_some() {
-                    next = next.1.next.unwrap()
+                let nn = next.1.next;
+                if nn.is_some() {
+                    let nnu = nn.unwrap();
+                    prev_op = nnu.0.clone();
+                    current_res = nnu.1;
                 } else {
                     break;
                 }
@@ -94,9 +111,9 @@ pub fn compute_conditions<T: KeyAccess + Debug>(
                 prev_op = next.0;
                 current_res = next.1;
             }
+            println!("in {:?}", new_tree);
         }
-
-        println!("{:?}", new_tree);
+        println!("out {:?}", new_tree);
         result_tree = match new_tree {
             Some(res) => res,
             None => {
@@ -106,6 +123,15 @@ pub fn compute_conditions<T: KeyAccess + Debug>(
         }
     }
 
+    // after the above code completes there could be two conditions left joined by the last operator in the list
+
+    if result_tree.next.is_some() {
+        let next = result_tree.next.unwrap();
+        is_valid = next.0.eval(result_tree.val, next.1.val);
+    } else {
+        is_valid = result_tree.val;
+    }
+    println!("{}", is_valid);
     Ok(is_valid)
 }
 
@@ -142,7 +168,7 @@ pub struct ConditionResult {
 impl ConditionResult {
     pub fn add_next_condition(&mut self, logical: Logical, val: bool) {
         let res = Box::new(ConditionResult { val, next: None });
-        
+
         let mut current = self;
 
         while let Some((_, ref mut next)) = current.next {

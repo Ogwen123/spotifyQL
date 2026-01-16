@@ -69,7 +69,7 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
         ), // test booleans in conditions,
         "/testc" => run_query(
             cx,
-            "SELECT name FROM PLAYLIST(Playlist 1) WHERE name == \"Holiday\" AND id LIKE \"test\" OR id LIKE \"test\" AND id LIKE \"test\";".to_string(),
+            "SELECT name FROM PLAYLIST(test) WHERE name == \"Shout\" AND id LIKE \"test\" OR id LIKE \"test\" AND id LIKE \"test\";".to_string(),
         )?,
         _ => {
             println!("{}", parsed_input);
