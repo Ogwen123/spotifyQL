@@ -1,44 +1,16 @@
+use std::fmt::Display;
 use crate::api::APIQuery;
 use crate::app_context::AppContext;
-use crate::query::{
-    tokenise,
-    tokenise::{DataSource, Operator},
-};
+use crate::query::{tokenise::DataSource, tokenise::Value as DValue};
 use crate::utils::utils::secs_now;
 use serde_json::Value;
 
 pub const DATA_TTL: u64 = 60 * 30;
 
-#[derive(Debug)]
-pub enum DataValue {
-    Str(String),
-    Int(i64),
-    Float(f32),
-    Bool(bool),
-    Strings(Vec<String>),
-}
-
-impl DataValue {
-    pub fn compare(&self, value: tokenise::Value, operator: Operator) -> Result<bool, String> {
-        match operator {
-            Operator::Equals => self.equals(value),
-            Operator::NotEquals => Ok(!self.equals(value)?),
-            Operator::Like => self.like(value),
-        }
-    }
-
-    // TODO: actually write comparison code
-    fn equals(&self, value: tokenise::Value) -> Result<bool, String> {
-        Ok(true)
-    }
-
-    fn like(&self, value: tokenise::Value) -> Result<bool, String> {
-        Ok(false)
-    }
-}
-
 pub trait KeyAccess {
-    fn access(&self, key: String) -> Result<DataValue, String>;
+    fn access<T>(&self, key: T) -> Result<DValue, String>
+    where
+        T: AsRef<str> + Display;
 }
 
 #[derive(Clone, Debug)]
@@ -54,16 +26,22 @@ pub struct TrackData {
 }
 
 impl KeyAccess for TrackData {
-    fn access(&self, key: String) -> Result<DataValue, String> {
-        match key.as_str() {
-            "id" => Ok(DataValue::Str(self.id.clone())),
-            "name" => Ok(DataValue::Str(self.name.clone())),
-            "duration" => Ok(DataValue::Int(self.duration.cast_signed())),
-            "album_name" => Ok(DataValue::Str(self.album_name.clone())),
-            "album_id" => Ok(DataValue::Str(self.album_id.clone())),
-            "artists" => Ok(DataValue::Strings(self.artists.clone())),
-            "added_at" => Ok(DataValue::Str(self.added_at.clone())),
-            "popularity" => Ok(DataValue::Int(self.popularity.cast_signed().into())),
+    fn access<T>(&self, key: T) -> Result<DValue, String> where T: AsRef<str> + Display {
+        match key.as_ref() {
+            "id" => Ok(DValue::Str(self.id.clone())),
+            "name" => Ok(DValue::Str(self.name.clone())),
+            "duration" => Ok(DValue::Int(self.duration.cast_signed())),
+            "album_name" => Ok(DValue::Str(self.album_name.clone())),
+            "album_id" => Ok(DValue::Str(self.album_id.clone())),
+            "artists" => Ok(DValue::List(
+                self.artists
+                    .clone()
+                    .into_iter()
+                    .map(|x| DValue::Str(x))
+                    .collect(),
+            )),
+            "added_at" => Ok(DValue::Str(self.added_at.clone())),
+            "popularity" => Ok(DValue::Int(self.popularity.cast_signed().into())),
             _ => Err(format!(
                 "SYNTAX ERROR: {} is not a valid attribute for track data.",
                 key
@@ -82,12 +60,12 @@ pub struct PlaylistData {
 }
 
 impl KeyAccess for PlaylistData {
-    fn access(&self, key: String) -> Result<DataValue, String> {
-        match key.as_str() {
-            "id" => Ok(DataValue::Str(self.id.clone())),
-            "name" => Ok(DataValue::Str(self.name.clone())),
-            "tracks_api" => Ok(DataValue::Str(self.tracks_api.clone())),
-            "track_content" => Ok(DataValue::Int(self.track_count.clone().cast_signed())),
+    fn access<T>(&self, key: T) -> Result<DValue, String> where T: AsRef<str> + Display {
+        match key.as_ref() {
+            "id" => Ok(DValue::Str(self.id.clone())),
+            "name" => Ok(DValue::Str(self.name.clone())),
+            "tracks_api" => Ok(DValue::Str(self.tracks_api.clone())),
+            "track_content" => Ok(DValue::Int(self.track_count.clone().cast_signed())),
             _ => Err(format!(
                 "SYNTAX ERROR: {} is not a valid attribute for playlist data.",
                 key
@@ -110,16 +88,22 @@ pub struct AlbumData {
 }
 
 impl KeyAccess for AlbumData {
-    fn access(&self, key: String) -> Result<DataValue, String> {
-        match key.as_str() {
-            "id" => Ok(DataValue::Str(self.id.clone())),
-            "name" => Ok(DataValue::Str(self.name.clone())),
-            "track_count" => Ok(DataValue::Int(self.track_count.cast_signed())),
-            "popularity" => Ok(DataValue::Int(self.popularity.cast_signed().into())),
-            "album_type" => Ok(DataValue::Str(self.album_type.clone())),
-            "release_date" => Ok(DataValue::Str(self.release_date.clone())),
-            "artists" => Ok(DataValue::Strings(self.artists.clone())),
-            "saved_at" => Ok(DataValue::Str(self.saved_at.clone())),
+    fn access<T>(&self, key: T) -> Result<DValue, String> where T: AsRef<str> + Display {
+        match key.as_ref() {
+            "id" => Ok(DValue::Str(self.id.clone())),
+            "name" => Ok(DValue::Str(self.name.clone())),
+            "track_count" => Ok(DValue::Int(self.track_count.cast_signed())),
+            "popularity" => Ok(DValue::Int(self.popularity.cast_signed().into())),
+            "album_type" => Ok(DValue::Str(self.album_type.clone())),
+            "release_date" => Ok(DValue::Str(self.release_date.clone())),
+            "artists" => Ok(DValue::List(
+                self.artists
+                    .clone()
+                    .into_iter()
+                    .map(|x| DValue::Str(x))
+                    .collect(),
+            )),
+            "saved_at" => Ok(DValue::Str(self.saved_at.clone())),
             _ => Err(format!(
                 "SYNTAX ERROR: {} is not a valid attribute for album data.",
                 key

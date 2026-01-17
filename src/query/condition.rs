@@ -35,7 +35,6 @@ pub fn compute_conditions<T: KeyAccess + Debug>(
 
         result_tree.add_next_condition(current_op, res)
     }
-    println!("{:?}     {:?}", result_tree, data);
 
     // make sure the result tree actually needs collapsing
     if result_tree.next.is_none() {
@@ -45,7 +44,6 @@ pub fn compute_conditions<T: KeyAccess + Debug>(
     let operators = vec![Logical::Or, Logical::And]; // order of precedence, all Or operations are collapsed, then all And operations, etc
 
     for op in operators {
-        println!("doing {}", op);
         let mut prev_op = Logical::Or;
         let mut current_res = Box::new(result_tree.clone());
 
@@ -69,8 +67,8 @@ pub fn compute_conditions<T: KeyAccess + Debug>(
                             .add_next_condition(prev_op.clone(), current_res.val);
                     }
 
-                    break
-                },
+                    break;
+                }
             };
             // do first condition outside the loop to set up the tree
             if next.0 == op {
@@ -111,9 +109,7 @@ pub fn compute_conditions<T: KeyAccess + Debug>(
                 prev_op = next.0;
                 current_res = next.1;
             }
-            println!("in {:?}", new_tree);
         }
-        println!("out {:?}", new_tree);
         result_tree = match new_tree {
             Some(res) => res,
             None => {

@@ -10,17 +10,20 @@ pub fn run_query(cx: &mut AppContext, query: String) -> Result<(), String> {
     info_nnl!("Tokenising");
     let tokens = tokenise(query)?;
     success!("Processed Tokens");
-
+    for i in tokens.clone() {
+        print!("{} ", i);
+    }
+    println!();
     info_nnl!("Parsing Tokens");
     let statement = parse(tokens)?;
     success!("Parsed Tokens");
-
+    println!("{:?}", statement);
     info_nnl!("Loading Data");
     io::stdout().flush().unwrap();
     load_data_source(cx, statement.source.clone())?;
+    success!("Loaded Data");
 
     let _ = statement.run(cx)?;
-    success!("Loaded Data");
 
     Ok(())
 }

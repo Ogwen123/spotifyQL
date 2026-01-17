@@ -1,6 +1,7 @@
+use std::mem::discriminant;
 use crate::query::condition::Condition;
 use crate::query::statements::{Aggregation, SelectStatement};
-use crate::query::tokenise::{DataSource, Logical, Token};
+use crate::query::tokenise::{DataSource, Logical, Operator, Token, Value};
 
 fn safe_next(iter: &mut dyn Iterator<Item = Token>) -> Result<Token, String> {
     match iter.next() {
@@ -131,46 +132,72 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
         */
 
         loop {
-            // every condition should be made up of 3 tokens
-            let attr = match tokens.next() {
-                Some(res) => match res {
-                    Token::Attribute(res) => res,
-                    _ => {
-                        return Err(format!("SYNTAX ERROR: Condition is missing attribute at {}", res))
-                    }
-                },
-                None => {
-                    return Err("SYNTAX ERROR: Conditions should consist of an attribute, an operator and a value".to_string())
-                }
+            let attr_t = match tokens.next() {
+                Some(res) => res,
+                None => return Err("SYNTAX ERROR: Conditions should consist of an attribute, an operator and a value".to_string())
+
             };
+            let attr: String;
+            let op: Operator;
+            let val: Value;
 
-            let op = match tokens.next() {
-                Some(res) => match res {
-                    Token::Operator(res) => res,
-                    _ => {
-                        return Err(format!("SYNTAX ERROR: Condition is missing operator at {}", res))
+            if let Token::Attribute(res) = attr_t {
+                // every condition should be made up of 3 tokens
+                attr = res;
+
+                op = match tokens.next() {
+                    Some(res) => match res {
+                        Token::Operator(res) => res,
+                        _ => {
+                            return Err(format!("SYNTAX ERROR: Condition is missing operator at {}", res))
+                        }
+                    },
+                    None => {
+                        return Err("SYNTAX ERROR: Conditions should consist of an attribute, an operator and a value".to_string())
                     }
-                },
-                None => {
-                    return Err("SYNTAX ERROR: Conditions should consist of an attribute, an operator and a value".to_string())
-                }
-            };
+                };
 
-            let val = match tokens.next() {
-                Some(res) => match res {
-                    Token::Value(res) => res,
-                    _ => {
-                        return Err(format!("SYNTAX ERROR: Condition is missing value at {}", res))
+                val = match tokens.next() {
+                    Some(res) => match res {
+                        Token::Value(res) => res,
+                        _ => {
+                            return Err(format!("SYNTAX ERROR: Condition is missing value at {}", res))
+                        }
+                    },
+                    None => {
+                        return Err("SYNTAX ERROR: Conditions should consist of an attribute, an operator and a value".to_string())
                     }
-                },
-                None => {
-                    return Err("SYNTAX ERROR: Conditions should consist of an attribute, an operator and a value".to_string())
-                }
-            };
+                };
+            } else if let Token::Value(res) = attr_t {
+                // every condition should be made up of 3 tokens
+                val = res;
 
-            // validate conditions have correct types, e.g. name can not equal a number so should throw an error, types are string, int, float, bool
+                op = match tokens.next() {
+                    Some(res) => match res {
+                        Token::Operator(res) => res,
+                        _ => {
+                            return Err(format!("SYNTAX ERROR: Condition is missing operator at {}", res))
+                        }
+                    },
+                    None => {
+                        return Err("SYNTAX ERROR: Conditions should consist of an attribute, an operator and a value".to_string())
+                    }
+                };
 
-            // when it comes to evaluating the conditions on each row, convert each condition into a boolean value of true or false and simplify it down to a single boolean using boolean algebra rules
+                attr = match tokens.next() {
+                    Some(res) => match res {
+                        Token::Attribute(res) => res,
+                        _ => {
+                            return Err(format!("SYNTAX ERROR: Condition is missing value at {}", res))
+                        }
+                    },
+                    None => {
+                        return Err("SYNTAX ERROR: Conditions should consist of an attribute, an operator and a value".to_string())
+                    }
+                };
+            } else {
+                return Err(format!("SYNTAX ERROR: Condition is missing attribute at {}", attr_t))
+            }
 
             let temp = Condition {
                 attribute: attr,

@@ -1,6 +1,7 @@
 use crate::app_context::AppContext;
 use crate::query::condition::{Condition, compute_conditions};
 use crate::query::data::{AlbumData, KeyAccess, PlaylistData, TrackData};
+use crate::query::display::DataDisplay;
 use crate::query::tokenise::DataSource;
 
 #[derive(Debug)]
@@ -23,21 +24,21 @@ impl SelectStatement {
         // gather targets
         match &self.source {
             DataSource::Playlists => {
-                self.playlists(match &cx.data.playlist_data {
+                let valid = self.playlists(match &cx.data.playlist_data {
                     Some(playlists) => playlists.clone(),
                     None => return Err("Playlist data not fetched.".to_string()),
                 })?;
 
-                // display results
-            }
+                DataDisplay::table(valid, self.targets.clone())
+            },
             DataSource::SavedAlbums => {
-                self.albums(match &cx.data.saved_album_data {
+                let valid = self.albums(match &cx.data.saved_album_data {
                     Some(albums) => albums.clone(),
                     None => return Err("Playlist data not fetched.".to_string()),
                 })?;
 
-                // display results
-            }
+                DataDisplay::table(valid, self.targets.clone())
+            },
             DataSource::Playlist(res) => {
                 let mut data: Option<&Vec<TrackData>> = None;
 
@@ -59,12 +60,8 @@ impl SelectStatement {
 
                 let valid = self.tracks(data.unwrap().clone())?;
 
-                for i in valid {
-                    println!("{:?}", i.access(self.targets[0].clone()))
-                }
-
-                // display results
-            }
+                DataDisplay::table(valid, self.targets.clone())
+            },
             DataSource::SavedAlbum(res) => {
                 let mut data: Option<&Vec<TrackData>> = None;
 
@@ -83,13 +80,12 @@ impl SelectStatement {
                     return Err(format!("No saved album with the name {}.", res));
                 }
 
-                self.tracks(data.unwrap().clone())?;
+                let valid = self.tracks(data.unwrap().clone())?;
 
-                // display results
+                DataDisplay::table(valid, self.targets.clone())
             }
         }
 
-        // apply conditions
         // apply aggregations
 
         Ok(())
@@ -109,15 +105,31 @@ impl SelectStatement {
         Ok(valid)
     }
 
-    fn playlists(&self, data: Vec<PlaylistData>) -> Result<(), String> {
+    fn playlists(&self, data: Vec<PlaylistData>) -> Result<Vec<PlaylistData>, String> {
+        let mut valid: Vec<PlaylistData> = Vec::new();
+
         for i in data {
-            println!("{:?}", i.access(self.targets[0].clone())?)
+            if self.conditions.is_none()
+                || compute_conditions(&i, self.conditions.clone().unwrap())?
+            {
+                valid.push(i);
+            }
         }
 
-        Ok(())
+        Ok(valid)
     }
 
-    fn albums(&self, data: Vec<AlbumData>) -> Result<(), String> {
-        Ok(())
+    fn albums(&self, data: Vec<AlbumData>) -> Result<Vec<AlbumData>, String> {
+        let mut valid: Vec<AlbumData> = Vec::new();
+
+        for i in data {
+            if self.conditions.is_none()
+                || compute_conditions(&i, self.conditions.clone().unwrap())?
+            {
+                valid.push(i);
+            }
+        }
+
+        Ok(valid)
     }
 }

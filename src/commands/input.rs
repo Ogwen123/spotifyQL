@@ -42,9 +42,14 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
             "SELECT id, name FROM playlist(all);".to_string(),
         )?,
         "/testl" => run_query(
-            // test logical operators
+            // test list operators
             cx,
-            "SELECT id, name FROM playlist(all) WHERE name == \"test\" AND id == 1;".to_string(),
+            "SELECT id, name FROM playlist(All) WHERE name in [\"Holiday\", \"Shout\"];".to_string(),
+        )?,
+        "/testlr" => run_query(
+            // test list operators reversed
+            cx,
+            "SELECT name FROM playlist(All) WHERE \"Arctic Monkeys\" in artists;".to_string(),
         )?,
         "/tests" => run_query(
             // test simple query
@@ -59,7 +64,7 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
         "/testp" => run_query(
             // test playlist data
             cx,
-            "SELECT name FROM PLAYLISTS;".to_string(),
+            "SELECT name FROM PLAYLIST(All) WHERE name LIKE \"dancefloor\";".to_string(),
         )?,
         "/testb" => println!(
             "{:?}",

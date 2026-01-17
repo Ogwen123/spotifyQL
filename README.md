@@ -65,8 +65,9 @@ fetched data is cached in-memory so if the program is restarted all data needs t
  - [x] implement token refreshing
  - [ ] check for errors on api response
  - [x] gathering targets
- - [ ] applying conditions
+ - [x] applying conditions
  - [ ] displaying data
+ - [ ] add support for IN keyword and CONTAINS with arrays
  - [ ] make a date struct and change all current dates stored in strings to use it
  - [ ] output to a file?
  - [ ] make into a tui app?

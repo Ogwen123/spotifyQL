@@ -1,39 +1,11 @@
 use regex::Regex;
+use std::cmp::PartialEq;
 use std::fmt::{Display, Formatter};
+use std::collections::HashMap;
+use std::mem::discriminant;
 use std::str::FromStr;
 
 // TOKEN ENUMS
-// #[derive(Clone, PartialEq, Debug)]
-// pub enum Attribute {
-//     Id,
-//     Name,
-//     Artist,
-// }
-//
-// impl Attribute {
-//     fn _match(s: &String) -> Result<Self, ()> {
-//         match s.as_str() {
-//             "id" => Ok(Attribute::Id),
-//             "name" => Ok(Attribute::Name),
-//             "artist" => Ok(Attribute::Artist),
-//             _ => Err(()),
-//         }
-//     }
-// }
-//
-// impl Display for Attribute {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-//         write!(
-//             f,
-//             "{}",
-//             match self {
-//                 Attribute::Id => "Attribute(Id)",
-//                 Attribute::Name => "Attribute(Name)",
-//                 Attribute::Artist => "Attribute(Artist)",
-//             }
-//         )
-//     }
-// }
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum DataSource {
@@ -63,6 +35,7 @@ pub enum Operator {
     Equals,
     Like,
     NotEquals,
+    In
 }
 
 impl Display for Operator {
@@ -74,6 +47,7 @@ impl Display for Operator {
                 Operator::Equals => "Equals",
                 Operator::Like => "Like",
                 Operator::NotEquals => "NotEquals",
+                Operator::In => "In"
             }
         )
     }
@@ -111,8 +85,66 @@ impl Display for Logical {
 pub enum Value {
     Str(String),
     Int(i64),
-    Float(f32),
+    Float(f64),
     Bool(bool),
+    List(Vec<Value>),
+}
+
+impl Value {
+    pub fn compare(&self, value: Value, operator: Operator) -> Result<bool, String> {
+        match operator {
+            Operator::Equals => self.equals(value),
+            Operator::NotEquals => Ok(!self.equals(value)?),
+            Operator::Like => self.like(value),
+            Operator::In => self.in_list(value)
+        }
+    }
+
+    // TODO: actually write comparison code
+    fn equals(&self, value: Value) -> Result<bool, String> {
+        if self == &value {
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    fn like(&self, value: Value) -> Result<bool, String> {
+        if let Value::Str(first) = self && let Value::Str(second) = &value {
+            if first.to_lowercase().contains(second) {
+                Ok(true)
+            } else {
+                Ok(false)
+            }
+        } else {
+            Err("You can only use LIKE operator on strings".to_string())
+        }
+    }
+    
+    fn inner_in_list(list: Vec<Value>, val: Value) -> Result<bool, String> {
+        if list.len() == 0 {
+            return Ok(false)
+        }
+        if discriminant(&list[0]) == discriminant(&val) {
+            if list.contains(&val) {
+                Ok(true)
+            } else {
+                Ok(false)
+            }
+        } else {
+            Err("Mismatched types in 'IN' condition!".to_string())
+        }
+    }
+    
+    fn in_list(&self, value: Value) -> Result<bool, String> {
+        if let Value::List(res) = self {
+            Self::inner_in_list(res.clone(), value)
+        } else if let Value::List(res) = value {
+            Self::inner_in_list(res, self.clone())
+        } else {
+            return Err("".to_string())
+        }
+    }
 }
 
 impl Display for Value {
@@ -125,6 +157,7 @@ impl Display for Value {
                 Value::Int(res) => format!("Int({})", res),
                 Value::Float(res) => format!("Float({})", res),
                 Value::Bool(res) => format!("Bool({})", res),
+                Value::List(res) => format!("List({:?})", res),
             }
         )
     }
@@ -198,6 +231,7 @@ impl RawToken {
             "==" => return Ok(Token::Operator(Operator::Equals)),
             "!=" => return Ok(Token::Operator(Operator::NotEquals)),
             "LIKE" => return Ok(Token::Operator(Operator::Like)),
+            "IN" => return Ok(Token::Operator(Operator::In)),
             "AND" => return Ok(Token::Logical(Logical::And)),
             "OR" => return Ok(Token::Logical(Logical::Or)),
             "PLAYLIST" => {
@@ -221,6 +255,9 @@ impl RawToken {
                 let float_regex = Regex::new(r"^-?\d+.\d+$").map_err(|x| x.to_string())?;
                 let bool_regex = Regex::new(r"^true|false$").map_err(|x| x.to_string())?;
                 let str_regex = Regex::new(r"^[\w\s]+$").map_err(|x| x.to_string())?;
+                let str_list_regex = Regex::new(r#"^("[\w]+", [ ]?)*("[\w]+")$"#).map_err(|x| x.to_string())?;
+                let int_list_regex = Regex::new(r#"^([\d]+, [ ]?)*([\d]+)$"#).map_err(|x| x.to_string())?;
+                let float_list_regex = Regex::new(r#"^([\d]+.[\d]+, [ ]?)*([\d]+.[\d]+)$"#).map_err(|x| x.to_string())?;
 
                 if bool_regex.is_match(&self.identifier.as_str()) {
                     return Ok(Token::Value(Value::Bool(self.identifier == "true")));
@@ -235,7 +272,7 @@ impl RawToken {
 
                 if float_regex.is_match(self.identifier.as_str()) {
                     return Ok(Token::Value(Value::Float(
-                        f32::from_str(self.identifier.as_str())
+                        f64::from_str(self.identifier.as_str())
                             .map_err(|x| format!("FLOAT ERROR: {}", x.to_string()))?,
                     )));
                 }
@@ -248,13 +285,77 @@ impl RawToken {
                 if self.content.is_some() && self.identifier.len() == 0 {
                     let cont = self.clone().content.unwrap();
 
+                    if str_list_regex.is_match(cont.as_str()) {
+                        let items: Vec<Value> = cont.split(",").map(|x| {
+                            let mut buf = String::new();
+
+                            let mut add = false;
+
+                            for char in x.chars() {
+                                if !add {
+                                    if char == '"' {
+                                        add = true;
+                                    }
+                                } else {
+                                    if char == '"' {
+                                        return Value::Str(buf)
+                                    } else {
+                                        buf.push(char);
+                                    }
+                                }
+                            }
+
+                            return Value::Str(buf)
+                        }).collect::<Vec<Value>>();
+
+                        return Ok(Token::Value(Value::List(items)))
+                    }
+
+                    if int_list_regex.is_match(cont.as_str()) {
+                        let parsed_items = cont.replace(" ", "");
+                        let str_items = parsed_items.split(",");
+                        let mut items: Vec<Value> = Vec::new();
+
+                        for item in str_items {
+                            match i64::from_str(item) {
+                                Ok(res) => {
+                                    items.push(Value::Int(res))
+                                },
+                                Err(err) => {
+                                    return Err(format!("Could not parse {} into an int. ({})", item, err))
+                                }
+                            }
+                        }
+
+                        return Ok(Token::Value(Value::List(items)))
+                    }
+
+                    if float_list_regex.is_match(cont.as_str()) {
+                        let parsed_items = cont.replace(" ", "");
+                        let str_items = parsed_items.split(",");
+                        let mut items: Vec<Value> = Vec::new();
+
+                        for item in str_items {
+                            match f64::from_str(item) {
+                                Ok(res) => {
+                                    items.push(Value::Float(res))
+                                },
+                                Err(err) => {
+                                    return Err(format!("Could not parse {} into an int. ({})", item, err))
+                                }
+                            }
+                        }
+
+                        return Ok(Token::Value(Value::List(items)))
+                    }
+
                     if str_regex.is_match(cont.as_str()) {
                         return Ok(Token::Value(Value::Str(cont))); // remove the quotes from the string
                     }
                 }
             }
         };
-
+        println!("{:?}", self);
         Err("Found unknown token in input.".to_string())
     }
 
@@ -268,7 +369,7 @@ impl RawToken {
 }
 
 fn split_token(s: &String) -> RawToken {
-    let split_on = vec!['(', '"'];
+    let split_on = HashMap::from([('(', ')'), ('"', '"'), ('[', ']')]);
     let mut end_on: char = '.';
 
     let mut split = false;
@@ -277,12 +378,8 @@ fn split_token(s: &String) -> RawToken {
 
     for i in s.chars() {
         if split == false {
-            if split_on.contains(&i) {
-                match i {
-                    '(' => end_on = ')',
-                    '"' => end_on = '"',
-                    _ => {} // this case should never be hit
-                }
+            if split_on.keys().collect::<Vec<&char>>().contains(&&i) {
+                end_on = *split_on.get(&i).unwrap(); // letter must be a key to enter this condition so unwrapping here should be safe
 
                 split = true;
                 rt.content = Some(String::new())
@@ -311,6 +408,7 @@ pub fn tokenise(input: String) -> Result<Vec<Token>, String> {
     let mut terminated: bool = false;
 
     let mut end_on = '.';
+    let split_on = HashMap::from([('(', ')'), ('"', '"'), ('[', ']')]);
 
     while let Some(letter) = letters.next() {
         if letter == ';' {
@@ -332,13 +430,10 @@ pub fn tokenise(input: String) -> Result<Vec<Token>, String> {
             if group {
                 buffer.push(letter)
             }
-        } else if group == false && (letter == '(' || letter == '"') {
+        } else if group == false && (split_on.keys().collect::<Vec<&char>>().contains(&&letter)) {
             group = true;
-            match letter {
-                '(' => end_on = ')',
-                '"' => end_on = '"',
-                _ => {}
-            }
+            end_on = *split_on.get(&letter).ok_or("You should not see this error".to_string())?;
+
             buffer.push(letter);
         } else if group == true && letter == end_on {
             group = false;
