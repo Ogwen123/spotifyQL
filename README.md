@@ -67,7 +67,8 @@ fetched data is cached in-memory so if the program is restarted all data needs t
  - [x] gathering targets
  - [x] applying conditions
  - [ ] displaying data
- - [ ] add support for IN keyword and CONTAINS with arrays
+ - [x] add support for IN keyword with arrays
+ - [ ] add support for >, <, >=, <= for ints and floats
  - [ ] make a date struct and change all current dates stored in strings to use it
  - [ ] output to a file?
  - [ ] make into a tui app?

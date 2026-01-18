@@ -11,6 +11,23 @@ pub enum Aggregation {
     None,
 }
 
+pub enum AggregationResult {
+    Int(i64),
+    Float(f64)
+}
+
+impl Aggregation {
+    pub fn format(&self, attributes: Vec<String>) -> String{
+        let attr_str = attributes.join(", ");
+
+        match self {
+            Aggregation::Count => format!("COUNT({})", attr_str),
+            Aggregation::Average => format!("AVERAGE({})", attr_str),
+            Aggregation::None => "".to_string()
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct SelectStatement {
     pub aggregation: Aggregation,
