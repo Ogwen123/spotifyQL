@@ -1,4 +1,4 @@
-use std::any::{Any, TypeId};
+use std::collections::HashMap;
 use crate::query::data::KeyAccess;
 use crate::query::statements::{Aggregation, AggregationResult};
 
@@ -14,27 +14,39 @@ impl DataDisplay {
         }
     }
 
-    pub fn aggregation_table(aggregation: Aggregation, attributes: Vec<String>, value: AggregationResult) {
-        let mut display_buffer: Vec<String> = Vec::new();
-        let mut max_col: usize;
+    pub fn aggregation_table(aggregation: Aggregation, data: HashMap<String, AggregationResult>) {
+        let mut head_buffer: Vec<String> = Vec::new();
+        let mut body_buffer: Vec<String> = Vec::new();
+        let mut max_cols: Vec<usize> = Vec::new();
 
-        display_buffer.push(format!("{}", aggregation.format(attributes)));
-        max_col = display_buffer[0].len();
-        let info_line = match value {
-            AggregationResult::Int(res) => {
-                format!("{}", res)
-            },
-            AggregationResult::Float(res) => {
-                format!("{:2}", res)
+        data.iter().for_each(|(k, v)| {
+            let mut str = aggregation.format(k);
+
+            let mut info_line = match v {
+                AggregationResult::Int(res) => {
+                    format!("{}", res)
+                },
+                AggregationResult::Float(res) => {
+                    format!("{:.2}", res)
+                }
+            };
+
+            if info_line.len() > str.len() {
+                max_cols.push(info_line.len());
+                str = format!("{:<width$}", str, width = info_line.len());
+            } else {
+                max_cols.push(str.len());
+                info_line = format!("{:<width$}", info_line, width = str.len());
             }
-        };
 
-        if info_line.len() > max_col {
-            max_col = info_line.len()
-        }
-        display_buffer.push(format!("{:-<w$}", "", w = max_col));
-        display_buffer.push(info_line);
-        
-        println!("{}", display_buffer.join("\n"))
+            head_buffer.push(str);
+            body_buffer.push(info_line)
+        });
+
+        let sep_line = max_cols.iter().map(|len| {
+            return format!("{:-<w$}", "", w = len)
+        }).collect::<Vec<String>>().join("|");
+
+        println!("|{}|\n|{}|\n|{}|", head_buffer.join("|"), sep_line, body_buffer.join("|"))
     }
 }

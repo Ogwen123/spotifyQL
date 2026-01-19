@@ -1,8 +1,9 @@
+use std::collections::HashMap;
 use crate::app_context::AppContext;
 use crate::query::condition::{Condition, compute_conditions};
 use crate::query::data::{AlbumData, KeyAccess, PlaylistData, TrackData};
 use crate::query::display::DataDisplay;
-use crate::query::tokenise::DataSource;
+use crate::query::tokenise::{DataSource, Value};
 
 #[derive(Debug)]
 pub enum Aggregation {
@@ -11,13 +12,23 @@ pub enum Aggregation {
     None,
 }
 
+#[derive(Clone)]
 pub enum AggregationResult {
     Int(i64),
     Float(f64)
 }
 
 impl Aggregation {
-    pub fn format(&self, attributes: Vec<String>) -> String{
+    pub fn format(&self, attribute: &String) -> String{
+
+        match self {
+            Aggregation::Count => format!("COUNT({})", attribute),
+            Aggregation::Average => format!("AVERAGE({})", attribute),
+            Aggregation::None => "".to_string()
+        }
+    }
+    
+    pub fn format_multi(&self, attributes: Vec<String>) -> String{
         let attr_str = attributes.join(", ");
 
         match self {
@@ -37,7 +48,7 @@ pub struct SelectStatement {
 }
 
 impl SelectStatement {
-    pub fn run(&self, cx: &AppContext) -> Result<(), String> {
+    pub fn run(self, cx: &AppContext) -> Result<(), String> {
         // gather targets
         match &self.source {
             DataSource::Playlists => {
@@ -46,7 +57,7 @@ impl SelectStatement {
                     None => return Err("Playlist data not fetched.".to_string()),
                 })?;
 
-                DataDisplay::table(valid, self.targets.clone())
+                self.handle_display(valid)?
             },
             DataSource::SavedAlbums => {
                 let valid = self.albums(match &cx.data.saved_album_data {
@@ -54,7 +65,7 @@ impl SelectStatement {
                     None => return Err("Playlist data not fetched.".to_string()),
                 })?;
 
-                DataDisplay::table(valid, self.targets.clone())
+                self.handle_display(valid)?
             },
             DataSource::Playlist(res) => {
                 let mut data: Option<&Vec<TrackData>> = None;
@@ -77,7 +88,7 @@ impl SelectStatement {
 
                 let valid = self.tracks(data.unwrap().clone())?;
 
-                DataDisplay::table(valid, self.targets.clone())
+                self.handle_display(valid)?
             },
             DataSource::SavedAlbum(res) => {
                 let mut data: Option<&Vec<TrackData>> = None;
@@ -99,11 +110,49 @@ impl SelectStatement {
 
                 let valid = self.tracks(data.unwrap().clone())?;
 
-                DataDisplay::table(valid, self.targets.clone())
+                self.handle_display(valid)?
             }
-        }
+        };
 
         // apply aggregations
+
+        Ok(())
+    }
+
+    fn handle_display<T>(self, data: Vec<T>) -> Result<(), String> where T: KeyAccess {
+        match self.aggregation {
+            Aggregation::Count => {
+                let mut count_data: HashMap<String, AggregationResult> = HashMap::new();
+                let count = AggregationResult::Int(data.len() as i64);
+                
+                for i in self.targets {
+                    count_data.insert(i, count.clone());
+                }
+                
+                DataDisplay::aggregation_table(self.aggregation, count_data)
+            },
+            Aggregation::Average => {
+                let mut average_data: HashMap<String, AggregationResult> = HashMap::new();
+                let count = data.len() as f64;
+                
+                for i in self.targets {
+                    let mut total: f64 = 0f64;
+                    
+                    for j in &data {
+                        match j.access(&i)? {
+                            Value::Int(res) => {total += res as f64},
+                            Value::Float(res) => {total += res},
+                            _ => return Err(format!("Cannot average field {} as it is a non-numeric type.", i))
+                        };
+                    }
+                    
+                    average_data.insert(i, AggregationResult::Float(total/count));
+                }
+                
+                DataDisplay::aggregation_table(self.aggregation, average_data)
+            },
+            Aggregation::None => DataDisplay::table(data, self.targets.clone())
+        }
 
         Ok(())
     }

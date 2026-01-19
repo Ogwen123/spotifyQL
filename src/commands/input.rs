@@ -34,7 +34,7 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
         "/testf" => run_query(
             // test full run through
             cx,
-            "SELECT COUNT(name) FROM playlist(all) WHERE artist == \"Arctic Monkeys\";".to_string(),
+            "SELECT COUNT(name) FROM playlist(All) WHERE \"Arctic Monkeys\" IN artists;".to_string(),
         )?,
         "/testd" => run_query(
             // test double attributes
@@ -77,7 +77,6 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
             "SELECT name FROM PLAYLIST(test) WHERE name == \"Shout\" AND id LIKE \"test\" OR id LIKE \"test\" AND id LIKE \"test\";".to_string(),
         )?,
         _ => {
-            println!("{}", parsed_input);
             run_query(cx, parsed_input.to_string())?
         }
     }

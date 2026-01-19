@@ -355,7 +355,6 @@ impl RawToken {
                 }
             }
         };
-        println!("{:?}", self);
         Err("Found unknown token in input.".to_string())
     }
 
