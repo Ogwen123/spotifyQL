@@ -69,7 +69,7 @@ fetched data is cached in-memory so if the program is restarted all data needs t
  - [ ] displaying data
  - [x] add support for IN keyword with arrays
  - [x] add support for >, <, >=, <= for ints and floats
- - [ ] add support for negating conditions
+ - [ ] add support for NOT IN condition
  - [ ] add support for using * as a display target
  - [ ] make a date struct and change all current dates stored in strings to use it
  - [ ] output to a file?

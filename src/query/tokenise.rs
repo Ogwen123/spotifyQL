@@ -36,10 +36,11 @@ pub enum Operator {
     Like,
     NotEquals,
     In,
+    NotIn,
     Less,
     LessEqual,
     Greater,
-    GreaterEqual
+    GreaterEqual,
 }
 
 impl Display for Operator {
@@ -55,7 +56,8 @@ impl Display for Operator {
                 Operator::Less => "LessThan",
                 Operator::LessEqual => "LessThanOrEqual",
                 Operator::Greater => "GreaterThan",
-                Operator::GreaterEqual => "GreaterThanOrEqual"
+                Operator::GreaterEqual => "GreaterThanOrEqual",
+                Operator::NotIn => "NotIn"
             }
         )
     }
@@ -106,9 +108,10 @@ impl Value {
             Operator::Like => self.like(value),
             Operator::In => self.in_list(value),
             Operator::Less => self.less_than(value),
-                Operator::LessEqual => self.less_than_or_equal(value),
+            Operator::LessEqual => self.less_than_or_equal(value),
             Operator::Greater => self.greater_than(value),
-                Operator::GreaterEqual => self.greater_than_or_equal(value),
+            Operator::GreaterEqual => self.greater_than_or_equal(value),
+            Operator::NotIn => Ok(!self.in_list(value)?)
         }
     }
 
@@ -302,6 +305,7 @@ impl RawToken {
             ">=" => return Ok(Token::Operator(Operator::GreaterEqual)),
             "LIKE" => return Ok(Token::Operator(Operator::Like)),
             "IN" => return Ok(Token::Operator(Operator::In)),
+            "NOT" => return Ok(Token::Operator(Operator::NotIn)), // not can only be used before IN so it must be a NotIn operation
             "AND" => return Ok(Token::Logical(Logical::And)),
             "OR" => return Ok(Token::Logical(Logical::Or)),
             "PLAYLIST" => {

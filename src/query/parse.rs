@@ -11,6 +11,10 @@ fn safe_next(iter: &mut dyn Iterator<Item = Token>) -> Result<Token, String> {
 }
 
 pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
+    for i in _tokens.clone() {
+        print!("{} ", i)
+    }
+    println!();
     // if the tokens contain a COUNT then it's a SelectCount, otherwise it's a Select
     if _tokens.len() < 4 {
         return Err(
@@ -157,6 +161,15 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                     }
                 };
 
+                if op == Operator::NotIn { // ignore the IN token that should be after a NOT token
+                    if let Some(Token::Operator(res)) = tokens.next() {
+                        if res != Operator::In {
+                            return Err("SYNTAX ERROR: NOT can only be used to negate an IN operation.".to_string())
+
+                        }
+                    }
+                }
+
                 val = match tokens.next() {
                     Some(res) => match res {
                         Token::Value(res) => res,
@@ -183,6 +196,15 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                         return Err("SYNTAX ERROR: Conditions should consist of an attribute, an operator and a value".to_string())
                     }
                 };
+
+                if op == Operator::NotIn { // ignore the IN token that should be after a NOT token
+                    if let Some(Token::Operator(res)) = tokens.next() {
+                        if res != Operator::In {
+                            return Err("SYNTAX ERROR: NOT can only be used to negate an IN operation.".to_string())
+
+                        }
+                    }
+                }
 
                 attr = match tokens.next() {
                     Some(res) => match res {

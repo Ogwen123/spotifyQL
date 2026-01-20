@@ -76,6 +76,10 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
             cx,
             "SELECT name FROM PLAYLIST(test) WHERE name == \"Shout\" AND id LIKE \"test\" OR id LIKE \"test\" AND id LIKE \"test\";".to_string(),
         )?,
+        "/testni" => run_query(
+            cx,
+            "SELECT COUNT(name) FROM PLAYLIST(All) WHERE \"Arctic Monkeys\" NOT IN artists;".to_string(),
+        )?,
         _ => {
             run_query(cx, parsed_input.to_string())?
         }
