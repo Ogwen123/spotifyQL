@@ -27,7 +27,7 @@ impl Aggregation {
             Aggregation::None => "".to_string()
         }
     }
-    
+
     pub fn format_multi(&self, attributes: Vec<String>) -> String{
         let attr_str = attributes.join(", ");
 
@@ -57,7 +57,7 @@ impl SelectStatement {
                     None => return Err("Playlist data not fetched.".to_string()),
                 })?;
 
-                self.handle_display(valid)?
+                self.handle_aggregation(valid)?
             },
             DataSource::SavedAlbums => {
                 let valid = self.albums(match &cx.data.saved_album_data {
@@ -65,7 +65,7 @@ impl SelectStatement {
                     None => return Err("Playlist data not fetched.".to_string()),
                 })?;
 
-                self.handle_display(valid)?
+                self.handle_aggregation(valid)?
             },
             DataSource::Playlist(res) => {
                 let mut data: Option<&Vec<TrackData>> = None;
@@ -88,7 +88,7 @@ impl SelectStatement {
 
                 let valid = self.tracks(data.unwrap().clone())?;
 
-                self.handle_display(valid)?
+                self.handle_aggregation(valid)?
             },
             DataSource::SavedAlbum(res) => {
                 let mut data: Option<&Vec<TrackData>> = None;
@@ -110,7 +110,7 @@ impl SelectStatement {
 
                 let valid = self.tracks(data.unwrap().clone())?;
 
-                self.handle_display(valid)?
+                self.handle_aggregation(valid)?
             }
         };
 
@@ -119,25 +119,25 @@ impl SelectStatement {
         Ok(())
     }
 
-    fn handle_display<T>(self, data: Vec<T>) -> Result<(), String> where T: KeyAccess {
+    fn handle_aggregation<T>(self, data: Vec<T>) -> Result<(), String> where T: KeyAccess {
         match self.aggregation {
             Aggregation::Count => {
                 let mut count_data: HashMap<String, AggregationResult> = HashMap::new();
                 let count = AggregationResult::Int(data.len() as i64);
-                
+
                 for i in self.targets {
                     count_data.insert(i, count.clone());
                 }
-                
+
                 DataDisplay::aggregation_table(self.aggregation, count_data)
             },
             Aggregation::Average => {
                 let mut average_data: HashMap<String, AggregationResult> = HashMap::new();
                 let count = data.len() as f64;
-                
+
                 for i in self.targets {
                     let mut total: f64 = 0f64;
-                    
+
                     for j in &data {
                         match j.access(&i)? {
                             Value::Int(res) => {total += res as f64},
@@ -145,10 +145,10 @@ impl SelectStatement {
                             _ => return Err(format!("Cannot average field {} as it is a non-numeric type.", i))
                         };
                     }
-                    
+
                     average_data.insert(i, AggregationResult::Float(total/count));
                 }
-                
+
                 DataDisplay::aggregation_table(self.aggregation, average_data)
             },
             Aggregation::None => DataDisplay::table(data, self.targets.clone())

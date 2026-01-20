@@ -35,7 +35,11 @@ pub enum Operator {
     Equals,
     Like,
     NotEquals,
-    In
+    In,
+    Less,
+    LessEqual,
+    Greater,
+    GreaterEqual
 }
 
 impl Display for Operator {
@@ -47,7 +51,11 @@ impl Display for Operator {
                 Operator::Equals => "Equals",
                 Operator::Like => "Like",
                 Operator::NotEquals => "NotEquals",
-                Operator::In => "In"
+                Operator::In => "In",
+                Operator::Less => "LessThan",
+                Operator::LessEqual => "LessThanOrEqual",
+                Operator::Greater => "GreaterThan",
+                Operator::GreaterEqual => "GreaterThanOrEqual"
             }
         )
     }
@@ -96,7 +104,11 @@ impl Value {
             Operator::Equals => self.equals(value),
             Operator::NotEquals => Ok(!self.equals(value)?),
             Operator::Like => self.like(value),
-            Operator::In => self.in_list(value)
+            Operator::In => self.in_list(value),
+            Operator::Less => self.less_than(value),
+                Operator::LessEqual => self.less_than_or_equal(value),
+            Operator::Greater => self.greater_than(value),
+                Operator::GreaterEqual => self.greater_than_or_equal(value),
         }
     }
 
@@ -143,6 +155,60 @@ impl Value {
             Self::inner_in_list(res, self.clone())
         } else {
             return Err("".to_string())
+        }
+    }
+
+    fn extract_numerics(&self) -> Result<f64, ()> {
+        match self {
+            Value::Int(res) => Ok(*res as f64),
+            Value::Float(res) => Ok(*res),
+            _ => {
+                Err(())
+            }
+        }
+    }
+
+    fn less_than(&self, value: Value) -> Result<bool, String> {
+        let lhs: f64 = self.extract_numerics().map_err(|_| "Left and right hand sides of < operation must be numeric.".to_string())?;
+        let rhs: f64 = value.extract_numerics().map_err(|_| "Left and right hand sides of < operation must be numeric.".to_string())?;
+
+        if lhs < rhs {
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    fn less_than_or_equal(&self, value: Value) -> Result<bool, String> {
+        let lhs: f64 = self.extract_numerics().map_err(|_| "Left and right hand sides of <= operation must be numeric.".to_string())?;
+        let rhs: f64 = value.extract_numerics().map_err(|_| "Left and right hand sides of <= operation must be numeric.".to_string())?;
+
+        if lhs < rhs || self.equals(value)? {
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    fn greater_than(&self, value: Value) -> Result<bool, String> {
+        let lhs: f64 = self.extract_numerics().map_err(|_| "Left and right hand sides of > operation must be numeric.".to_string())?;
+        let rhs: f64 = value.extract_numerics().map_err(|_| "Left and right hand sides of > operation must be numeric.".to_string())?;
+
+        if lhs > rhs {
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    fn greater_than_or_equal(&self, value: Value) -> Result<bool, String> {
+        let lhs: f64 = self.extract_numerics().map_err(|_| "Left and right hand sides of >= operation must be numeric.".to_string())?;
+        let rhs: f64 = value.extract_numerics().map_err(|_| "Left and right hand sides of >= operation must be numeric.".to_string())?;
+
+        if lhs > rhs || self.equals(value)? {
+            Ok(true)
+        } else {
+            Ok(false)
         }
     }
 }
@@ -230,6 +296,10 @@ impl RawToken {
             "WHERE" => return Ok(Token::WHERE),
             "==" => return Ok(Token::Operator(Operator::Equals)),
             "!=" => return Ok(Token::Operator(Operator::NotEquals)),
+            "<" => return Ok(Token::Operator(Operator::Less)),
+            "<=" => return Ok(Token::Operator(Operator::LessEqual)),
+            ">" => return Ok(Token::Operator(Operator::Greater)),
+            ">=" => return Ok(Token::Operator(Operator::GreaterEqual)),
             "LIKE" => return Ok(Token::Operator(Operator::Like)),
             "IN" => return Ok(Token::Operator(Operator::In)),
             "AND" => return Ok(Token::Logical(Logical::And)),
