@@ -44,14 +44,14 @@ macro_rules! fatal {
     }};
 }
 
-macro_rules! success_nnl { // no new line
-    () => {
-        $crate::print!("\n")
-    };
-    ($($arg:tt)*) => {{
-        print!("\x1b[32m[SUCCESS]\x1b[0m {}", format!($($arg)*));
-    }};
-}
+// macro_rules! success_nnl { // no new line
+//     () => {
+//         $crate::print!("\n")
+//     };
+//     ($($arg:tt)*) => {{
+//         print!("\x1b[32m[SUCCESS]\x1b[0m {}", format!($($arg)*));
+//     }};
+// }
 
 macro_rules! info_nnl {
     () => {
@@ -63,23 +63,23 @@ macro_rules! info_nnl {
     }};
 }
 
-macro_rules! warning_nnl {
-    () => {
-        $crate::print!("\n")
-    };
-    ($($arg:tt)*) => {{
-        print!("\x1b[33m[WARNING]\x1b[0m {}", format!($($arg)*));
-    }};
-}
-
-macro_rules! fatal_nnl {
-    () => {
-        $crate::print!("\n")
-    };
-    ($($arg:tt)*) => {{
-        print!("\x1b[31m\x1b[1m[FATAL] {}\x1b[0m ", format!($($arg)*));
-    }};
-}
+// macro_rules! warning_nnl {
+//     () => {
+//         $crate::print!("\n")
+//     };
+//     ($($arg:tt)*) => {{
+//         print!("\x1b[33m[WARNING]\x1b[0m {}", format!($($arg)*));
+//     }};
+// }
+// 
+// macro_rules! fatal_nnl {
+//     () => {
+//         $crate::print!("\n")
+//     };
+//     ($($arg:tt)*) => {{
+//         print!("\x1b[31m\x1b[1m[FATAL] {}\x1b[0m ", format!($($arg)*));
+//     }};
+// }
 
 pub(crate) use error;
 pub(crate) use fatal;
@@ -87,7 +87,7 @@ pub(crate) use info;
 pub(crate) use success;
 pub(crate) use warning;
 
-pub(crate) use fatal_nnl;
+// pub(crate) use fatal_nnl;
 pub(crate) use info_nnl;
-pub(crate) use success_nnl;
-pub(crate) use warning_nnl;
+// pub(crate) use success_nnl;
+// pub(crate) use warning_nnl;

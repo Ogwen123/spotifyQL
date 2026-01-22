@@ -6,10 +6,10 @@ pub fn compute_conditions<T: KeyAccess + Debug>(
     data: &T,
     conditions: Condition,
 ) -> Result<bool, String> {
-    let mut is_valid = false;
+    let is_valid;
 
     let mut current_condition = conditions.clone();
-    let mut current_op: Logical = Logical::Or;
+    let mut current_op: Logical;
 
     // do the first condition outside loop to set up the tree
     let res = data

@@ -29,8 +29,6 @@ impl AppContext {
 
         Ok(cx)
     }
-
-    pub fn set_code_verifier(&mut self) {}
 }
 
 impl Default for AppContext {

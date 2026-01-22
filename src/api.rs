@@ -252,6 +252,11 @@ impl<'a> APIQuery {
                     }
                 };
 
+                if resp.status() != 200 {
+                    tx.send(Err(format!("API query failed with code {}", resp.status()))).expect("Failed to send success response down request channel. (1)");
+                    return
+                }
+
                 let body_result = resp.text().await;
 
                 let body = match body_result {

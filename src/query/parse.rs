@@ -1,4 +1,3 @@
-use std::mem::discriminant;
 use crate::query::condition::Condition;
 use crate::query::statements::{Aggregation, SelectStatement};
 use crate::query::tokenise::{DataSource, Logical, Operator, Token, Value};

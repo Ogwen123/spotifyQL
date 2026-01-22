@@ -27,16 +27,6 @@ impl Aggregation {
             Aggregation::None => "".to_string()
         }
     }
-
-    pub fn format_multi(&self, attributes: Vec<String>) -> String{
-        let attr_str = attributes.join(", ");
-
-        match self {
-            Aggregation::Count => format!("COUNT({})", attr_str),
-            Aggregation::Average => format!("AVERAGE({})", attr_str),
-            Aggregation::None => "".to_string()
-        }
-    }
 }
 
 #[derive(Debug)]
