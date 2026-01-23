@@ -39,7 +39,7 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
         "/testd" => run_query(
             // test double attributes
             cx,
-            "SELECT id, name FROM playlist(all);".to_string(),
+            "SELECT id, name FROM playlist(All);".to_string(),
         )?,
         "/testl" => run_query(
             // test list operators

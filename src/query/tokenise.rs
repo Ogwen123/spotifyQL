@@ -100,6 +100,18 @@ pub enum Value {
     List(Vec<Value>),
 }
 
+impl Display for Value {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            Value::Int(res) => res.to_string(),
+            Value::Float(res) => res.to_string(),
+            Value::Bool(res) => res.to_string(),
+            Value::Str(res) => res.to_string(),
+            Value::List(res) => res.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(",")
+        })
+    }
+}
+
 impl Value {
     pub fn compare(&self, value: Value, operator: Operator) -> Result<bool, String> {
         match operator {
@@ -213,22 +225,6 @@ impl Value {
         } else {
             Ok(false)
         }
-    }
-}
-
-impl Display for Value {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Value::Str(res) => format!("Str({})", res),
-                Value::Int(res) => format!("Int({})", res),
-                Value::Float(res) => format!("Float({})", res),
-                Value::Bool(res) => format!("Bool({})", res),
-                Value::List(res) => format!("List({:?})", res),
-            }
-        )
     }
 }
 

@@ -10,6 +10,10 @@ fn safe_next(iter: &mut dyn Iterator<Item = Token>) -> Result<Token, String> {
     }
 }
 
+fn split_aggregated_attributes(attributes: String) -> Vec<String> {
+    attributes.replace(" ", "").split(",").map(|x| x.to_string()).collect::<Vec<String>>()
+}
+
 pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
     for i in _tokens.clone() {
         print!("{} ", i)
@@ -48,7 +52,7 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                         ));
                     }
 
-                    targets.push(res);
+                    targets = split_aggregated_attributes(res);
                     aggregation = Aggregation::Count;
 
                     // cannot mix aggregation and normal attributes to this has to be the end of the attribute section
@@ -62,7 +66,7 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                         ));
                     }
 
-                    targets.push(res);
+                    targets = split_aggregated_attributes(res);
                     aggregation = Aggregation::Average;
 
                     // cannot mix aggregation and normal attributes to this has to be the end of the attribute section
