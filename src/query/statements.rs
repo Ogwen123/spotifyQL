@@ -141,7 +141,7 @@ impl SelectStatement {
 
                 DataDisplay::aggregation_table(self.aggregation, average_data)
             },
-            Aggregation::None => DataDisplay::table(data, self.targets.clone())
+            Aggregation::None => DataDisplay::table(data, self.targets.clone())?
         }
 
         Ok(())

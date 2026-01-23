@@ -11,6 +11,8 @@ pub trait KeyAccess {
     fn access<T>(&self, key: T) -> Result<DValue, String>
     where
         T: AsRef<str> + Display;
+
+    fn attributes() -> Vec<String>;
 }
 
 #[derive(Clone, Debug)]
@@ -48,6 +50,10 @@ impl KeyAccess for TrackData {
             )),
         }
     }
+
+    fn attributes() -> Vec<String> {
+        vec!["id", "name", "duration", "album_name", "album_id", "artists", "added_at", "popularity"].iter().map(|x| x.to_string()).collect::<Vec<String>>()
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -65,12 +71,16 @@ impl KeyAccess for PlaylistData {
             "id" => Ok(DValue::Str(self.id.clone())),
             "name" => Ok(DValue::Str(self.name.clone())),
             "tracks_api" => Ok(DValue::Str(self.tracks_api.clone())),
-            "track_content" => Ok(DValue::Int(self.track_count.clone().cast_signed())),
+            "track_count" => Ok(DValue::Int(self.track_count.clone().cast_signed())),
             _ => Err(format!(
                 "SYNTAX ERROR: {} is not a valid attribute for playlist data.",
                 key
             )),
         }
+    }
+
+    fn attributes() -> Vec<String> {
+        vec!["id", "name", "tracks_api", "track_count"].iter().map(|x| x.to_string()).collect::<Vec<String>>()
     }
 }
 
@@ -109,6 +119,10 @@ impl KeyAccess for AlbumData {
                 key
             )),
         }
+    }
+
+    fn attributes() -> Vec<String> {
+        vec!["id", "name", "track_count", "popularity", "album_type", "release_date", "artists", "saved_at", ].iter().map(|x| x.to_string()).collect::<Vec<String>>()
     }
 }
 

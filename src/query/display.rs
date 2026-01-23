@@ -5,13 +5,15 @@ use crate::query::statements::{Aggregation, AggregationResult};
 pub struct DataDisplay;
 
 impl DataDisplay {
-    pub fn table<T>(data: Vec<T>, attributes: Vec<String>) where T: KeyAccess {
+    pub fn table<T>(data: Vec<T>, attributes: Vec<String>) -> Result<(), String> where T: KeyAccess {
         for i in data {
             for attr in &attributes {
-                print!("{:?} ", i.access(attr))
+                print!("{:?} ", i.access(attr)?)
             }
             println!()
         }
+
+        Ok(())
     }
 
     pub fn aggregation_table(aggregation: Aggregation, data: HashMap<String, AggregationResult>) {

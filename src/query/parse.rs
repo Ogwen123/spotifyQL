@@ -1,4 +1,5 @@
 use crate::query::condition::Condition;
+use crate::query::data::{AlbumData, KeyAccess, PlaylistData, TrackData};
 use crate::query::statements::{Aggregation, SelectStatement};
 use crate::query::tokenise::{DataSource, Logical, Operator, Token, Value};
 
@@ -27,7 +28,9 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
     if statement_type == Token::SELECT {
         let mut aggregation = Aggregation::None;
         let mut targets: Vec<String> = Vec::new();
-
+        
+        let mut attribute_wild_card = false;
+        
         let mut reached_from = false;
         loop {
             // collect attributes
@@ -67,6 +70,14 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                 }
                 Token::Attribute(res) => {
                     targets.push(res);
+                },
+                Token::AttributeWildcard => {
+                    if targets.len() != 0 {
+                        return Err(format!("SYNTAX ERROR: Cannot mix wildcard with specific attributes at {}", attr))
+                    }
+                    
+                    attribute_wild_card = true; // need to wait to find the datasource token to get the attributes list
+                    break;
                 }
                 Token::FROM => {
                     reached_from = true;
@@ -76,7 +87,7 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
             }
         }
 
-        if targets.len() == 0 {
+        if targets.len() == 0 && attribute_wild_card == false {
             return Err("SYNTAX ERROR: No attributes defined after SELECT".to_string());
         }
 
@@ -101,7 +112,15 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                 ));
             }
         }
-
+        
+        if attribute_wild_card {
+            targets = match source {
+                DataSource::Playlist(_) | DataSource::SavedAlbum(_) => TrackData::attributes(),
+                DataSource::Playlists => PlaylistData::attributes(),
+                DataSource::SavedAlbums => AlbumData::attributes()
+            }
+        }
+        
         match tokens.next() {
             Some(w) => match w {
                 Token::WHERE => {}

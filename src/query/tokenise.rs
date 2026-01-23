@@ -235,6 +235,7 @@ impl Display for Value {
 #[derive(Clone, PartialEq)]
 pub enum Token {
     SELECT,
+    AttributeWildcard,
     COUNT(String),
     AVERAGE(String),
     FROM,
@@ -253,6 +254,7 @@ impl Display for Token {
             "{}",
             match self {
                 Token::SELECT => "SELECT".to_string(),
+                Token::AttributeWildcard => "AllAttributes".to_string(),
                 Token::COUNT(res) => format!("COUNT({})", res),
                 Token::AVERAGE(res) => format!("AVERAGE({})", res),
                 Token::FROM => "FROM".to_string(),
@@ -285,6 +287,7 @@ impl RawToken {
     fn build_token(self) -> Result<Token, String> {
         match self.identifier.as_str().to_uppercase().as_str() {
             "SELECT" => return Ok(Token::SELECT),
+            "*" => return Ok(Token::AttributeWildcard),
             "COUNT" => {
                 let attr = self.content.unwrap_or("".to_string());
 

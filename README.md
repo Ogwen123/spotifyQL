@@ -63,13 +63,13 @@ fetched data is cached in-memory so if the program is restarted all data needs t
  - [x] fix api query returning invalid access token
  - [x] code verifier must be hashed incorrectly
  - [x] implement token refreshing
- - [ ] check for errors on api response
+ - [x] check for errors on api response
  - [x] gathering targets
  - [x] applying conditions
  - [ ] displaying data
  - [x] add support for IN keyword with arrays
  - [x] add support for >, <, >=, <= for ints and floats
- - [ ] add support for NOT IN condition
+ - [x] add support for NOT IN condition
  - [ ] add support for using * as a display target
  - [ ] make a date struct and change all current dates stored in strings to use it
  - [ ] output to a file?
