@@ -18,8 +18,9 @@ impl DataDisplay {
         for row in data {
             let mut buf: Vec<String> = Vec::new();
             for (colindex, col) in attributes.iter().enumerate() {
-                let length = col.len();
-                buf.push(row.access(col)?.to_string());
+                let data = row.access(col)?.to_string();
+                let length = data.len();
+                buf.push(data);
 
                 if max_cols[colindex] < length {
                     max_cols[colindex] = length
@@ -31,23 +32,24 @@ impl DataDisplay {
 
         // add padding
 
-        for (index, x) in head_buffer.iter_mut().enumerate() {
-            *x = format!("{:<width$}", x, width = max_cols[index]);
-        }
+        head_buffer = head_buffer.iter().enumerate().map(|(index, col)| {
+            return format!("{:^width$}", col, width = max_cols[index]);
 
-        for (rowindex, row) in body_buffer.iter_mut().enumerate() {
+        }).collect::<Vec<String>>();
+
+        body_buffer = body_buffer.iter().enumerate().map(|(rowindex, row)| {
             let padded = row.iter().enumerate().map(|(colindex, col)| {
-                return format!("{:<width$}", col, width = max_cols[colindex]);
+                return format!("{:^width$}", col, width = max_cols[colindex]);
             }).collect::<Vec<String>>();
 
-            *row = padded;
-        }
+            return padded
+        }).collect::<Vec<Vec<String>>>();
 
         let sep_line = max_cols.iter().map(|len| {
             return format!("{:-<w$}", "", w = len)
         }).collect::<Vec<String>>().join("|");
 
-        println!("|{}|\n|{}|\n|{}|", head_buffer.join("|"), sep_line, body_buffer.iter().map(|x| x.join("|")).collect::<Vec<String>>().join("\n"));
+        println!("|{}|\n|{}|\n{}", head_buffer.join("|"), sep_line, body_buffer.iter().map(|x| format!("|{}|", x.join("|"))).collect::<Vec<String>>().join("\n"));
 
         Ok(())
     }

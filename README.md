@@ -67,6 +67,7 @@ fetched data is cached in-memory so if the program is restarted all data needs t
  - [x] gathering targets
  - [x] applying conditions
  - [ ] displaying data
+ - [ ] cache data
  - [x] add support for IN keyword with arrays
  - [x] add support for >, <, >=, <= for ints and floats
  - [x] add support for NOT IN condition
