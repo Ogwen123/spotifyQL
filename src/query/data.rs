@@ -188,9 +188,10 @@ pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), S
 }
 
 /// Extract data with complete error handling
-pub struct ResultParser;
+pub mod ResultParser {
+    use serde_json::Value;
+    use crate::query::data::{AlbumData, PlaylistData, TrackData};
 
-impl ResultParser {
     pub fn parse_playlists(str_data: String) -> Result<Vec<PlaylistData>, String> {
         let mut playlists: Vec<PlaylistData> = Vec::new();
         let val: Value = serde_json::from_str(str_data.as_str()).map_err(|x| x.to_string())?;

@@ -1,10 +1,8 @@
-use std::collections::HashMap;
-use crate::query::data::KeyAccess;
-use crate::query::statements::{Aggregation, AggregationResult};
+pub mod DataDisplay {
+    use std::collections::HashMap;
+    use crate::query::data::KeyAccess;
+    use crate::query::statements::{Aggregation, AggregationResult};
 
-pub struct DataDisplay;
-
-impl DataDisplay {
     pub fn table<T>(data: Vec<T>, attributes: Vec<String>) -> Result<(), String> where T: KeyAccess {
         let mut head_buffer: Vec<String> = Vec::new();
         let mut body_buffer: Vec<Vec<String>> = Vec::new();
