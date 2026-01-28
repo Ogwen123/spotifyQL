@@ -188,7 +188,7 @@ pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), S
 }
 
 /// Extract data with complete error handling
-pub mod ResultParser {
+pub mod result_parser {
     use serde_json::Value;
     use crate::query::data::{AlbumData, PlaylistData, TrackData};
 

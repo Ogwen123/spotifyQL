@@ -1,4 +1,4 @@
-pub mod DataDisplay {
+pub mod data_display {
     use std::collections::HashMap;
     use crate::query::data::KeyAccess;
     use crate::query::statements::{Aggregation, AggregationResult};

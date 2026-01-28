@@ -1,5 +1,5 @@
 use crate::app_context::AppContext;
-use crate::query::data::{AlbumData, PlaylistData, ResultParser, TrackData};
+use crate::query::data::{AlbumData, PlaylistData, result_parser, TrackData};
 use crate::utils::logger::fatal;
 use crate::utils::url::build_url;
 use regex::Regex;
@@ -82,7 +82,7 @@ impl APIQuery {
 
             let raw_data = query.send(cx)?;
 
-            let mut temp_playlists = &mut ResultParser::parse_playlists(raw_data)?;
+            let mut temp_playlists = &mut result_parser::parse_playlists(raw_data)?;
 
             // get playlist data
             for i in temp_playlists.iter_mut() {
@@ -126,7 +126,7 @@ impl APIQuery {
 
             let raw_data = query.send(cx)?;
 
-            let mut temp_albums = ResultParser::parse_albums(raw_data)?;
+            let mut temp_albums = result_parser::parse_albums(raw_data)?;
 
             for i in albums.iter_mut() {
                 let tracks = APIQuery::get_album_tracks(cx, i.id.clone())?;
@@ -174,7 +174,7 @@ impl APIQuery {
 
             let raw_data = query.send(cx)?;
 
-            let mut temp_tracks = ResultParser::parse_tracks(raw_data, &playlist_id)?;
+            let mut temp_tracks = result_parser::parse_tracks(raw_data, &playlist_id)?;
 
             let loaded_tracks = temp_tracks.len();
 
@@ -215,7 +215,7 @@ impl APIQuery {
 
             let raw_data = query.send(cx)?;
 
-            let mut temp_tracks = ResultParser::parse_tracks(raw_data, &playlist_id)?;
+            let mut temp_tracks = result_parser::parse_tracks(raw_data, &playlist_id)?;
 
             let loaded_tracks = temp_tracks.len();
 

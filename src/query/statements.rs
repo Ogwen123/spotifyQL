@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use crate::app_context::AppContext;
 use crate::query::condition::{Condition, compute_conditions};
 use crate::query::data::{AlbumData, KeyAccess, PlaylistData, TrackData};
-use crate::query::display::DataDisplay;
+use crate::query::display::data_display;
 use crate::query::tokenise::{DataSource, Value};
 
 #[derive(Debug)]
@@ -119,7 +119,7 @@ impl SelectStatement {
                     count_data.insert(i, count.clone());
                 }
 
-                DataDisplay::aggregation_table(self.aggregation, count_data)
+                data_display::aggregation_table(self.aggregation, count_data)
             },
             Aggregation::Average => {
                 let mut average_data: HashMap<String, AggregationResult> = HashMap::new();
@@ -139,9 +139,9 @@ impl SelectStatement {
                     average_data.insert(i, AggregationResult::Float(total/count));
                 }
 
-                DataDisplay::aggregation_table(self.aggregation, average_data)
+                data_display::aggregation_table(self.aggregation, average_data)
             },
-            Aggregation::None => DataDisplay::table(data, self.targets.clone())?
+            Aggregation::None => data_display::table(data, self.targets.clone())?
         }
 
         Ok(())
