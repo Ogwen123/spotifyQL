@@ -10,7 +10,7 @@ impl DataDisplay {
         let mut body_buffer: Vec<Vec<String>> = Vec::new();
         let mut max_cols: Vec<usize> = Vec::new();
 
-        for (index, i) in attributes.iter().enumerate() {
+        for i in attributes.iter() {
             max_cols.push(i.len());
             head_buffer.push(i.clone());
         }
@@ -37,7 +37,7 @@ impl DataDisplay {
 
         }).collect::<Vec<String>>();
 
-        body_buffer = body_buffer.iter().enumerate().map(|(rowindex, row)| {
+        body_buffer = body_buffer.iter().map(|row| {
             let padded = row.iter().enumerate().map(|(colindex, col)| {
                 return format!("{:^width$}", col, width = max_cols[colindex]);
             }).collect::<Vec<String>>();

@@ -66,12 +66,13 @@ fetched data is cached in-memory so if the program is restarted all data needs t
  - [x] check for errors on api response
  - [x] gathering targets
  - [x] applying conditions
- - [ ] displaying data
+ - [x] displaying data
+ - [ ] add user following data querying
  - [ ] cache data
  - [x] add support for IN keyword with arrays
  - [x] add support for >, <, >=, <= for ints and floats
  - [x] add support for NOT IN condition
- - [ ] add support for using * as a display target
+ - [x] add support for using * as a display target
  - [ ] make a date struct and change all current dates stored in strings to use it
  - [ ] output to a file?
  - [ ] make into a tui app?
