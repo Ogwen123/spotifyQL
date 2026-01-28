@@ -55,7 +55,7 @@ impl QueryType {
 static API_ENDPOINT: &str = "https://api.spotify.com/v1";
 static MAX_RESPONSE_ITEMS: usize = 50;
 
-impl<'a> APIQuery {
+impl APIQuery {
     /// Get all of a users playlists
     pub fn get_playlists(cx: &AppContext) -> Result<Vec<PlaylistData>, String> {
         let url = QueryType::UserPlaylist.make_endpoint(API_ENDPOINT, None);
