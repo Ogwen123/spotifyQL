@@ -1,7 +1,7 @@
 use regex::Regex;
 use std::cmp::PartialEq;
-use std::fmt::{Display, Formatter};
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 use std::mem::discriminant;
 use std::str::FromStr;
 
@@ -57,7 +57,7 @@ impl Display for Operator {
                 Operator::LessEqual => "LessThanOrEqual",
                 Operator::Greater => "GreaterThan",
                 Operator::GreaterEqual => "GreaterThanOrEqual",
-                Operator::NotIn => "NotIn"
+                Operator::NotIn => "NotIn",
             }
         )
     }
@@ -102,13 +102,21 @@ pub enum Value {
 
 impl Display for Value {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            Value::Int(res) => res.to_string(),
-            Value::Float(res) => res.to_string(),
-            Value::Bool(res) => res.to_string(),
-            Value::Str(res) => res.to_string(),
-            Value::List(res) => res.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(",")
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                Value::Int(res) => res.to_string(),
+                Value::Float(res) => res.to_string(),
+                Value::Bool(res) => res.to_string(),
+                Value::Str(res) => res.to_string(),
+                Value::List(res) => res
+                    .iter()
+                    .map(|x| x.to_string())
+                    .collect::<Vec<String>>()
+                    .join(","),
+            }
+        )
     }
 }
 
@@ -123,21 +131,19 @@ impl Value {
             Operator::LessEqual => self.less_than_or_equal(value),
             Operator::Greater => self.greater_than(value),
             Operator::GreaterEqual => self.greater_than_or_equal(value),
-            Operator::NotIn => Ok(!self.in_list(value)?)
+            Operator::NotIn => Ok(!self.in_list(value)?),
         }
     }
 
     // TODO: actually write comparison code
     fn equals(&self, value: Value) -> Result<bool, String> {
-        if self == &value {
-            Ok(true)
-        } else {
-            Ok(false)
-        }
+        if self == &value { Ok(true) } else { Ok(false) }
     }
 
     fn like(&self, value: Value) -> Result<bool, String> {
-        if let Value::Str(first) = self && let Value::Str(second) = &value {
+        if let Value::Str(first) = self
+            && let Value::Str(second) = &value
+        {
             if first.to_lowercase().contains(second) {
                 Ok(true)
             } else {
@@ -147,10 +153,10 @@ impl Value {
             Err("You can only use LIKE operator on strings".to_string())
         }
     }
-    
+
     fn inner_in_list(list: Vec<Value>, val: Value) -> Result<bool, String> {
         if list.len() == 0 {
-            return Ok(false)
+            return Ok(false);
         }
         if discriminant(&list[0]) == discriminant(&val) {
             if list.contains(&val) {
@@ -162,14 +168,14 @@ impl Value {
             Err("Mismatched types in 'IN' condition!".to_string())
         }
     }
-    
+
     fn in_list(&self, value: Value) -> Result<bool, String> {
         if let Value::List(res) = self {
             Self::inner_in_list(res.clone(), value)
         } else if let Value::List(res) = value {
             Self::inner_in_list(res, self.clone())
         } else {
-            return Err("".to_string())
+            return Err("".to_string());
         }
     }
 
@@ -177,26 +183,28 @@ impl Value {
         match self {
             Value::Int(res) => Ok(*res as f64),
             Value::Float(res) => Ok(*res),
-            _ => {
-                Err(())
-            }
+            _ => Err(()),
         }
     }
 
     fn less_than(&self, value: Value) -> Result<bool, String> {
-        let lhs: f64 = self.extract_numerics().map_err(|_| "Left and right hand sides of < operation must be numeric.".to_string())?;
-        let rhs: f64 = value.extract_numerics().map_err(|_| "Left and right hand sides of < operation must be numeric.".to_string())?;
+        let lhs: f64 = self
+            .extract_numerics()
+            .map_err(|_| "Left and right hand sides of < operation must be numeric.".to_string())?;
+        let rhs: f64 = value
+            .extract_numerics()
+            .map_err(|_| "Left and right hand sides of < operation must be numeric.".to_string())?;
 
-        if lhs < rhs {
-            Ok(true)
-        } else {
-            Ok(false)
-        }
+        if lhs < rhs { Ok(true) } else { Ok(false) }
     }
 
     fn less_than_or_equal(&self, value: Value) -> Result<bool, String> {
-        let lhs: f64 = self.extract_numerics().map_err(|_| "Left and right hand sides of <= operation must be numeric.".to_string())?;
-        let rhs: f64 = value.extract_numerics().map_err(|_| "Left and right hand sides of <= operation must be numeric.".to_string())?;
+        let lhs: f64 = self.extract_numerics().map_err(|_| {
+            "Left and right hand sides of <= operation must be numeric.".to_string()
+        })?;
+        let rhs: f64 = value.extract_numerics().map_err(|_| {
+            "Left and right hand sides of <= operation must be numeric.".to_string()
+        })?;
 
         if lhs < rhs || self.equals(value)? {
             Ok(true)
@@ -206,19 +214,23 @@ impl Value {
     }
 
     fn greater_than(&self, value: Value) -> Result<bool, String> {
-        let lhs: f64 = self.extract_numerics().map_err(|_| "Left and right hand sides of > operation must be numeric.".to_string())?;
-        let rhs: f64 = value.extract_numerics().map_err(|_| "Left and right hand sides of > operation must be numeric.".to_string())?;
+        let lhs: f64 = self
+            .extract_numerics()
+            .map_err(|_| "Left and right hand sides of > operation must be numeric.".to_string())?;
+        let rhs: f64 = value
+            .extract_numerics()
+            .map_err(|_| "Left and right hand sides of > operation must be numeric.".to_string())?;
 
-        if lhs > rhs {
-            Ok(true)
-        } else {
-            Ok(false)
-        }
+        if lhs > rhs { Ok(true) } else { Ok(false) }
     }
 
     fn greater_than_or_equal(&self, value: Value) -> Result<bool, String> {
-        let lhs: f64 = self.extract_numerics().map_err(|_| "Left and right hand sides of >= operation must be numeric.".to_string())?;
-        let rhs: f64 = value.extract_numerics().map_err(|_| "Left and right hand sides of >= operation must be numeric.".to_string())?;
+        let lhs: f64 = self.extract_numerics().map_err(|_| {
+            "Left and right hand sides of >= operation must be numeric.".to_string()
+        })?;
+        let rhs: f64 = value.extract_numerics().map_err(|_| {
+            "Left and right hand sides of >= operation must be numeric.".to_string()
+        })?;
 
         if lhs > rhs || self.equals(value)? {
             Ok(true)
@@ -328,9 +340,12 @@ impl RawToken {
                 let float_regex = Regex::new(r"^-?\d+.\d+$").map_err(|x| x.to_string())?;
                 let bool_regex = Regex::new(r"^true|false$").map_err(|x| x.to_string())?;
                 let str_regex = Regex::new(r"^[\w\s]+$").map_err(|x| x.to_string())?;
-                let str_list_regex = Regex::new(r#"^("[\w]+", [ ]?)*("[\w]+")$"#).map_err(|x| x.to_string())?;
-                let int_list_regex = Regex::new(r#"^([\d]+, [ ]?)*([\d]+)$"#).map_err(|x| x.to_string())?;
-                let float_list_regex = Regex::new(r#"^([\d]+.[\d]+, [ ]?)*([\d]+.[\d]+)$"#).map_err(|x| x.to_string())?;
+                let str_list_regex =
+                    Regex::new(r#"^("[\w]+", [ ]?)*("[\w]+")$"#).map_err(|x| x.to_string())?;
+                let int_list_regex =
+                    Regex::new(r#"^([\d]+, [ ]?)*([\d]+)$"#).map_err(|x| x.to_string())?;
+                let float_list_regex = Regex::new(r#"^([\d]+.[\d]+, [ ]?)*([\d]+.[\d]+)$"#)
+                    .map_err(|x| x.to_string())?;
 
                 if bool_regex.is_match(&self.identifier.as_str()) {
                     return Ok(Token::Value(Value::Bool(self.identifier == "true")));
@@ -359,29 +374,32 @@ impl RawToken {
                     let cont = self.clone().content.unwrap();
 
                     if str_list_regex.is_match(cont.as_str()) {
-                        let items: Vec<Value> = cont.split(",").map(|x| {
-                            let mut buf = String::new();
+                        let items: Vec<Value> = cont
+                            .split(",")
+                            .map(|x| {
+                                let mut buf = String::new();
 
-                            let mut add = false;
+                                let mut add = false;
 
-                            for char in x.chars() {
-                                if !add {
-                                    if char == '"' {
-                                        add = true;
-                                    }
-                                } else {
-                                    if char == '"' {
-                                        return Value::Str(buf)
+                                for char in x.chars() {
+                                    if !add {
+                                        if char == '"' {
+                                            add = true;
+                                        }
                                     } else {
-                                        buf.push(char);
+                                        if char == '"' {
+                                            return Value::Str(buf);
+                                        } else {
+                                            buf.push(char);
+                                        }
                                     }
                                 }
-                            }
 
-                            return Value::Str(buf)
-                        }).collect::<Vec<Value>>();
+                                return Value::Str(buf);
+                            })
+                            .collect::<Vec<Value>>();
 
-                        return Ok(Token::Value(Value::List(items)))
+                        return Ok(Token::Value(Value::List(items)));
                     }
 
                     if int_list_regex.is_match(cont.as_str()) {
@@ -391,16 +409,17 @@ impl RawToken {
 
                         for item in str_items {
                             match i64::from_str(item) {
-                                Ok(res) => {
-                                    items.push(Value::Int(res))
-                                },
+                                Ok(res) => items.push(Value::Int(res)),
                                 Err(err) => {
-                                    return Err(format!("Could not parse {} into an int. ({})", item, err))
+                                    return Err(format!(
+                                        "Could not parse {} into an int. ({})",
+                                        item, err
+                                    ));
                                 }
                             }
                         }
 
-                        return Ok(Token::Value(Value::List(items)))
+                        return Ok(Token::Value(Value::List(items)));
                     }
 
                     if float_list_regex.is_match(cont.as_str()) {
@@ -410,16 +429,17 @@ impl RawToken {
 
                         for item in str_items {
                             match f64::from_str(item) {
-                                Ok(res) => {
-                                    items.push(Value::Float(res))
-                                },
+                                Ok(res) => items.push(Value::Float(res)),
                                 Err(err) => {
-                                    return Err(format!("Could not parse {} into an int. ({})", item, err))
+                                    return Err(format!(
+                                        "Could not parse {} into an int. ({})",
+                                        item, err
+                                    ));
                                 }
                             }
                         }
 
-                        return Ok(Token::Value(Value::List(items)))
+                        return Ok(Token::Value(Value::List(items)));
                     }
 
                     if str_regex.is_match(cont.as_str()) {
@@ -504,7 +524,9 @@ pub fn tokenise(input: String) -> Result<Vec<Token>, String> {
             }
         } else if group == false && (split_on.keys().collect::<Vec<&char>>().contains(&&letter)) {
             group = true;
-            end_on = *split_on.get(&letter).ok_or("You should not see this error".to_string())?;
+            end_on = *split_on
+                .get(&letter)
+                .ok_or("You should not see this error".to_string())?;
 
             buffer.push(letter);
         } else if group == true && letter == end_on {

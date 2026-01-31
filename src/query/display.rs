@@ -1,9 +1,12 @@
 pub mod data_display {
-    use std::collections::HashMap;
     use crate::query::data::KeyAccess;
     use crate::query::statements::{Aggregation, AggregationResult};
+    use std::collections::HashMap;
 
-    pub fn table<T>(data: Vec<T>, attributes: Vec<String>) -> Result<(), String> where T: KeyAccess {
+    pub fn table<T>(data: Vec<T>, attributes: Vec<String>) -> Result<(), String>
+    where
+        T: KeyAccess,
+    {
         let mut head_buffer: Vec<String> = Vec::new();
         let mut body_buffer: Vec<Vec<String>> = Vec::new();
         let mut max_cols: Vec<usize> = Vec::new();
@@ -30,24 +33,45 @@ pub mod data_display {
 
         // add padding
 
-        head_buffer = head_buffer.iter().enumerate().map(|(index, col)| {
-            return format!("{:^width$}", col, width = max_cols[index]);
+        head_buffer = head_buffer
+            .iter()
+            .enumerate()
+            .map(|(index, col)| {
+                return format!("{:^width$}", col, width = max_cols[index]);
+            })
+            .collect::<Vec<String>>();
 
-        }).collect::<Vec<String>>();
+        body_buffer = body_buffer
+            .iter()
+            .map(|row| {
+                let padded = row
+                    .iter()
+                    .enumerate()
+                    .map(|(colindex, col)| {
+                        return format!("{:^width$}", col, width = max_cols[colindex]);
+                    })
+                    .collect::<Vec<String>>();
 
-        body_buffer = body_buffer.iter().map(|row| {
-            let padded = row.iter().enumerate().map(|(colindex, col)| {
-                return format!("{:^width$}", col, width = max_cols[colindex]);
-            }).collect::<Vec<String>>();
+                return padded;
+            })
+            .collect::<Vec<Vec<String>>>();
 
-            return padded
-        }).collect::<Vec<Vec<String>>>();
+        let sep_line = max_cols
+            .iter()
+            .map(|len| return format!("{:-<w$}", "", w = len))
+            .collect::<Vec<String>>()
+            .join("|");
 
-        let sep_line = max_cols.iter().map(|len| {
-            return format!("{:-<w$}", "", w = len)
-        }).collect::<Vec<String>>().join("|");
-
-        println!("|{}|\n|{}|\n{}", head_buffer.join("|"), sep_line, body_buffer.iter().map(|x| format!("|{}|", x.join("|"))).collect::<Vec<String>>().join("\n"));
+        println!(
+            "|{}|\n|{}|\n{}",
+            head_buffer.join("|"),
+            sep_line,
+            body_buffer
+                .iter()
+                .map(|x| format!("|{}|", x.join("|")))
+                .collect::<Vec<String>>()
+                .join("\n")
+        );
 
         Ok(())
     }
@@ -63,7 +87,7 @@ pub mod data_display {
             let mut info_line = match v {
                 AggregationResult::Int(res) => {
                     format!("{}", res)
-                },
+                }
                 AggregationResult::Float(res) => {
                     format!("{:.2}", res)
                 }
@@ -81,10 +105,17 @@ pub mod data_display {
             body_buffer.push(info_line)
         });
 
-        let sep_line = max_cols.iter().map(|len| {
-            return format!("{:-<w$}", "", w = len)
-        }).collect::<Vec<String>>().join("|");
+        let sep_line = max_cols
+            .iter()
+            .map(|len| return format!("{:-<w$}", "", w = len))
+            .collect::<Vec<String>>()
+            .join("|");
 
-        println!("|{}|\n|{}|\n|{}|", head_buffer.join("|"), sep_line, body_buffer.join("|"))
+        println!(
+            "|{}|\n|{}|\n|{}|",
+            head_buffer.join("|"),
+            sep_line,
+            body_buffer.join("|")
+        )
     }
 }

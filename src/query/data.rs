@@ -1,9 +1,9 @@
-use std::fmt::Display;
 use crate::api::APIQuery;
 use crate::app_context::AppContext;
 use crate::query::{tokenise::DataSource, tokenise::Value as DValue};
 use crate::utils::utils::secs_now;
 use serde_json::Value;
+use std::fmt::Display;
 
 pub const DATA_TTL: u64 = 60 * 30;
 
@@ -28,7 +28,10 @@ pub struct TrackData {
 }
 
 impl KeyAccess for TrackData {
-    fn access<T>(&self, key: T) -> Result<DValue, String> where T: AsRef<str> + Display {
+    fn access<T>(&self, key: T) -> Result<DValue, String>
+    where
+        T: AsRef<str> + Display,
+    {
         match key.as_ref() {
             "id" => Ok(DValue::Str(self.id.clone())),
             "name" => Ok(DValue::Str(self.name.clone())),
@@ -52,7 +55,19 @@ impl KeyAccess for TrackData {
     }
 
     fn attributes() -> Vec<String> {
-        vec!["id", "name", "duration", "album_name", "album_id", "artists", "added_at", "popularity"].iter().map(|x| x.to_string()).collect::<Vec<String>>()
+        vec![
+            "id",
+            "name",
+            "duration",
+            "album_name",
+            "album_id",
+            "artists",
+            "added_at",
+            "popularity",
+        ]
+        .iter()
+        .map(|x| x.to_string())
+        .collect::<Vec<String>>()
     }
 }
 
@@ -66,7 +81,10 @@ pub struct PlaylistData {
 }
 
 impl KeyAccess for PlaylistData {
-    fn access<T>(&self, key: T) -> Result<DValue, String> where T: AsRef<str> + Display {
+    fn access<T>(&self, key: T) -> Result<DValue, String>
+    where
+        T: AsRef<str> + Display,
+    {
         match key.as_ref() {
             "id" => Ok(DValue::Str(self.id.clone())),
             "name" => Ok(DValue::Str(self.name.clone())),
@@ -80,7 +98,10 @@ impl KeyAccess for PlaylistData {
     }
 
     fn attributes() -> Vec<String> {
-        vec!["id", "name", "tracks_api", "track_count"].iter().map(|x| x.to_string()).collect::<Vec<String>>()
+        vec!["id", "name", "tracks_api", "track_count"]
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
     }
 }
 
@@ -98,7 +119,10 @@ pub struct AlbumData {
 }
 
 impl KeyAccess for AlbumData {
-    fn access<T>(&self, key: T) -> Result<DValue, String> where T: AsRef<str> + Display {
+    fn access<T>(&self, key: T) -> Result<DValue, String>
+    where
+        T: AsRef<str> + Display,
+    {
         match key.as_ref() {
             "id" => Ok(DValue::Str(self.id.clone())),
             "name" => Ok(DValue::Str(self.name.clone())),
@@ -122,7 +146,19 @@ impl KeyAccess for AlbumData {
     }
 
     fn attributes() -> Vec<String> {
-        vec!["id", "name", "track_count", "popularity", "album_type", "release_date", "artists", "saved_at", ].iter().map(|x| x.to_string()).collect::<Vec<String>>()
+        vec![
+            "id",
+            "name",
+            "track_count",
+            "popularity",
+            "album_type",
+            "release_date",
+            "artists",
+            "saved_at",
+        ]
+        .iter()
+        .map(|x| x.to_string())
+        .collect::<Vec<String>>()
     }
 }
 
@@ -189,8 +225,8 @@ pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), S
 
 /// Extract data with complete error handling
 pub mod result_parser {
-    use serde_json::Value;
     use crate::query::data::{AlbumData, PlaylistData, TrackData};
+    use serde_json::Value;
 
     pub fn parse_playlists(str_data: String) -> Result<Vec<PlaylistData>, String> {
         let mut playlists: Vec<PlaylistData> = Vec::new();

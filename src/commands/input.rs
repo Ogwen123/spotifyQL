@@ -6,6 +6,7 @@ use crate::query::tokenise::tokenise;
 use crate::utils::logger::{error, info, success};
 use std::io;
 use std::io::Write;
+use crate::utils::date::Date;
 
 fn exit() {
     success!("Exiting");
@@ -19,6 +20,12 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
             return Ok(());
         }
         "/test" => {
+            info!("testing date parsing");
+            let dates = vec!["12/12/25", "12/2025", "2025", "12-12/25", "12-2025", "2025"];
+            for i in dates {
+                println!("{} parsed as {:?}", i, Date::new(i.to_string()))
+            }
+
             info!("testing api querying");
             APIQuery::get_playlists(cx)?;
 

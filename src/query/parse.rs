@@ -11,7 +11,11 @@ fn safe_next(iter: &mut dyn Iterator<Item = Token>) -> Result<Token, String> {
 }
 
 fn split_aggregated_attributes(attributes: String) -> Vec<String> {
-    attributes.replace(" ", "").split(",").map(|x| x.to_string()).collect::<Vec<String>>()
+    attributes
+        .replace(" ", "")
+        .split(",")
+        .map(|x| x.to_string())
+        .collect::<Vec<String>>()
 }
 
 pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
@@ -32,9 +36,9 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
     if statement_type == Token::SELECT {
         let mut aggregation = Aggregation::None;
         let mut targets: Vec<String> = Vec::new();
-        
+
         let mut attribute_wild_card = false;
-        
+
         let mut reached_from = false;
         loop {
             // collect attributes
@@ -74,12 +78,15 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                 }
                 Token::Attribute(res) => {
                     targets.push(res);
-                },
+                }
                 Token::AttributeWildcard => {
                     if targets.len() != 0 {
-                        return Err(format!("SYNTAX ERROR: Cannot mix wildcard with specific attributes at {}", attr))
+                        return Err(format!(
+                            "SYNTAX ERROR: Cannot mix wildcard with specific attributes at {}",
+                            attr
+                        ));
                     }
-                    
+
                     attribute_wild_card = true; // need to wait to find the datasource token to get the attributes list
                     break;
                 }
@@ -116,15 +123,15 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                 ));
             }
         }
-        
+
         if attribute_wild_card {
             targets = match source {
                 DataSource::Playlist(_) | DataSource::SavedAlbum(_) => TrackData::attributes(),
                 DataSource::Playlists => PlaylistData::attributes(),
-                DataSource::SavedAlbums => AlbumData::attributes()
+                DataSource::SavedAlbums => AlbumData::attributes(),
             }
         }
-        
+
         match tokens.next() {
             Some(w) => match w {
                 Token::WHERE => {}
@@ -183,11 +190,14 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                     }
                 };
 
-                if op == Operator::NotIn { // ignore the IN token that should be after a NOT token
+                if op == Operator::NotIn {
+                    // ignore the IN token that should be after a NOT token
                     if let Some(Token::Operator(res)) = tokens.next() {
                         if res != Operator::In {
-                            return Err("SYNTAX ERROR: NOT can only be used to negate an IN operation.".to_string())
-
+                            return Err(
+                                "SYNTAX ERROR: NOT can only be used to negate an IN operation."
+                                    .to_string(),
+                            );
                         }
                     }
                 }
@@ -219,11 +229,14 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                     }
                 };
 
-                if op == Operator::NotIn { // ignore the IN token that should be after a NOT token
+                if op == Operator::NotIn {
+                    // ignore the IN token that should be after a NOT token
                     if let Some(Token::Operator(res)) = tokens.next() {
                         if res != Operator::In {
-                            return Err("SYNTAX ERROR: NOT can only be used to negate an IN operation.".to_string())
-
+                            return Err(
+                                "SYNTAX ERROR: NOT can only be used to negate an IN operation."
+                                    .to_string(),
+                            );
                         }
                     }
                 }
@@ -240,7 +253,10 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                     }
                 };
             } else {
-                return Err(format!("SYNTAX ERROR: Condition is missing attribute at {}", attr_t))
+                return Err(format!(
+                    "SYNTAX ERROR: Condition is missing attribute at {}",
+                    attr_t
+                ));
             }
 
             let temp = Condition {

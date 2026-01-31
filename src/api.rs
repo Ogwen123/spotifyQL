@@ -1,5 +1,5 @@
 use crate::app_context::AppContext;
-use crate::query::data::{AlbumData, PlaylistData, result_parser, TrackData};
+use crate::query::data::{AlbumData, PlaylistData, TrackData, result_parser};
 use crate::utils::logger::fatal;
 use crate::utils::url::build_url;
 use regex::Regex;
@@ -253,8 +253,9 @@ impl APIQuery {
                 };
 
                 if resp.status() != 200 {
-                    tx.send(Err(format!("API query failed with code {}", resp.status()))).expect("Failed to send success response down request channel. (1)");
-                    return
+                    tx.send(Err(format!("API query failed with code {}", resp.status())))
+                        .expect("Failed to send success response down request channel. (1)");
+                    return;
                 }
 
                 let body_result = resp.text().await;

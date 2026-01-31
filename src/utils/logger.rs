@@ -71,7 +71,7 @@ macro_rules! info_nnl {
 //         print!("\x1b[33m[WARNING]\x1b[0m {}", format!($($arg)*));
 //     }};
 // }
-// 
+//
 // macro_rules! fatal_nnl {
 //     () => {
 //         $crate::print!("\n")

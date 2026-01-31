@@ -1,9 +1,9 @@
-use std::collections::HashMap;
 use crate::app_context::AppContext;
 use crate::query::condition::{Condition, compute_conditions};
 use crate::query::data::{AlbumData, KeyAccess, PlaylistData, TrackData};
 use crate::query::display::data_display;
 use crate::query::tokenise::{DataSource, Value};
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub enum Aggregation {
@@ -15,16 +15,15 @@ pub enum Aggregation {
 #[derive(Clone)]
 pub enum AggregationResult {
     Int(i64),
-    Float(f64)
+    Float(f64),
 }
 
 impl Aggregation {
-    pub fn format(&self, attribute: &String) -> String{
-
+    pub fn format(&self, attribute: &String) -> String {
         match self {
             Aggregation::Count => format!("COUNT({})", attribute),
             Aggregation::Average => format!("AVERAGE({})", attribute),
-            Aggregation::None => "".to_string()
+            Aggregation::None => "".to_string(),
         }
     }
 }
@@ -48,7 +47,7 @@ impl SelectStatement {
                 })?;
 
                 self.handle_aggregation(valid)?
-            },
+            }
             DataSource::SavedAlbums => {
                 let valid = self.albums(match &cx.data.saved_album_data {
                     Some(albums) => albums.clone(),
@@ -56,7 +55,7 @@ impl SelectStatement {
                 })?;
 
                 self.handle_aggregation(valid)?
-            },
+            }
             DataSource::Playlist(res) => {
                 let mut data: Option<&Vec<TrackData>> = None;
 
@@ -79,7 +78,7 @@ impl SelectStatement {
                 let valid = self.tracks(data.unwrap().clone())?;
 
                 self.handle_aggregation(valid)?
-            },
+            }
             DataSource::SavedAlbum(res) => {
                 let mut data: Option<&Vec<TrackData>> = None;
 
@@ -109,7 +108,10 @@ impl SelectStatement {
         Ok(())
     }
 
-    fn handle_aggregation<T>(self, data: Vec<T>) -> Result<(), String> where T: KeyAccess {
+    fn handle_aggregation<T>(self, data: Vec<T>) -> Result<(), String>
+    where
+        T: KeyAccess,
+    {
         match self.aggregation {
             Aggregation::Count => {
                 let mut count_data: HashMap<String, AggregationResult> = HashMap::new();
@@ -120,7 +122,7 @@ impl SelectStatement {
                 }
 
                 data_display::aggregation_table(self.aggregation, count_data)
-            },
+            }
             Aggregation::Average => {
                 let mut average_data: HashMap<String, AggregationResult> = HashMap::new();
                 let count = data.len() as f64;
@@ -130,18 +132,23 @@ impl SelectStatement {
 
                     for j in &data {
                         match j.access(&i)? {
-                            Value::Int(res) => {total += res as f64},
-                            Value::Float(res) => {total += res},
-                            _ => return Err(format!("Cannot average field {} as it is a non-numeric type.", i))
+                            Value::Int(res) => total += res as f64,
+                            Value::Float(res) => total += res,
+                            _ => {
+                                return Err(format!(
+                                    "Cannot average field {} as it is a non-numeric type.",
+                                    i
+                                ));
+                            }
                         };
                     }
 
-                    average_data.insert(i, AggregationResult::Float(total/count));
+                    average_data.insert(i, AggregationResult::Float(total / count));
                 }
 
                 data_display::aggregation_table(self.aggregation, average_data)
-            },
-            Aggregation::None => data_display::table(data, self.targets.clone())?
+            }
+            Aggregation::None => data_display::table(data, self.targets.clone())?,
         }
 
         Ok(())

@@ -59,6 +59,13 @@ Album data is used when the data source is just `ALBUMS`
 
 fetched data is cached in-memory so if the program is restarted all data needs to be refreshed, in-memory cached data has a TTL of 30 minutes.
 
+## Dates
+Dates must be delimited by either `-` or `/` and must in the `dd/mm/yyyy` or `dd/mm/yy` layout.
+
+You can also provide just the year (`yyyy`) or just the month and year (`mm/yyyy` or `mm/yy`)
+
+If using `dd/mm/yy` then 20yy will be used, unless that is in the future in which case 19yy will be used
+
 ## TODO
  - [x] fix api query returning invalid access token
  - [x] code verifier must be hashed incorrectly
