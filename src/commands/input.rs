@@ -3,10 +3,10 @@ use crate::app_context::AppContext;
 use crate::query::parse::parse;
 use crate::query::run::run_query;
 use crate::query::tokenise::tokenise;
+use crate::utils::date::Date;
 use crate::utils::logger::{error, info, success};
 use std::io;
 use std::io::Write;
-use crate::utils::date::Date;
 
 fn exit() {
     success!("Exiting");
