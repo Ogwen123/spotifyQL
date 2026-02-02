@@ -4,6 +4,7 @@ use crate::query::{tokenise::DataSource, tokenise::Value as DValue};
 use crate::utils::utils::secs_now;
 use serde_json::Value;
 use std::fmt::Display;
+use crate::utils::logger::info;
 
 pub const DATA_TTL: u64 = 60 * 30;
 
@@ -201,6 +202,9 @@ pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), S
                 cx.data.playlist_data = Some(APIQuery::get_playlists(cx)?);
                 cx.data.playlist_data_ct = secs_now();
             }
+            if cx.user_config.debug {
+                info!("Loaded playlist data")
+            }
         }
         DataSource::SavedAlbum(_) | DataSource::SavedAlbums => {
             let mut load = false;
@@ -216,6 +220,9 @@ pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), S
             if load {
                 cx.data.saved_album_data = Some(APIQuery::get_saved_albums(cx)?);
                 cx.data.saved_album_data_ct = secs_now();
+            }
+            if cx.user_config.debug {
+                info!("Loaded album data")
             }
         }
     }

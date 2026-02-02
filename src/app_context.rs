@@ -1,4 +1,5 @@
 use crate::auth::code::AuthFileContent;
+use crate::config::user_config::UserConfig;
 use crate::query::data::Data;
 use crate::utils::file::{File, read_file};
 
@@ -9,10 +10,11 @@ pub struct AppContext {
     pub refresh_token: String,
     pub expires_after: u64,
     pub data: Data,
+    pub user_config: UserConfig
 }
 
 impl AppContext {
-    pub fn new() -> Result<Self, String> {
+    pub fn load() -> Result<Self, String> {
         let mut cx = Self::default();
 
         let auth_file_contents = match read_file(File::Auth) {
@@ -26,7 +28,8 @@ impl AppContext {
         cx.token = auth_data.token;
         cx.refresh_token = auth_data.refresh_token;
         cx.expires_after = auth_data.expires_after;
-
+        cx.user_config = UserConfig::load()?;
+        
         Ok(cx)
     }
 }
@@ -39,6 +42,7 @@ impl Default for AppContext {
             refresh_token: String::new(),
             expires_after: 0,
             data: Default::default(),
+            user_config: UserConfig::default()
         }
     }
 }

@@ -25,7 +25,7 @@ fn main() {
         return;
     }
 
-    let mut cx = match AppContext::new() {
+    let mut cx = match AppContext::load() {
         Ok(res) => res,
         Err(err) => {
             warning!("{}", err);

@@ -4,6 +4,7 @@ use crate::query::data::{AlbumData, KeyAccess, PlaylistData, TrackData};
 use crate::query::display::data_display;
 use crate::query::tokenise::{DataSource, Value};
 use std::collections::HashMap;
+use crate::utils::logger::info;
 
 #[derive(Debug)]
 pub enum Aggregation {
@@ -45,8 +46,12 @@ impl SelectStatement {
                     Some(playlists) => playlists.clone(),
                     None => return Err("Playlist data not fetched.".to_string()),
                 })?;
-
-                self.handle_aggregation(valid)?
+                
+                if cx.user_config.debug {
+                    info!("Filtered playlists")
+                }
+                
+                self.handle_aggregation_and_display(valid)?
             }
             DataSource::SavedAlbums => {
                 let valid = self.albums(match &cx.data.saved_album_data {
@@ -54,7 +59,11 @@ impl SelectStatement {
                     None => return Err("Playlist data not fetched.".to_string()),
                 })?;
 
-                self.handle_aggregation(valid)?
+                if cx.user_config.debug {
+                    info!("Filtered playlists")
+                }
+                
+                self.handle_aggregation_and_display(valid)?
             }
             DataSource::Playlist(res) => {
                 let mut data: Option<&Vec<TrackData>> = None;
@@ -77,7 +86,11 @@ impl SelectStatement {
 
                 let valid = self.tracks(data.unwrap().clone())?;
 
-                self.handle_aggregation(valid)?
+                if cx.user_config.debug {
+                    info!("Filtered playlist tracks")
+                }
+                
+                self.handle_aggregation_and_display(valid)?
             }
             DataSource::SavedAlbum(res) => {
                 let mut data: Option<&Vec<TrackData>> = None;
@@ -99,7 +112,11 @@ impl SelectStatement {
 
                 let valid = self.tracks(data.unwrap().clone())?;
 
-                self.handle_aggregation(valid)?
+                if cx.user_config.debug {
+                    info!("Filtered playlists")
+                }
+                
+                self.handle_aggregation_and_display(valid)?
             }
         };
 
@@ -108,7 +125,7 @@ impl SelectStatement {
         Ok(())
     }
 
-    fn handle_aggregation<T>(self, data: Vec<T>) -> Result<(), String>
+    fn handle_aggregation_and_display<T>(self, data: Vec<T>) -> Result<(), String>
     where
         T: KeyAccess,
     {
@@ -164,7 +181,7 @@ impl SelectStatement {
                 valid.push(i);
             }
         }
-
+        
         Ok(valid)
     }
 
@@ -178,7 +195,7 @@ impl SelectStatement {
                 valid.push(i);
             }
         }
-
+        
         Ok(valid)
     }
 
