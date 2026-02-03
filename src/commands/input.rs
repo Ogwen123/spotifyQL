@@ -14,83 +14,96 @@ fn exit() {
 }
 
 fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
-    match parsed_input {
-        "exit" | "/exit" | "quit" | "/quit" => {
-            exit();
-            return Ok(());
-        }
-        "/test" => {
-            info!("testing date parsing");
-            let dates = vec!["12/12/25", "12/2025", "2025", "12-12/25", "12-2025", "2025"];
-            for i in dates {
-                println!("{} parsed as {:?}", i, Date::new(i.to_string()))
+
+    if cx.user_config.debug {
+        match parsed_input {
+            "exit" | "/exit" | "quit" | "/quit" => {
+                exit();
+                return Ok(());
             }
+            "/test" => {
+                info!("testing date parsing");
+                let dates = vec!["12/12/25", "12/2025", "2025", "12-12/25", "12-2025", "2025"];
+                for i in dates {
+                    println!("{} parsed as {:?}", i, Date::new(i.to_string()))
+                }
 
-            info!("testing api querying");
-            APIQuery::get_playlists(cx)?;
+                info!("testing api querying");
+                APIQuery::get_playlists(cx)?;
 
-            info!("testing tokeniser");
-            let tokens = tokenise(
-                "SELECT COUNT(name) FROM playlist(all) WHERE artist == \"Arctic Monkeys\";"
-                    .to_string(),
-            )?;
+                info!("testing tokeniser");
+                let tokens = tokenise(
+                    "SELECT COUNT(name) FROM playlist(all) WHERE artist == \"Arctic Monkeys\";"
+                        .to_string(),
+                )?;
 
-            info!("testing token parsing");
-            println!("{:?}", parse(tokens)?);
+                info!("testing token parsing");
+                println!("{:?}", parse(tokens)?);
+            }
+            "/testf" => run_query(
+                // test full run through
+                cx,
+                "SELECT COUNT(name) FROM playlist(All) WHERE \"Arctic Monkeys\" IN artists;".to_string(),
+            )?,
+            "/testd" => run_query(
+                // test double attributes
+                cx,
+                "SELECT id, name FROM playlist(All);".to_string(),
+            )?,
+            "/testl" => run_query(
+                // test list operators
+                cx,
+                "SELECT id, name FROM playlist(All) WHERE name in [\"Holiday\", \"Shout\"];".to_string(),
+            )?,
+            "/testlr" => run_query(
+                // test list operators reversed
+                cx,
+                "SELECT name FROM playlist(All) WHERE \"Arctic Monkeys\" in artists;".to_string(),
+            )?,
+            "/tests" => run_query(
+                // test simple query
+                cx,
+                "SELECT name FROM playlist(All);".to_string(),
+            )?,
+            "/testa" => println!(
+                // test fetching album data
+                "{:?}",
+                parse(tokenise("SELECT name FROM ALBUMS;".to_string())?)?
+            ),
+            "/testp" => run_query(
+                // test playlist data
+                cx,
+                "SELECT name FROM PLAYLIST(All) WHERE name LIKE \"dancefloor\";".to_string(),
+            )?,
+            "/testb" => println!(
+                "{:?}",
+                parse(tokenise(
+                    "SELECT name FROM album WHERE name == true;".to_string()
+                )?)?
+            ), // test booleans in conditions,
+            "/testc" => run_query(
+                cx,
+                "SELECT name FROM PLAYLIST(test) WHERE name == \"Shout\" AND id LIKE \"test\" OR id LIKE \"test\" AND id LIKE \"test\";".to_string(),
+            )?,
+            "/testni" => run_query(
+                cx,
+                "SELECT COUNT(name) FROM PLAYLIST(All) WHERE \"Arctic Monkeys\" NOT IN artists;".to_string(),
+            )?,
+            _ => {
+                run_query(cx, parsed_input.to_string())?
+            }
         }
-        "/testf" => run_query(
-            // test full run through
-            cx,
-            "SELECT COUNT(name) FROM playlist(All) WHERE \"Arctic Monkeys\" IN artists;".to_string(),
-        )?,
-        "/testd" => run_query(
-            // test double attributes
-            cx,
-            "SELECT id, name FROM playlist(All);".to_string(),
-        )?,
-        "/testl" => run_query(
-            // test list operators
-            cx,
-            "SELECT id, name FROM playlist(All) WHERE name in [\"Holiday\", \"Shout\"];".to_string(),
-        )?,
-        "/testlr" => run_query(
-            // test list operators reversed
-            cx,
-            "SELECT name FROM playlist(All) WHERE \"Arctic Monkeys\" in artists;".to_string(),
-        )?,
-        "/tests" => run_query(
-            // test simple query
-            cx,
-            "SELECT name FROM playlist(All);".to_string(),
-        )?,
-        "/testa" => println!(
-            // test fetching album data
-            "{:?}",
-            parse(tokenise("SELECT name FROM ALBUMS;".to_string())?)?
-        ),
-        "/testp" => run_query(
-            // test playlist data
-            cx,
-            "SELECT name FROM PLAYLIST(All) WHERE name LIKE \"dancefloor\";".to_string(),
-        )?,
-        "/testb" => println!(
-            "{:?}",
-            parse(tokenise(
-                "SELECT name FROM album WHERE name == true;".to_string()
-            )?)?
-        ), // test booleans in conditions,
-        "/testc" => run_query(
-            cx,
-            "SELECT name FROM PLAYLIST(test) WHERE name == \"Shout\" AND id LIKE \"test\" OR id LIKE \"test\" AND id LIKE \"test\";".to_string(),
-        )?,
-        "/testni" => run_query(
-            cx,
-            "SELECT COUNT(name) FROM PLAYLIST(All) WHERE \"Arctic Monkeys\" NOT IN artists;".to_string(),
-        )?,
-        _ => {
-            run_query(cx, parsed_input.to_string())?
+    } else {
+        match parsed_input {
+            "exit" | "/exit" | "quit" | "/quit" => {
+                exit();
+                return Ok(());
+            },
+            _ => run_query(cx, parsed_input.to_string())?
         }
     }
+
+
 
     Ok(())
 }
