@@ -1,15 +1,15 @@
-use serde::Deserialize;
-use crate::utils::file::{read_file, File};
+use crate::utils::file::{File, read_file};
 use crate::utils::logger::warning;
+use serde::Deserialize;
 
 #[derive(Default, Clone)]
 pub struct UserConfig {
-    pub debug: bool
+    pub debug: bool,
 }
 
 #[derive(Deserialize)]
 struct ConfigFileContent {
-    debug: bool
+    debug: bool,
 }
 
 impl UserConfig {
@@ -20,8 +20,8 @@ impl UserConfig {
             Ok(res) => res,
             Err(_) => {
                 warning!("Could not load user config, resorting to default");
-                return Ok(Self::default())
-            },
+                return Ok(Self::default());
+            }
         };
 
         let user_config: ConfigFileContent =

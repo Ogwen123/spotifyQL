@@ -2,6 +2,10 @@ use chrono::{Datelike, Utc};
 use std::cmp::Ordering;
 use std::str::FromStr;
 
+fn unix_time(date: &Date) -> u64 {
+    todo!()
+}
+
 #[derive(Debug)]
 pub enum DateScope {
     Day,   // dd/mm/yyyy
@@ -179,13 +183,13 @@ impl Date {
     fn has_equal_scope(&self, other: &Self) -> bool {
         let mut eq = true;
 
-        if (self.month.is_some() || self.month.is_some())
-            && (self.month.is_none() || self.month.is_none())
+        if (self.month.is_some() || other.month.is_some())
+            && (self.month.is_none() || other.month.is_none())
         {
             eq = false;
         }
 
-        if (self.day.is_some() || self.day.is_some()) && (self.day.is_none() || self.day.is_none())
+        if (self.day.is_some() || other.day.is_some()) && (self.day.is_none() || other.day.is_none())
         {
             eq = false;
         }
@@ -199,18 +203,18 @@ impl PartialEq<Self> for Date {
         let mut eq = true;
 
         if self.has_equal_scope(other) {
-            if self.year != self.year {
+            if self.year != other.year {
                 eq = false;
             }
 
             if self.month.is_some() {
-                if self.month.unwrap() != self.month.unwrap() {
+                if self.month.unwrap() != other.month.unwrap() {
                     eq = false;
                 }
             }
 
             if self.day.is_some() {
-                if self.day.unwrap() != self.day.unwrap() {
+                if self.day.unwrap() != other.day.unwrap() {
                     eq = false;
                 }
             }
@@ -224,22 +228,50 @@ impl PartialEq<Self> for Date {
 
 impl PartialOrd for Date {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        todo!()
+        if self == other {
+            Some(Ordering::Equal)
+        } else if self > other {
+            Some(Ordering::Greater)
+        } else if self < other {
+            Some(Ordering::Less)
+        } else {
+            None
+        }
     }
-
+    /*
+    if the full scope is not provided the earliest date is assumed,
+    e.g. given just 2000, for comparison purposes it is assumed that is it 01-01-2000
+    so 2000 < 01-02-2000
+    */
     fn lt(&self, other: &Self) -> bool {
-        todo!()
+        if unix_time(self) < unix_time(other) {
+            true
+        } else {
+            false
+        }
     }
 
     fn le(&self, other: &Self) -> bool {
-        todo!()
+        if unix_time(self) <= unix_time(other) {
+            true
+        } else {
+            false
+        }
     }
 
     fn gt(&self, other: &Self) -> bool {
-        todo!()
+        if unix_time(self) < unix_time(other) {
+            true
+        } else {
+            false
+        }
     }
 
     fn ge(&self, other: &Self) -> bool {
-        todo!()
+        if unix_time(self) <= unix_time(other) {
+            true
+        } else {
+            false
+        }
     }
 }

@@ -14,7 +14,6 @@ fn exit() {
 }
 
 fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
-
     if cx.user_config.debug {
         match parsed_input {
             "exit" | "/exit" | "quit" | "/quit" => {
@@ -98,12 +97,10 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
             "exit" | "/exit" | "quit" | "/quit" => {
                 exit();
                 return Ok(());
-            },
-            _ => run_query(cx, parsed_input.to_string())?
+            }
+            _ => run_query(cx, parsed_input.to_string())?,
         }
     }
-
-
 
     Ok(())
 }

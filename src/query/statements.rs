@@ -3,8 +3,8 @@ use crate::query::condition::{Condition, compute_conditions};
 use crate::query::data::{AlbumData, KeyAccess, PlaylistData, TrackData};
 use crate::query::display::data_display;
 use crate::query::tokenise::{DataSource, Value};
-use std::collections::HashMap;
 use crate::utils::logger::info;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub enum Aggregation {
@@ -46,11 +46,11 @@ impl SelectStatement {
                     Some(playlists) => playlists.clone(),
                     None => return Err("Playlist data not fetched.".to_string()),
                 })?;
-                
+
                 if cx.user_config.debug {
                     info!("Filtered playlists")
                 }
-                
+
                 self.handle_aggregation_and_display(valid)?
             }
             DataSource::SavedAlbums => {
@@ -62,7 +62,7 @@ impl SelectStatement {
                 if cx.user_config.debug {
                     info!("Filtered playlists")
                 }
-                
+
                 self.handle_aggregation_and_display(valid)?
             }
             DataSource::Playlist(res) => {
@@ -89,7 +89,7 @@ impl SelectStatement {
                 if cx.user_config.debug {
                     info!("Filtered playlist tracks")
                 }
-                
+
                 self.handle_aggregation_and_display(valid)?
             }
             DataSource::SavedAlbum(res) => {
@@ -115,7 +115,7 @@ impl SelectStatement {
                 if cx.user_config.debug {
                     info!("Filtered playlists")
                 }
-                
+
                 self.handle_aggregation_and_display(valid)?
             }
         };
@@ -181,7 +181,7 @@ impl SelectStatement {
                 valid.push(i);
             }
         }
-        
+
         Ok(valid)
     }
 
@@ -195,7 +195,7 @@ impl SelectStatement {
                 valid.push(i);
             }
         }
-        
+
         Ok(valid)
     }
 

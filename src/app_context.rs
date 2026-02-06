@@ -10,7 +10,7 @@ pub struct AppContext {
     pub refresh_token: String,
     pub expires_after: u64,
     pub data: Data,
-    pub user_config: UserConfig
+    pub user_config: UserConfig,
 }
 
 impl AppContext {
@@ -29,7 +29,7 @@ impl AppContext {
         cx.refresh_token = auth_data.refresh_token;
         cx.expires_after = auth_data.expires_after;
         cx.user_config = UserConfig::load()?;
-        
+
         Ok(cx)
     }
 }
@@ -42,7 +42,7 @@ impl Default for AppContext {
             refresh_token: String::new(),
             expires_after: 0,
             data: Default::default(),
-            user_config: UserConfig::default()
+            user_config: UserConfig::default(),
         }
     }
 }
