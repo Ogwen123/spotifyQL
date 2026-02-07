@@ -5,6 +5,7 @@ use crate::utils::logger::info;
 use crate::utils::utils::secs_now;
 use serde_json::Value;
 use std::fmt::Display;
+use crate::utils::date::Date;
 
 pub const DATA_TTL: u64 = 60 * 30;
 
@@ -21,6 +22,7 @@ pub struct TrackData {
     pub id: String,
     pub name: String,
     pub duration: u64,
+    pub release_date: Date,
     pub album_name: String,
     pub album_id: String,
     pub artists: Vec<String>,
@@ -37,6 +39,7 @@ impl KeyAccess for TrackData {
             "id" => Ok(DValue::Str(self.id.clone())),
             "name" => Ok(DValue::Str(self.name.clone())),
             "duration" => Ok(DValue::Int(self.duration.cast_signed())),
+            "release_date"=> Ok(DValue::Date(self.release_date.clone())),
             "album_name" => Ok(DValue::Str(self.album_name.clone())),
             "album_id" => Ok(DValue::Str(self.album_id.clone())),
             "artists" => Ok(DValue::List(
@@ -114,7 +117,7 @@ pub struct AlbumData {
     pub tracks: Vec<TrackData>,
     pub popularity: u8, // value between 0 and 100
     pub album_type: String,
-    pub release_date: String,
+    pub release_date: Date,
     pub artists: Vec<String>,
     pub saved_at: String,
 }
@@ -130,7 +133,7 @@ impl KeyAccess for AlbumData {
             "track_count" => Ok(DValue::Int(self.track_count.cast_signed())),
             "popularity" => Ok(DValue::Int(self.popularity.cast_signed().into())),
             "album_type" => Ok(DValue::Str(self.album_type.clone())),
-            "release_date" => Ok(DValue::Str(self.release_date.clone())),
+            "release_date" => Ok(DValue::Date(self.release_date.clone())),
             "artists" => Ok(DValue::List(
                 self.artists
                     .clone()
@@ -234,6 +237,7 @@ pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), S
 pub mod result_parser {
     use crate::query::data::{AlbumData, PlaylistData, TrackData};
     use serde_json::Value;
+    use crate::utils::date::{Date, DateSource};
 
     pub fn parse_playlists(str_data: String) -> Result<Vec<PlaylistData>, String> {
         let mut playlists: Vec<PlaylistData> = Vec::new();
@@ -475,7 +479,7 @@ pub mod result_parser {
                         tracks: Vec::new(),
                         popularity: album_data.3,
                         album_type: album_data.4,
-                        release_date: album_data.5,
+                        release_date: Date::new(album_data.5, DateSource::Spotify)?,
                         artists: album_data.6,
                         saved_at: added_at,
                     })
@@ -593,8 +597,15 @@ pub mod result_parser {
                                             return Err("Value 'name' in field 'album' of field 'track' is an unexpected type.".to_string());
                                         }
                                     };
+                                    
+                                    let release_date = match &album["release_date"] {
+                                        Value::String(res) => res.clone(),
+                                        _ => {
+                                            return Err("Value 'release_date' in field 'album' for field 'track' is an unexpected type.".to_string())
+                                        }
+                                    };
 
-                                    (id, name)
+                                    (id, name, release_date)
                                 }
                                 _ => {
                                     return Err(format!(
@@ -637,6 +648,7 @@ pub mod result_parser {
                                 duration,
                                 album_data.0,
                                 album_data.1,
+                                album_data.2,
                                 artists,
                                 popularity,
                             )
@@ -654,9 +666,10 @@ pub mod result_parser {
                         duration: track_data.2,
                         album_id: track_data.3,
                         album_name: track_data.4,
-                        artists: track_data.5,
+                        release_date: Date::new(track_data.5, DateSource::Spotify)?,
+                        artists: track_data.6,
                         added_at,
-                        popularity: track_data.6,
+                        popularity: track_data.7,
                     })
                 }
                 _ => {

@@ -168,7 +168,7 @@ impl APIQuery {
                 limit: MAX_RESPONSE_ITEMS,
                 offset: MAX_RESPONSE_ITEMS * count,
                 fields: Some(String::from(
-                    "items(added_at,track(id,name,duration_ms,popularity,album(id,name),artists(id,name))",
+                    "items(added_at,track(id,name,duration_ms,popularity,album(id,name,release_date),artists(id,name))",
                 )),
             };
 
@@ -209,7 +209,7 @@ impl APIQuery {
                 limit: MAX_RESPONSE_ITEMS,
                 offset: MAX_RESPONSE_ITEMS * count,
                 fields: Some(String::from(
-                    "items(added_at,track(id,name,duration_ms,popularity,album(id,name),artists(id,name))",
+                    "items(added_at,track(id,name,duration_ms,popularity,album(id,name,release_date),artists(id,name))",
                 )),
             };
 

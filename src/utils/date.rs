@@ -1,19 +1,29 @@
-use chrono::{Datelike, Utc};
-use std::cmp::Ordering;
+use chrono::{Datelike, NaiveDate, TimeZone, Utc};
+use std::cmp::{Ordering, PartialEq};
 use std::str::FromStr;
 
-fn unix_time(date: &Date) -> u64 {
-    todo!()
+fn unix_time(date: &Date) -> i64 {
+    let year = date.year as i32;
+    let month = date.month.unwrap_or(1) as u32;
+    let day = date.day.unwrap_or(1) as u32;
+
+    let date = NaiveDate::from_ymd_opt(year, month, day)
+        .expect("invalid date");
+
+    let datetime = date.and_hms_opt(0, 0, 0).unwrap();
+    let unix = Utc.from_utc_datetime(&datetime).timestamp();
+
+    unix
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum DateScope {
     Day,   // dd/mm/yyyy
     Month, // mm/yyyy
     Year,  // yyyy
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Date {
     scope: DateScope,
     year: u32,
@@ -21,8 +31,13 @@ pub struct Date {
     day: Option<u8>,
 }
 
+pub enum DateSource {
+    Spotify, // yyyy-mm-dd
+    User // dd-mm-yyyy
+}
+
 impl Date {
-    pub fn new(date_str: String) -> Result<Date, String> {
+    pub fn new(date_str: String, source: DateSource) -> Result<Date, String> {
         // delimiter is either / or -
 
         let mut delim = 'n'; // n for none
@@ -38,7 +53,7 @@ impl Date {
             delim = '/';
         }
 
-        let mut year: u32 = 0;
+        let mut year: u32;
         let mut month: Option<u8> = None;
         let mut day: Option<u8> = None;
         let mut scope: DateScope = DateScope::Year;
@@ -57,7 +72,12 @@ impl Date {
             if comps.len() == 2 {
                 scope = DateScope::Month;
 
-                match u8::from_str(comps[0]) {
+                let (month_i, year_i) = match source {
+                    DateSource::Spotify => (1, 0),
+                    DateSource::User => (0, 1)
+                };
+
+                match u8::from_str(comps[month_i]) {
                     Ok(res) => month = Some(res),
                     Err(err) => {
                         return Err(format!(
@@ -67,7 +87,7 @@ impl Date {
                     }
                 }
 
-                match u32::from_str(comps[1]) {
+                match u32::from_str(comps[year_i]) {
                     Ok(res) => year = res,
                     Err(err) => {
                         return Err(format!(
@@ -79,7 +99,12 @@ impl Date {
             } else if comps.len() == 3 {
                 scope = DateScope::Day;
 
-                match u8::from_str(comps[0]) {
+                let (day_i, month_i, year_i) = match source {
+                    DateSource::Spotify => (2, 1, 0),
+                    DateSource::User => (0, 1, 2)
+                };
+
+                match u8::from_str(comps[day_i]) {
                     Ok(res) => day = Some(res),
                     Err(err) => {
                         return Err(format!(
@@ -89,7 +114,7 @@ impl Date {
                     }
                 }
 
-                match u8::from_str(comps[1]) {
+                match u8::from_str(comps[month_i]) {
                     Ok(res) => month = Some(res),
                     Err(err) => {
                         return Err(format!(
@@ -99,7 +124,7 @@ impl Date {
                     }
                 }
 
-                match u32::from_str(comps[2]) {
+                match u32::from_str(comps[year_i]) {
                     Ok(res) => year = res,
                     Err(err) => {
                         return Err(format!(
@@ -151,7 +176,7 @@ impl Date {
 
             if (_31_days.contains(&_month) && _days > 31)
                 || (_30_days.contains(&_month) && _days > 30)
-                || (_month == 2 && (_days != 28 || _days != 29))
+                || (_month == 2 && (_days > 29))
             {
                 return Err(format!(
                     "{} is not a valid number of days for month {}.",
@@ -164,7 +189,7 @@ impl Date {
         Ok(self)
     }
 
-    fn format(&self) -> String {
+    pub fn format(&self) -> String {
         let mut buf: String = String::new();
 
         if self.day.is_some() {
@@ -180,29 +205,13 @@ impl Date {
         buf
     }
 
-    fn has_equal_scope(&self, other: &Self) -> bool {
-        let mut eq = true;
-
-        if (self.month.is_some() || other.month.is_some())
-            && (self.month.is_none() || other.month.is_none())
-        {
-            eq = false;
-        }
-
-        if (self.day.is_some() || other.day.is_some()) && (self.day.is_none() || other.day.is_none())
-        {
-            eq = false;
-        }
-
-        eq
-    }
 }
 
 impl PartialEq<Self> for Date {
     fn eq(&self, other: &Self) -> bool {
         let mut eq = true;
 
-        if self.has_equal_scope(other) {
+        if self.scope == other.scope {
             if self.year != other.year {
                 eq = false;
             }
@@ -260,7 +269,7 @@ impl PartialOrd for Date {
     }
 
     fn gt(&self, other: &Self) -> bool {
-        if unix_time(self) < unix_time(other) {
+        if unix_time(self) > unix_time(other) {
             true
         } else {
             false
@@ -268,7 +277,7 @@ impl PartialOrd for Date {
     }
 
     fn ge(&self, other: &Self) -> bool {
-        if unix_time(self) <= unix_time(other) {
+        if unix_time(self) >= unix_time(other) {
             true
         } else {
             false

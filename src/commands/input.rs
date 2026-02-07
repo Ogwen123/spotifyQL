@@ -3,7 +3,7 @@ use crate::app_context::AppContext;
 use crate::query::parse::parse;
 use crate::query::run::run_query;
 use crate::query::tokenise::tokenise;
-use crate::utils::date::Date;
+use crate::utils::date::{Date, DateSource};
 use crate::utils::logger::{error, info, success};
 use std::io;
 use std::io::Write;
@@ -24,7 +24,7 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
                 info!("testing date parsing");
                 let dates = vec!["12/12/25", "12/2025", "2025", "12-12/25", "12-2025", "2025"];
                 for i in dates {
-                    println!("{} parsed as {:?}", i, Date::new(i.to_string()))
+                    println!("{} parsed as {:?}", i, Date::new(i.to_string(), DateSource::User))
                 }
 
                 info!("testing api querying");
@@ -85,8 +85,14 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
                 "SELECT name FROM PLAYLIST(test) WHERE name == \"Shout\" AND id LIKE \"test\" OR id LIKE \"test\" AND id LIKE \"test\";".to_string(),
             )?,
             "/testni" => run_query(
+                // test NOT IN operator
                 cx,
                 "SELECT COUNT(name) FROM PLAYLIST(All) WHERE \"Arctic Monkeys\" NOT IN artists;".to_string(),
+            )?,
+            "/testda" => run_query(
+                // test date
+                cx,
+                "SELECT name FROM PLAYLIST(All) WHERE release_date < 7-6-2006;".to_string(),
             )?,
             _ => {
                 run_query(cx, parsed_input.to_string())?

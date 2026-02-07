@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::mem::discriminant;
 use std::str::FromStr;
-
+use crate::utils::date::{Date, DateSource};
 // TOKEN ENUMS
 
 #[derive(Clone, PartialEq, Debug)]
@@ -97,6 +97,7 @@ pub enum Value {
     Int(i64),
     Float(f64),
     Bool(bool),
+    Date(Date),
     List(Vec<Value>),
 }
 
@@ -110,6 +111,7 @@ impl Display for Value {
                 Value::Float(res) => res.to_string(),
                 Value::Bool(res) => res.to_string(),
                 Value::Str(res) => res.to_string(),
+                Value::Date(res) => res.format(),
                 Value::List(res) => res
                     .iter()
                     .map(|x| x.to_string())
@@ -122,6 +124,20 @@ impl Display for Value {
 
 impl Value {
     pub fn compare(&self, value: Value, operator: Operator) -> Result<bool, String> {
+        if let Value::Date(attr) = self && let Value::Date(target) = &value {
+            return match operator {
+                Operator::Equals => self.equals(value),
+                Operator::NotEquals => Ok(!self.equals(value)?),
+                Operator::Less => Ok(attr < target),
+                Operator::LessEqual => Ok(attr <= target),
+                Operator::Greater => Ok(attr > target),
+                Operator::GreaterEqual => Ok(attr >= target),
+                _ => {
+                    Err("Invalid operation on Date type.".to_string())
+                }
+            }
+        }
+        
         match operator {
             Operator::Equals => self.equals(value),
             Operator::NotEquals => Ok(!self.equals(value)?),
@@ -339,6 +355,7 @@ impl RawToken {
                 let int_regex = Regex::new(r"^-?\d+$").map_err(|x| x.to_string())?;
                 let float_regex = Regex::new(r"^-?\d+.\d+$").map_err(|x| x.to_string())?;
                 let bool_regex = Regex::new(r"^true|false$").map_err(|x| x.to_string())?;
+                let date_regex = Regex::new(r"^(\d?\d(-|\/))?(\d?\d(-|\/))?(\d{2}|\d{4})$").map_err(|x| x.to_string())?;
                 let str_regex = Regex::new(r"^[\w\s]+$").map_err(|x| x.to_string())?;
                 let str_list_regex =
                     Regex::new(r#"^("[\w]+", [ ]?)*("[\w]+")$"#).map_err(|x| x.to_string())?;
@@ -364,7 +381,11 @@ impl RawToken {
                             .map_err(|x| format!("FLOAT ERROR: {}", x.to_string()))?,
                     )));
                 }
-
+                
+                if date_regex.is_match(self.identifier.as_str()) {
+                    return Ok(Token::Value(Value::Date(Date::new(self.identifier, DateSource::User)?)))
+                }
+                
                 // if the identifier is a string then it is an attribute string, otherwise it is a value string
                 if str_regex.is_match(self.identifier.as_str()) {
                     return Ok(Token::Attribute(self.identifier)); // remove the quotes from the string
