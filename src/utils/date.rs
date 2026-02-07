@@ -141,7 +141,7 @@ impl Date {
             }
         }
 
-        if year > 100 {
+        if year < 100 {
             if Utc::now().year() as u32 > (2000 + year) {
                 year += 1900;
             } else {

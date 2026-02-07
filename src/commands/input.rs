@@ -92,7 +92,7 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
             "/testda" => run_query(
                 // test date
                 cx,
-                "SELECT name FROM PLAYLIST(All) WHERE release_date < 7-6-2006;".to_string(),
+                "SELECT name, release_date FROM PLAYLIST(All) WHERE release_date > 7-6-2006;".to_string(),
             )?,
             _ => {
                 run_query(cx, parsed_input.to_string())?

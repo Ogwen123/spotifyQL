@@ -80,6 +80,7 @@ If using `dd/mm/yy` then 20yy will be used, unless that is in the future in whic
  - [x] add support for >, <, >=, <= for ints and floats
  - [x] add support for NOT IN condition
  - [x] add support for using * as a display target
+ - [ ] ORDER BY functionality
  - [ ] make a date struct and change all current dates stored in strings to use it
  - [ ] output to a file?
  - [ ] make into a tui app?
