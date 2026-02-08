@@ -56,7 +56,7 @@ impl Date {
         let mut year: u32;
         let mut month: Option<u8> = None;
         let mut day: Option<u8> = None;
-        let mut scope: DateScope = DateScope::Year;
+        let scope: DateScope;
 
         if delim == 'n' {
             match u32::from_str(&date_str) {
@@ -157,7 +157,16 @@ impl Date {
         }
         .validate()?)
     }
-
+    
+    pub fn year(year: u32) -> Result<Date, String> {
+        Date {
+            scope: DateScope::Year,
+            year,
+            month: None,
+            day: None
+        }.validate()
+    }
+    
     pub fn validate(self) -> Result<Self, String> {
         let _31_days: Vec<u8> = vec![1, 3, 5, 6, 7, 10, 12];
         let _30_days: Vec<u8> = vec![4, 6, 9, 11];
