@@ -597,7 +597,7 @@ pub mod result_parser {
                                             return Err("Value 'name' in field 'album' of field 'track' is an unexpected type.".to_string());
                                         }
                                     };
-                                    
+
                                     let release_date = match &album["release_date"] {
                                         Value::String(res) => res.clone(),
                                         _ => {

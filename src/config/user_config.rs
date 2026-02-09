@@ -2,14 +2,16 @@ use crate::utils::file::{File, read_file};
 use crate::utils::logger::warning;
 use serde::Deserialize;
 
-#[derive(Default, Clone)]
+#[derive(Clone)]
 pub struct UserConfig {
     pub debug: bool,
+    pub tui: bool
 }
 
 #[derive(Deserialize)]
 struct ConfigFileContent {
     debug: bool,
+    tui: bool
 }
 
 impl UserConfig {
@@ -30,5 +32,14 @@ impl UserConfig {
         cx.debug = user_config.debug;
 
         Ok(cx)
+    }
+}
+
+impl Default for UserConfig {
+    fn default() -> Self {
+        Self {
+            debug: false,
+            tui: true
+        }
     }
 }

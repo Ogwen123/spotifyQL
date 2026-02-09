@@ -7,6 +7,8 @@ use crate::{
     config::args::{Command, RunContext},
 };
 use app_context::AppContext;
+use crate::ui::tui::TUI;
+
 mod api;
 mod app_context;
 mod auth;
@@ -14,6 +16,7 @@ mod commands;
 mod config;
 mod query;
 mod utils;
+mod ui;
 
 fn main() {
     let rc = RunContext::new();
@@ -62,8 +65,23 @@ fn main() {
             success!("Refreshed token.");
         }
 
-        if let Err(err) = input_loop(&mut cx) {
-            fatal!("{}", err)
+        if cx.user_config.tui {
+            match TUI::new() {
+                Ok(ref mut res) => {
+                    if let Err(err) = res.start() {
+                        TUI::leave_alternate_buffer();
+                        fatal!("{}", err)
+                    }
+                },
+                Err(err) => {
+                    fatal!("{}", err)
+                }
+            }
+
+        } else {
+            if let Err(err) = input_loop(&mut cx) {
+                fatal!("{}", err)
+            }
         }
     }
 }
