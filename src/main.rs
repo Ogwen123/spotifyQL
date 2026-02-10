@@ -69,7 +69,7 @@ fn main() {
             match TUI::new() {
                 Ok(ref mut res) => {
                     if let Err(err) = res.start() {
-                        TUI::leave_alternate_buffer();
+                        TUI::leave_tui_mode();
                         fatal!("{}", err)
                     }
                 },
