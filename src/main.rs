@@ -1,5 +1,6 @@
 use crate::auth::token_refresh::refresh_token;
 use crate::commands::input::input_loop;
+use crate::ui::tui::TUI;
 use crate::utils::logger::{fatal, info_nnl, success, warning};
 use crate::utils::utils::secs_now;
 use crate::{
@@ -7,7 +8,6 @@ use crate::{
     config::args::{Command, RunContext},
 };
 use app_context::AppContext;
-use crate::ui::tui::TUI;
 
 mod api;
 mod app_context;
@@ -15,8 +15,8 @@ mod auth;
 mod commands;
 mod config;
 mod query;
-mod utils;
 mod ui;
+mod utils;
 
 fn main() {
     let rc = RunContext::new();
@@ -72,12 +72,11 @@ fn main() {
                         TUI::leave_tui_mode();
                         fatal!("{}", err)
                     }
-                },
+                }
                 Err(err) => {
                     fatal!("{}", err)
                 }
             }
-
         } else {
             if let Err(err) = input_loop(&mut cx) {
                 fatal!("{}", err)

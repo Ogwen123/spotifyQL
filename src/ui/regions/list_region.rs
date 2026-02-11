@@ -1,6 +1,8 @@
 use crate::ui::framebuffer::{Cell, FrameBuffer};
 use crate::ui::regions::region::Region;
 use crate::ui::tui::Colour;
+use crossterm::event::Event;
+use crate::utils::utils::bounds_loc;
 
 pub struct ListRegion {
     pub x: u16,
@@ -8,7 +10,9 @@ pub struct ListRegion {
     pub width: u16,
     pub height: u16,
     pub border_colour: Colour,
+    pub focused_border_colour: Colour,
     pub data: Vec<String>, // vector of lines to be displayed
+    pub focused: bool,
 }
 
 impl Region for ListRegion {
@@ -24,63 +28,64 @@ impl Region for ListRegion {
 
     /// Make a border of the given colour and fill with inner buffer (buffer length is 0)
     fn build_region_buffer(&self) -> Vec<Cell> {
-            let mut buffer: Vec<Cell> = Vec::new();
-            let inner_buffer = self.build_inner_buffer();
+        let mut buffer: Vec<Cell> = Vec::new();
+        let inner_buffer = self.build_inner_buffer();
 
-            for y in 0..self.height {
-                for x in 0..self.width {
-                    let c = self.border_colour.clone();
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let c = self.border_colour.clone();
 
-                    if y == 0 {
-                        if x == 0 {
-                            buffer.push(Cell {
-                                char: '╭',
-                                colour: c
-                            })
-                        } else if x == self.width - 1 {
-                            buffer.push(Cell {
-                                char: '╮',
-                                colour: c
-                            })
-                        } else {
-                            buffer.push(Cell {
-                                char: '─',
-                                colour: c
-                            })
-                        }
-                    } else if y == self.height - 1 {
-                        if x == 0 {
-                            buffer.push(Cell {
-                                char: '╰',
-                                colour: c
-                            })
-                        } else if x == self.width - 1 {
-                            buffer.push(Cell {
-                                char: '╯',
-                                colour: c
-                            })
-                        } else {
-                            buffer.push(Cell {
-                                char: '─',
-                                colour: c
-                            })
-                        }
+                if y == 0 {
+                    if x == 0 {
+                        buffer.push(Cell {
+                            char: '╭',
+                            colour: c,
+                        })
+                    } else if x == self.width - 1 {
+                        buffer.push(Cell {
+                            char: '╮',
+                            colour: c,
+                        })
                     } else {
-                        if x == 0 || x == self.width - 1 {
-                            buffer.push(Cell {
-                                char: '│',
-                                colour: c
-                            })
-                        } else {
-                            buffer.push(inner_buffer[((y - 1)*(self.width - 2) + (x - 1)) as usize].clone())
-                        }
+                        buffer.push(Cell {
+                            char: '─',
+                            colour: c,
+                        })
+                    }
+                } else if y == self.height - 1 {
+                    if x == 0 {
+                        buffer.push(Cell {
+                            char: '╰',
+                            colour: c,
+                        })
+                    } else if x == self.width - 1 {
+                        buffer.push(Cell {
+                            char: '╯',
+                            colour: c,
+                        })
+                    } else {
+                        buffer.push(Cell {
+                            char: '─',
+                            colour: c,
+                        })
+                    }
+                } else {
+                    if x == 0 || x == self.width - 1 {
+                        buffer.push(Cell {
+                            char: '│',
+                            colour: c,
+                        })
+                    } else {
+                        buffer.push(
+                            inner_buffer[((y - 1) * (self.width - 2) + (x - 1)) as usize].clone(),
+                        )
                     }
                 }
             }
-
-            buffer
         }
 
+        buffer
+    }
 
     fn draw(&self, fb: &mut FrameBuffer) {
         let content = self.build_region_buffer();
@@ -91,5 +96,24 @@ impl Region for ListRegion {
 
             fb.put(local_x + self.x, local_y + self.y, cell)
         }
+    }
+
+    fn handle_event(&self, event: Event) {
+        todo!()
+    }
+
+    fn _debug(&self) {
+        println!(
+            "width: {}, height: {}, x: {}, y: {}",
+            self.width, self.height, self.x, self.y
+        );
+    }
+
+    fn bounds_loc(&self, x: u16, y: u16) -> bool {
+        bounds_loc(self.x, self.y, self.width, self.height, x, y)
+    }
+
+    fn set_focus(&mut self, focus: bool) {
+        self.focused = focus;
     }
 }

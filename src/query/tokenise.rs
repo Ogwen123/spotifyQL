@@ -1,10 +1,10 @@
+use crate::utils::date::{Date, DateSource};
 use regex::Regex;
 use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::mem::discriminant;
 use std::str::FromStr;
-use crate::utils::date::{Date, DateSource};
 // TOKEN ENUMS
 
 #[derive(Clone, PartialEq, Debug)]
@@ -129,9 +129,7 @@ impl Value {
             let target: &Date = match &value {
                 Value::Int(res) => &Date::year(res.clone() as u32)?,
                 Value::Date(res) => res,
-                _ => {
-                    return Err("Can only compare a Date to another Date".to_string())
-                }
+                _ => return Err("Can only compare a Date to another Date".to_string()),
             };
 
             return match operator {
@@ -141,10 +139,8 @@ impl Value {
                 Operator::LessEqual => Ok(attr <= target),
                 Operator::Greater => Ok(attr > target),
                 Operator::GreaterEqual => Ok(attr >= target),
-                _ => {
-                    Err("Invalid operation on Date type.".to_string())
-                }
-            }
+                _ => Err("Invalid operation on Date type.".to_string()),
+            };
         }
 
         match operator {
@@ -364,14 +360,15 @@ impl RawToken {
                 let int_regex = Regex::new(r"^-?\d+$").map_err(|x| x.to_string())?;
                 let float_regex = Regex::new(r"^-?\d+.\d+$").map_err(|x| x.to_string())?;
                 let bool_regex = Regex::new(r"^true|false$").map_err(|x| x.to_string())?;
-                let date_regex = Regex::new(r"^(\d?\d([-/]))?(\d?\d([-/]))?(\d{2}|\d{4})$").map_err(|x| x.to_string())?;
+                let date_regex = Regex::new(r"^(\d?\d([-/]))?(\d?\d([-/]))?(\d{2}|\d{4})$")
+                    .map_err(|x| x.to_string())?;
                 let str_regex = Regex::new(r"^[\w\s]+$").map_err(|x| x.to_string())?;
                 let str_list_regex =
                     Regex::new(r#"^("\w+",  ?)*("\w+")$"#).map_err(|x| x.to_string())?;
                 let int_list_regex =
                     Regex::new(r#"^(\d+,  ?)*(\d+)$"#).map_err(|x| x.to_string())?;
-                let float_list_regex = Regex::new(r#"^(\d+.\d+,  ?)*(\d+.\d+)$"#)
-                    .map_err(|x| x.to_string())?;
+                let float_list_regex =
+                    Regex::new(r#"^(\d+.\d+,  ?)*(\d+.\d+)$"#).map_err(|x| x.to_string())?;
 
                 if bool_regex.is_match(&self.identifier.as_str()) {
                     return Ok(Token::Value(Value::Bool(self.identifier == "true")));
@@ -392,7 +389,10 @@ impl RawToken {
                 }
 
                 if date_regex.is_match(self.identifier.as_str()) {
-                    return Ok(Token::Value(Value::Date(Date::new(self.identifier, DateSource::User)?)))
+                    return Ok(Token::Value(Value::Date(Date::new(
+                        self.identifier,
+                        DateSource::User,
+                    )?)));
                 }
 
                 // if the identifier is a string then it is an attribute string, otherwise it is a value string

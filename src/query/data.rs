@@ -1,11 +1,11 @@
 use crate::api::APIQuery;
 use crate::app_context::AppContext;
 use crate::query::{tokenise::DataSource, tokenise::Value as DValue};
+use crate::utils::date::Date;
 use crate::utils::logger::info;
 use crate::utils::utils::secs_now;
 use serde_json::Value;
 use std::fmt::Display;
-use crate::utils::date::Date;
 
 pub const DATA_TTL: u64 = 60 * 30;
 
@@ -39,7 +39,7 @@ impl KeyAccess for TrackData {
             "id" => Ok(DValue::Str(self.id.clone())),
             "name" => Ok(DValue::Str(self.name.clone())),
             "duration" => Ok(DValue::Int(self.duration.cast_signed())),
-            "release_date"=> Ok(DValue::Date(self.release_date.clone())),
+            "release_date" => Ok(DValue::Date(self.release_date.clone())),
             "album_name" => Ok(DValue::Str(self.album_name.clone())),
             "album_id" => Ok(DValue::Str(self.album_id.clone())),
             "artists" => Ok(DValue::List(
@@ -236,8 +236,8 @@ pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), S
 /// Extract data with complete error handling
 pub mod result_parser {
     use crate::query::data::{AlbumData, PlaylistData, TrackData};
-    use serde_json::Value;
     use crate::utils::date::{Date, DateSource};
+    use serde_json::Value;
 
     pub fn parse_playlists(str_data: String) -> Result<Vec<PlaylistData>, String> {
         let mut playlists: Vec<PlaylistData> = Vec::new();

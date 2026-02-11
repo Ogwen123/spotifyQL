@@ -1,17 +1,20 @@
-use std::cmp::PartialEq;
 use crate::ui::framebuffer::FrameBuffer;
-use crate::ui::regions::region::Region;
-use crossterm::event::{Event, poll, read, KeyModifiers};
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, size, EnterAlternateScreen, LeaveAlternateScreen};
-use std::fmt::{Display, Formatter};
-use std::io;
-use std::time::Duration;
-use crossterm::event::KeyCode::Char;
-use crossterm::execute;
 use crate::ui::regions::input_region::InputRegion;
 use crate::ui::regions::list_region::ListRegion;
+use crate::ui::regions::region::Region;
 use crate::ui::regions::table_region::TableRegion;
 use crate::utils::logger::info;
+use crossterm::event::KeyCode::Char;
+use crossterm::event::{Event, KeyModifiers, poll, read, MouseEventKind};
+use crossterm::execute;
+use crossterm::terminal::{
+    EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode, size,
+};
+use std::cmp::PartialEq;
+use std::fmt::{Display, Formatter};
+use std::io;
+use std::mem::swap;
+use std::time::Duration;
 
 #[derive(Clone, PartialEq)]
 pub enum Colour {
@@ -19,6 +22,10 @@ pub enum Colour {
     Blue,
     Purple,
     White,
+    Grey,
+    BrightGreen,
+    BrightBlue,
+    BrightPurple,
 }
 
 impl Display for Colour {
@@ -31,6 +38,10 @@ impl Display for Colour {
                 Colour::Blue => "\x1b[34m",
                 Colour::Purple => "\x1b[35m",
                 Colour::White => "\x1b[37m",
+                Colour::Grey => "\x1b[90m",
+                Colour::BrightGreen => "\x1b[42m",
+                Colour::BrightBlue => "\x1b[44m",
+                Colour::BrightPurple => "\x1b[45m",
             }
         )
     }
@@ -42,14 +53,14 @@ pub struct TUI {
     regions: Vec<Box<dyn Region>>,
     current: FrameBuffer,
     previous: FrameBuffer,
-    run: bool
+    run: bool,
 }
 
 impl TUI {
     pub fn new() -> Result<TUI, String> {
-        Self::enter_tui_mode(); // need to enter alt buffer here to get correct size
+        Self::enter_tui_mode()?; // need to enter alt buffer here to get correct size
 
-        let (rows, cols) = match size() {
+        let (cols, rows) = match size() {
             Ok(res) => res,
             Err(err) => {
                 return Err(format!(
@@ -59,15 +70,15 @@ impl TUI {
             }
         };
 
-        
         Ok(TUI {
             width: cols,
             height: rows,
             regions: Vec::new(),
             current: FrameBuffer::new(cols, rows),
             previous: FrameBuffer::new(cols, rows),
-            run: true
-        }.init_regions(cols, rows))
+            run: true,
+        }
+        .init_regions(cols, rows))
     }
 
     fn init_regions(mut self, width: u16, height: u16) -> Self {
@@ -75,10 +86,13 @@ impl TUI {
         let input_region = InputRegion {
             x: 0,
             y: 0,
-            height: (height as f64 * 0.1).ceil() as u16,
+            height: 3,
             width,
             value: String::new(),
             border_colour: Colour::Green,
+            focused_border_colour: Colour::BrightGreen,
+            focused: true,
+            placeholder: String::from("Enter Query"),
         };
         // data region
         let data_region = TableRegion {
@@ -89,6 +103,8 @@ impl TUI {
             headings: Vec::new(),
             data: Vec::new(),
             border_colour: Colour::Blue,
+            focused_border_colour: Colour::BrightBlue,
+            focused: false,
         };
         // log region
         let log_region = ListRegion {
@@ -98,10 +114,17 @@ impl TUI {
             width,
             data: Vec::new(),
             border_colour: Colour::Purple,
+            focused_border_colour: Colour::BrightPurple,
+
+            focused: false,
         };
 
-        self.regions = vec![Box::new(input_region), Box::new(data_region), Box::new(log_region)];
-        
+        self.regions = vec![
+            Box::new(input_region),
+            Box::new(data_region),
+            Box::new(log_region),
+        ];
+
         self
     }
 
@@ -112,8 +135,12 @@ impl TUI {
         loop {
             if !self.run {
                 Self::leave_tui_mode()?;
+                println!("{}, {}", self.width, self.height);
+                for i in &self.regions {
+                    i._debug();
+                }
                 info!("Exiting");
-                return Ok(())
+                return Ok(());
             }
 
             self.draw();
@@ -129,7 +156,9 @@ impl TUI {
             region.draw(&mut self.current)
         }
 
-        self.flush_diff()
+        self.flush_diff();
+
+        swap(&mut self.current, &mut self.previous)
     }
 
     fn flush_diff(&mut self) {
@@ -154,12 +183,21 @@ impl TUI {
     fn handle_event(&mut self, event: Event) {
         match event {
             Event::Key(res) => {
-                println!("pressed key {}", res.code);
-                if res.code == Char('c') && res.modifiers.contains(KeyModifiers::CONTROL)  {
+                if res.code == Char('c') && res.modifiers.contains(KeyModifiers::CONTROL) {
                     self.run = false;
                 }
             }
-            Event::Mouse(res) => {}
+            Event::Mouse(res) => {
+                if let MouseEventKind::Down(button) = res.kind && button.is_left() {
+                    for i in &mut self.regions {
+                        if i.bounds_loc(res.column, res.row) {
+                            i.set_focus(true);
+                        } else {
+                            i.set_focus(false);
+                        }
+                    }
+                }
+            }
             Event::Resize(cols, rows) => {
                 self.height = rows;
                 self.width = cols;
@@ -174,7 +212,6 @@ impl TUI {
         Ok(())
     }
     pub fn leave_tui_mode() -> Result<(), String> {
-
         // Do anything on the alternate screen
 
         execute!(io::stdout(), LeaveAlternateScreen).map_err(|x| x.to_string())?;

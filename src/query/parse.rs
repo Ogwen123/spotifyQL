@@ -259,8 +259,6 @@ pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
                 ));
             }
 
-            
-            
             let temp = Condition {
                 attribute: attr,
                 operation: op,

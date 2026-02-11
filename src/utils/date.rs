@@ -7,8 +7,7 @@ fn unix_time(date: &Date) -> i64 {
     let month = date.month.unwrap_or(1) as u32;
     let day = date.day.unwrap_or(1) as u32;
 
-    let date = NaiveDate::from_ymd_opt(year, month, day)
-        .expect("invalid date");
+    let date = NaiveDate::from_ymd_opt(year, month, day).expect("invalid date");
 
     let datetime = date.and_hms_opt(0, 0, 0).unwrap();
     let unix = Utc.from_utc_datetime(&datetime).timestamp();
@@ -33,7 +32,7 @@ pub struct Date {
 
 pub enum DateSource {
     Spotify, // yyyy-mm-dd
-    User // dd-mm-yyyy
+    User,    // dd-mm-yyyy
 }
 
 impl Date {
@@ -74,7 +73,7 @@ impl Date {
 
                 let (month_i, year_i) = match source {
                     DateSource::Spotify => (1, 0),
-                    DateSource::User => (0, 1)
+                    DateSource::User => (0, 1),
                 };
 
                 match u8::from_str(comps[month_i]) {
@@ -101,7 +100,7 @@ impl Date {
 
                 let (day_i, month_i, year_i) = match source {
                     DateSource::Spotify => (2, 1, 0),
-                    DateSource::User => (0, 1, 2)
+                    DateSource::User => (0, 1, 2),
                 };
 
                 match u8::from_str(comps[day_i]) {
@@ -157,16 +156,17 @@ impl Date {
         }
         .validate()?)
     }
-    
+
     pub fn year(year: u32) -> Result<Date, String> {
         Date {
             scope: DateScope::Year,
             year,
             month: None,
-            day: None
-        }.validate()
+            day: None,
+        }
+        .validate()
     }
-    
+
     pub fn validate(self) -> Result<Self, String> {
         let _31_days: Vec<u8> = vec![1, 3, 5, 6, 7, 10, 12];
         let _30_days: Vec<u8> = vec![4, 6, 9, 11];
@@ -213,7 +213,6 @@ impl Date {
 
         buf
     }
-
 }
 
 impl PartialEq<Self> for Date {

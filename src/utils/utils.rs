@@ -8,3 +8,17 @@ pub fn secs_now() -> u64 {
 
     since_the_epoch.as_secs()
 }
+
+#[inline]
+pub fn bounds_loc(box_x: u16, box_y: u16, width: u16, height: u16, loc_x: u16, loc_y: u16) -> bool {
+    let t = box_y;
+    let l = box_x;
+    let b = box_y + height;
+    let r = box_x + width;
+    
+    if loc_x > l && loc_x < r && loc_y > t && loc_y < b {
+        true
+    } else {
+        false
+    }
+}

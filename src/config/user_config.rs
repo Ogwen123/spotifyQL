@@ -5,13 +5,13 @@ use serde::Deserialize;
 #[derive(Clone)]
 pub struct UserConfig {
     pub debug: bool,
-    pub tui: bool
+    pub tui: bool,
 }
 
 #[derive(Deserialize)]
 struct ConfigFileContent {
     debug: bool,
-    tui: bool
+    tui: bool,
 }
 
 impl UserConfig {
@@ -39,7 +39,7 @@ impl Default for UserConfig {
     fn default() -> Self {
         Self {
             debug: false,
-            tui: true
+            tui: true,
         }
     }
 }
