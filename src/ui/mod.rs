@@ -1,3 +1,3 @@
 pub mod tui;
 mod framebuffer;
-mod region;
+mod regions;

@@ -1,6 +1,6 @@
 use std::cmp::PartialEq;
 use crate::ui::framebuffer::FrameBuffer;
-use crate::ui::region::Region;
+use crate::ui::regions::region::Region;
 use crossterm::event::{Event, poll, read, KeyModifiers};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, size, EnterAlternateScreen, LeaveAlternateScreen};
 use std::fmt::{Display, Formatter};
@@ -8,6 +8,9 @@ use std::io;
 use std::time::Duration;
 use crossterm::event::KeyCode::Char;
 use crossterm::execute;
+use crate::ui::regions::input_region::InputRegion;
+use crate::ui::regions::list_region::ListRegion;
+use crate::ui::regions::table_region::TableRegion;
 use crate::utils::logger::info;
 
 #[derive(Clone, PartialEq)]
@@ -36,7 +39,7 @@ impl Display for Colour {
 pub struct TUI {
     width: u16,
     height: u16,
-    regions: Vec<Region>,
+    regions: Vec<Box<dyn Region>>,
     current: FrameBuffer,
     previous: FrameBuffer,
     run: bool
@@ -44,6 +47,8 @@ pub struct TUI {
 
 impl TUI {
     pub fn new() -> Result<TUI, String> {
+        Self::enter_tui_mode(); // need to enter alt buffer here to get correct size
+
         let (rows, cols) = match size() {
             Ok(res) => res,
             Err(err) => {
@@ -54,41 +59,39 @@ impl TUI {
             }
         };
 
-        Self::enter_tui_mode();
-
-        let regions = Self::init_regions(cols, rows)?;
-
+        
         Ok(TUI {
             width: cols,
             height: rows,
-            regions,
+            regions: Vec::new(),
             current: FrameBuffer::new(cols, rows),
             previous: FrameBuffer::new(cols, rows),
             run: true
-        })
+        }.init_regions(cols, rows))
     }
 
-    fn init_regions(width: u16, height: u16) -> Result<Vec<Region>, String> {
+    fn init_regions(mut self, width: u16, height: u16) -> Self {
         // input region
-        let input_region = Region {
+        let input_region = InputRegion {
             x: 0,
             y: 0,
             height: (height as f64 * 0.1).ceil() as u16,
             width,
-            data: Vec::new(),
+            value: String::new(),
             border_colour: Colour::Green,
         };
         // data region
-        let data_region = Region {
+        let data_region = TableRegion {
             x: 0,
             y: input_region.height,
             height: (height as f64 * 0.7).ceil() as u16,
             width,
+            headings: Vec::new(),
             data: Vec::new(),
             border_colour: Colour::Blue,
         };
         // log region
-        let log_region = Region {
+        let log_region = ListRegion {
             x: 0,
             y: data_region.y + data_region.height,
             height: height - (data_region.height + input_region.height),
@@ -97,7 +100,9 @@ impl TUI {
             border_colour: Colour::Purple,
         };
 
-        Ok(vec![input_region, data_region, log_region])
+        self.regions = vec![Box::new(input_region), Box::new(data_region), Box::new(log_region)];
+        
+        self
     }
 
     pub fn start(&mut self) -> Result<(), String> {
