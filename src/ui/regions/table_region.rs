@@ -35,7 +35,7 @@ impl Region for TableRegion {
 
         for y in 0..self.height {
             for x in 0..self.width {
-                let c = self.border_colour.clone();
+                let c = if self.focused {self.focused_border_colour.clone()} else {self.border_colour.clone()};
 
                 if y == 0 {
                     if x == 0 {
@@ -100,8 +100,8 @@ impl Region for TableRegion {
         }
     }
 
-    fn handle_event(&self, event: Event) {
-        todo!()
+    fn handle_event(&mut self, event: Event) {
+        if !self.focused {return}
     }
 
     fn _debug(&self) {

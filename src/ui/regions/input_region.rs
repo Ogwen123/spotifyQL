@@ -1,7 +1,7 @@
 use crate::ui::framebuffer::{Cell, FrameBuffer};
 use crate::ui::regions::region::Region;
 use crate::ui::tui::Colour;
-use crossterm::event::Event;
+use crossterm::event::{Event, KeyCode, KeyEvent};
 use crate::utils::utils::bounds_loc;
 
 pub struct InputRegion {
@@ -52,7 +52,7 @@ impl Region for InputRegion {
 
         for y in 0..self.height {
             for x in 0..self.width {
-                let c = self.border_colour.clone();
+                let c = if self.focused {self.focused_border_colour.clone()} else {self.border_colour.clone()};
 
                 if y == 0 {
                     if x == 0 {
@@ -110,15 +110,38 @@ impl Region for InputRegion {
         let content = self.build_region_buffer();
 
         for (loc, cell) in content.into_iter().enumerate() {
-            let local_y = (loc as f64 / fb.width as f64).floor() as u16;
-            let local_x = loc as u16 % fb.width;
+            let local_y = (loc as f64 / self.width as f64).floor() as u16;
+            let local_x = loc as u16 % self.width;
 
             fb.put(local_x + self.x, local_y + self.y, cell)
         }
     }
 
-    fn handle_event(&self, event: Event) {
-        todo!()
+    fn handle_event(&mut self, event: Event) {
+        if !self.focused {return}
+
+        match event {
+            Event::Key(res) => {
+                match res.code {
+                    KeyCode::Char(c) => {
+                        self.value.push(c);
+                    },
+                    KeyCode::Backspace => {
+                        self.value.pop();
+                    },
+                    KeyCode::Enter => {
+                        // run query
+                        self.value = String::new()
+                    }
+                    _ => {}
+                }
+            }
+            Event::Mouse(res) => {
+
+            }
+            _ => {}
+        }
+
     }
 
     fn _debug(&self) {

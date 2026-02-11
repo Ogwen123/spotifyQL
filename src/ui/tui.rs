@@ -5,7 +5,9 @@ use crate::ui::regions::region::Region;
 use crate::ui::regions::table_region::TableRegion;
 use crate::utils::logger::info;
 use crossterm::event::KeyCode::Char;
-use crossterm::event::{Event, KeyModifiers, poll, read, MouseEventKind};
+use crossterm::event::{
+    DisableMouseCapture, EnableMouseCapture, Event, KeyModifiers, MouseEventKind, poll, read,
+};
 use crossterm::execute;
 use crossterm::terminal::{
     EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode, size,
@@ -13,6 +15,7 @@ use crossterm::terminal::{
 use std::cmp::PartialEq;
 use std::fmt::{Display, Formatter};
 use std::io;
+use std::io::Write;
 use std::mem::swap;
 use std::time::Duration;
 
@@ -21,6 +24,8 @@ pub enum Colour {
     Green,
     Blue,
     Purple,
+    Red,
+    Cyan,
     White,
     Grey,
     BrightGreen,
@@ -37,11 +42,13 @@ impl Display for Colour {
                 Colour::Green => "\x1b[32m",
                 Colour::Blue => "\x1b[34m",
                 Colour::Purple => "\x1b[35m",
+                Colour::Red => "\x1b[31m",
+                Colour::Cyan => "\x1b[36m",
                 Colour::White => "\x1b[37m",
                 Colour::Grey => "\x1b[90m",
-                Colour::BrightGreen => "\x1b[42m",
-                Colour::BrightBlue => "\x1b[44m",
-                Colour::BrightPurple => "\x1b[45m",
+                Colour::BrightGreen => "\x1b[92m",
+                Colour::BrightBlue => "\x1b[94m",
+                Colour::BrightPurple => "\x1b[95m",
             }
         )
     }
@@ -89,8 +96,8 @@ impl TUI {
             height: 3,
             width,
             value: String::new(),
-            border_colour: Colour::Green,
-            focused_border_colour: Colour::BrightGreen,
+            border_colour: Colour::Cyan,
+            focused_border_colour: Colour::Green,
             focused: true,
             placeholder: String::from("Enter Query"),
         };
@@ -132,6 +139,8 @@ impl TUI {
         // enter alternate display buffer
         Self::enter_tui_mode()?;
 
+        let mut count = 0;
+
         loop {
             if !self.run {
                 Self::leave_tui_mode()?;
@@ -143,7 +152,13 @@ impl TUI {
                 return Ok(());
             }
 
-            self.draw();
+            if count == 100 { // complete redraw every 100 draws
+                count = 0;
+                self.draw(true);
+            } else {
+                self.draw(false);
+            }
+            count += 1;
 
             if poll(Duration::from_millis(100)).map_err(|x| x.to_string())? {
                 self.handle_event(read().map_err(|x| x.to_string())?)
@@ -151,12 +166,16 @@ impl TUI {
         }
     }
 
-    fn draw(&mut self) {
+    fn draw(&mut self, force: bool) {
         for region in &self.regions {
             region.draw(&mut self.current)
         }
 
-        self.flush_diff();
+        if force {
+            self.flush();
+        } else {
+            self.flush_diff();
+        }
 
         swap(&mut self.current, &mut self.previous)
     }
@@ -167,7 +186,8 @@ impl TUI {
         for y in 0..self.height {
             for x in 0..self.width {
                 let cell = self.current.get(x, y);
-                if self.previous.get(x, y) != cell {
+                let prev_cell = self.previous.get(x, y);
+                if prev_cell.colour != cell.colour || prev_cell.char != cell.char {
                     print!(
                         "\x1b[{};{}H{}{}",
                         y + 1,
@@ -178,6 +198,26 @@ impl TUI {
                 }
             }
         }
+
+        io::stdout().flush().unwrap();
+    }
+
+    fn flush(&mut self) {
+        // \x1b[3;6H\x1b[37m@
+
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let cell = self.current.get(x, y);
+                    print!(
+                        "\x1b[{};{}H{}{}",
+                        y + 1,
+                        x + 1,
+                        cell.colour.to_string(),
+                        cell.char
+                    );
+
+            }
+        }
     }
 
     fn handle_event(&mut self, event: Event) {
@@ -185,11 +225,18 @@ impl TUI {
             Event::Key(res) => {
                 if res.code == Char('c') && res.modifiers.contains(KeyModifiers::CONTROL) {
                     self.run = false;
+                    return
+                }
+                for i in self.regions.iter_mut() {
+                    i.handle_event(event.clone())
                 }
             }
             Event::Mouse(res) => {
-                if let MouseEventKind::Down(button) = res.kind && button.is_left() {
-                    for i in &mut self.regions {
+                if let MouseEventKind::Down(button) = res.kind
+                    && button.is_left()
+                {
+
+                    for i in self.regions.iter_mut() {
                         if i.bounds_loc(res.column, res.row) {
                             i.set_focus(true);
                         } else {
@@ -208,6 +255,7 @@ impl TUI {
 
     pub fn enter_tui_mode() -> Result<(), String> {
         execute!(io::stdout(), EnterAlternateScreen).map_err(|x| x.to_string())?;
+        execute!(io::stdout(), EnableMouseCapture).map_err(|x| x.to_string())?;
         enable_raw_mode().map_err(|x| x.to_string())?;
         Ok(())
     }
@@ -215,6 +263,7 @@ impl TUI {
         // Do anything on the alternate screen
 
         execute!(io::stdout(), LeaveAlternateScreen).map_err(|x| x.to_string())?;
+        execute!(io::stdout(), DisableMouseCapture).map_err(|x| x.to_string())?;
         disable_raw_mode().map_err(|x| x.to_string())?;
         Ok(())
     }
