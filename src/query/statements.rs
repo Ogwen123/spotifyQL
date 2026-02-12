@@ -5,6 +5,7 @@ use crate::query::display::data_display;
 use crate::query::tokenise::{DataSource, Value};
 use crate::utils::logger::info;
 use std::collections::HashMap;
+use crate::query::display::data_display::{aggregation_table, build_aggregation_table, build_table, table};
 
 #[derive(Debug)]
 pub enum Aggregation {
@@ -51,7 +52,7 @@ impl SelectStatement {
                     info!("Filtered playlists")
                 }
 
-                self.handle_aggregation_and_display(valid)?
+                self.handle_aggregation_and_display(valid, cx)?
             }
             DataSource::SavedAlbums => {
                 let valid = self.albums(match &cx.data.saved_album_data {
@@ -63,7 +64,7 @@ impl SelectStatement {
                     info!("Filtered playlists")
                 }
 
-                self.handle_aggregation_and_display(valid)?
+                self.handle_aggregation_and_display(valid, cx)?
             }
             DataSource::Playlist(res) => {
                 let mut data: Option<&Vec<TrackData>> = None;
@@ -90,7 +91,7 @@ impl SelectStatement {
                     info!("Filtered playlist tracks")
                 }
 
-                self.handle_aggregation_and_display(valid)?
+                self.handle_aggregation_and_display(valid, cx)?
             }
             DataSource::SavedAlbum(res) => {
                 let mut data: Option<&Vec<TrackData>> = None;
@@ -116,7 +117,7 @@ impl SelectStatement {
                     info!("Filtered playlists")
                 }
 
-                self.handle_aggregation_and_display(valid)?
+                self.handle_aggregation_and_display(valid, cx)?
             }
         };
 
@@ -125,7 +126,7 @@ impl SelectStatement {
         Ok(())
     }
 
-    fn handle_aggregation_and_display<T>(self, data: Vec<T>) -> Result<(), String>
+    fn handle_aggregation_and_display<T>(self, data: Vec<T>, cx: &AppContext) -> Result<(), String>
     where
         T: KeyAccess,
     {
@@ -138,7 +139,11 @@ impl SelectStatement {
                     count_data.insert(i, count.clone());
                 }
 
-                data_display::aggregation_table(self.aggregation, count_data)
+                if cx.user_config.tui {
+                    cx.tui.clone().unwrap().borrow_mut().send_table_data(build_aggregation_table(self.aggregation, count_data))? // if cx.usee_config.tui is true then .unwrap() is safe
+                } else {
+                    aggregation_table(self.aggregation, count_data)
+                }
             }
             Aggregation::Average => {
                 let mut average_data: HashMap<String, AggregationResult> = HashMap::new();
@@ -163,9 +168,19 @@ impl SelectStatement {
                     average_data.insert(i, AggregationResult::Float(total / count));
                 }
 
-                data_display::aggregation_table(self.aggregation, average_data)
+                if cx.user_config.tui {
+                    cx.tui.clone().unwrap().borrow_mut().send_table_data(build_aggregation_table(self.aggregation, average_data))? // if cx.usee_config.tui is true then .unwrap() is safe
+                } else {
+                    aggregation_table(self.aggregation, average_data)
+                }
             }
-            Aggregation::None => data_display::table(data, self.targets.clone())?,
+            Aggregation::None => {
+                if cx.user_config.tui {
+                    cx.tui.clone().unwrap().borrow_mut().send_table_data(build_table(data, self.targets.clone())?)? // if cx.usee_config.tui is true then .unwrap() is safe
+                } else {
+                    table(data, self.targets.clone())?
+                }
+            },
         }
 
         Ok(())

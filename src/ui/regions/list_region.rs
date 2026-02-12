@@ -1,5 +1,5 @@
 use crate::ui::framebuffer::{Cell, FrameBuffer};
-use crate::ui::regions::region::Region;
+use crate::ui::regions::region::{Region, RegionData, RegionType};
 use crate::ui::tui::Colour;
 use crossterm::event::Event;
 use crate::utils::utils::bounds_loc;
@@ -21,6 +21,7 @@ impl Region for ListRegion {
             Cell {
                 char: ' ',
                 colour: Colour::White,
+                bold: false
             };
             ((self.width - 2) * (self.height - 2)) as usize
         ]
@@ -40,16 +41,19 @@ impl Region for ListRegion {
                         buffer.push(Cell {
                             char: '╭',
                             colour: c,
+                            bold: self.focused
                         })
                     } else if x == self.width - 1 {
                         buffer.push(Cell {
                             char: '╮',
                             colour: c,
+                            bold: self.focused
                         })
                     } else {
                         buffer.push(Cell {
                             char: '─',
                             colour: c,
+                            bold: self.focused
                         })
                     }
                 } else if y == self.height - 1 {
@@ -57,16 +61,19 @@ impl Region for ListRegion {
                         buffer.push(Cell {
                             char: '╰',
                             colour: c,
+                            bold: self.focused
                         })
                     } else if x == self.width - 1 {
                         buffer.push(Cell {
                             char: '╯',
                             colour: c,
+                            bold: self.focused
                         })
                     } else {
                         buffer.push(Cell {
                             char: '─',
                             colour: c,
+                            bold: self.focused
                         })
                     }
                 } else {
@@ -74,6 +81,7 @@ impl Region for ListRegion {
                         buffer.push(Cell {
                             char: '│',
                             colour: c,
+                            bold: self.focused
                         })
                     } else {
                         buffer.push(
@@ -115,5 +123,18 @@ impl Region for ListRegion {
 
     fn set_focus(&mut self, focus: bool) {
         self.focused = focus;
+    }
+
+    fn _type(&self) -> RegionType {
+        RegionType::List
+    }
+
+    fn send_data(&mut self, data: RegionData) {
+        match data {
+            RegionData::List(res) => {
+                self.data.push(res)
+            },
+            _ => {}
+        }
     }
 }

@@ -1,8 +1,10 @@
 use crate::query::tokenise::Value;
 use crate::ui::framebuffer::{Cell, FrameBuffer};
-use crate::ui::regions::region::Region;
+use crate::ui::regions::region::{Region, RegionData, RegionType};
 use crate::ui::tui::Colour;
 use crossterm::event::Event;
+use crate::query::data::KeyAccess;
+use crate::query::display::data_display::build_table;
 use crate::utils::utils::bounds_loc;
 
 pub struct TableRegion {
@@ -12,20 +14,39 @@ pub struct TableRegion {
     pub height: u16,
     pub border_colour: Colour,
     pub focused_border_colour: Colour,
-    pub headings: Vec<String>,
-    pub data: Vec<Vec<Value>>,
+    pub formatted_table: Vec<String>,
     pub focused: bool,
+}
+
+impl TableRegion {
+    fn data<T>(&mut self, data: Vec<T>, attributes: Vec<String>) -> Result<(), String> where T: KeyAccess {
+        self.formatted_table = build_table(data, attributes)?;
+        Ok(())
+    }
 }
 
 impl Region for TableRegion {
     fn build_inner_buffer(&self) -> Vec<Cell> {
-        vec![
+        let mut buffer = vec![
             Cell {
                 char: ' ',
                 colour: Colour::White,
+                bold: false
             };
             ((self.width - 2) * (self.height - 2)) as usize
-        ]
+        ];
+
+        for (y, row) in self.formatted_table.iter().enumerate() {
+            for (x, char) in row.chars().enumerate() {
+                buffer[y * (self.width - 2) as usize + x] = Cell {
+                    char,
+                    colour: Colour::White,
+                    bold: false
+                }
+            }
+        }
+
+        buffer
     }
 
     /// Make a border of the given colour and fill with inner buffer (buffer length is 0)
@@ -42,16 +63,19 @@ impl Region for TableRegion {
                         buffer.push(Cell {
                             char: '╭',
                             colour: c,
+                            bold: self.focused
                         })
                     } else if x == self.width - 1 {
                         buffer.push(Cell {
                             char: '╮',
                             colour: c,
+                            bold: self.focused
                         })
                     } else {
                         buffer.push(Cell {
                             char: '─',
                             colour: c,
+                            bold: self.focused
                         })
                     }
                 } else if y == self.height - 1 {
@@ -59,16 +83,19 @@ impl Region for TableRegion {
                         buffer.push(Cell {
                             char: '╰',
                             colour: c,
+                            bold: self.focused
                         })
                     } else if x == self.width - 1 {
                         buffer.push(Cell {
                             char: '╯',
                             colour: c,
+                            bold: self.focused
                         })
                     } else {
                         buffer.push(Cell {
                             char: '─',
                             colour: c,
+                            bold: self.focused
                         })
                     }
                 } else {
@@ -76,6 +103,7 @@ impl Region for TableRegion {
                         buffer.push(Cell {
                             char: '│',
                             colour: c,
+                            bold: self.focused
                         })
                     } else {
                         buffer.push(
@@ -117,5 +145,18 @@ impl Region for TableRegion {
 
     fn set_focus(&mut self, focus: bool) {
         self.focused = focus;
+    }
+
+    fn _type(&self) -> RegionType {
+        RegionType::Table
+    }
+
+    fn send_data(&mut self, data: RegionData) {
+        match data {
+            RegionData::Table(res) => {
+                self.formatted_table = res;
+            },
+            _ => {} // ignore non table data
+        }
     }
 }

@@ -1,6 +1,18 @@
 use crate::ui::framebuffer::{Cell, FrameBuffer};
 use crossterm::event::Event;
 
+#[derive(PartialEq)]
+pub enum RegionType {
+    Input,
+    Table,
+    List
+}
+
+pub enum RegionData {
+    Table(Vec<String>),
+    List(String)
+}
+
 pub trait Region {
     fn build_inner_buffer(&self) -> Vec<Cell>;
 
@@ -16,4 +28,8 @@ pub trait Region {
     fn bounds_loc(&self, x: u16, y: u16) -> bool;
 
     fn set_focus(&mut self, focus: bool);
+
+    fn _type(&self) -> RegionType;
+
+    fn send_data(&mut self, data: RegionData);
 }

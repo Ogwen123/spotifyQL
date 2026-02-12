@@ -1,9 +1,10 @@
 use crate::ui::framebuffer::FrameBuffer;
 use crate::ui::regions::input_region::InputRegion;
 use crate::ui::regions::list_region::ListRegion;
-use crate::ui::regions::region::Region;
+use crate::ui::regions::region::{Region, RegionData, RegionType};
 use crate::ui::regions::table_region::TableRegion;
 use crate::utils::logger::info;
+use crossterm::cursor::{Hide, Show};
 use crossterm::event::KeyCode::Char;
 use crossterm::event::{
     DisableMouseCapture, EnableMouseCapture, Event, KeyModifiers, MouseEventKind, poll, read,
@@ -18,6 +19,8 @@ use std::io;
 use std::io::Write;
 use std::mem::swap;
 use std::time::Duration;
+use crate::query::data::KeyAccess;
+use crate::query::display::data_display::build_table;
 
 #[derive(Clone, PartialEq)]
 pub enum Colour {
@@ -31,6 +34,24 @@ pub enum Colour {
     BrightGreen,
     BrightBlue,
     BrightPurple,
+}
+
+impl Colour {
+    pub fn code(&self) -> String {
+        match self {
+            Colour::Green => "32m",
+            Colour::Blue => "34m",
+            Colour::Purple => "35m",
+            Colour::Red => "31m",
+            Colour::Cyan => "36m",
+            Colour::White => "37m",
+            Colour::Grey => "90m",
+            Colour::BrightGreen => "92m",
+            Colour::BrightBlue => "94m",
+            Colour::BrightPurple => "95m",
+        }
+        .to_string()
+    }
 }
 
 impl Display for Colour {
@@ -99,7 +120,7 @@ impl TUI {
             border_colour: Colour::Cyan,
             focused_border_colour: Colour::Green,
             focused: true,
-            placeholder: String::from("Enter Query"),
+            placeholder: String::from("Start typing query here..."),
         };
         // data region
         let data_region = TableRegion {
@@ -107,8 +128,7 @@ impl TUI {
             y: input_region.height,
             height: (height as f64 * 0.7).ceil() as u16,
             width,
-            headings: Vec::new(),
-            data: Vec::new(),
+            formatted_table: Vec::new(),
             border_colour: Colour::Blue,
             focused_border_colour: Colour::BrightBlue,
             focused: false,
@@ -139,8 +159,6 @@ impl TUI {
         // enter alternate display buffer
         Self::enter_tui_mode()?;
 
-        let mut count = 0;
-
         loop {
             if !self.run {
                 Self::leave_tui_mode()?;
@@ -152,13 +170,7 @@ impl TUI {
                 return Ok(());
             }
 
-            if count == 100 { // complete redraw every 100 draws
-                count = 0;
-                self.draw(true);
-            } else {
-                self.draw(false);
-            }
-            count += 1;
+            self.draw();
 
             if poll(Duration::from_millis(100)).map_err(|x| x.to_string())? {
                 self.handle_event(read().map_err(|x| x.to_string())?)
@@ -166,16 +178,12 @@ impl TUI {
         }
     }
 
-    fn draw(&mut self, force: bool) {
+    fn draw(&mut self) {
         for region in &self.regions {
             region.draw(&mut self.current)
         }
 
-        if force {
-            self.flush();
-        } else {
-            self.flush_diff();
-        }
+        self.flush_diff();
 
         swap(&mut self.current, &mut self.previous)
     }
@@ -189,10 +197,11 @@ impl TUI {
                 let prev_cell = self.previous.get(x, y);
                 if prev_cell.colour != cell.colour || prev_cell.char != cell.char {
                     print!(
-                        "\x1b[{};{}H{}{}",
+                        "\x1b[{};{}H\x1b[{};{}{}",
                         y + 1,
                         x + 1,
-                        cell.colour.to_string(),
+                        if cell.bold { "1" } else { "22" },
+                        cell.colour.code(),
                         cell.char
                     );
                 }
@@ -202,30 +211,12 @@ impl TUI {
         io::stdout().flush().unwrap();
     }
 
-    fn flush(&mut self) {
-        // \x1b[3;6H\x1b[37m@
-
-        for y in 0..self.height {
-            for x in 0..self.width {
-                let cell = self.current.get(x, y);
-                    print!(
-                        "\x1b[{};{}H{}{}",
-                        y + 1,
-                        x + 1,
-                        cell.colour.to_string(),
-                        cell.char
-                    );
-
-            }
-        }
-    }
-
     fn handle_event(&mut self, event: Event) {
         match event {
             Event::Key(res) => {
                 if res.code == Char('c') && res.modifiers.contains(KeyModifiers::CONTROL) {
                     self.run = false;
-                    return
+                    return;
                 }
                 for i in self.regions.iter_mut() {
                     i.handle_event(event.clone())
@@ -235,7 +226,6 @@ impl TUI {
                 if let MouseEventKind::Down(button) = res.kind
                     && button.is_left()
                 {
-
                     for i in self.regions.iter_mut() {
                         if i.bounds_loc(res.column, res.row) {
                             i.set_focus(true);
@@ -256,6 +246,7 @@ impl TUI {
     pub fn enter_tui_mode() -> Result<(), String> {
         execute!(io::stdout(), EnterAlternateScreen).map_err(|x| x.to_string())?;
         execute!(io::stdout(), EnableMouseCapture).map_err(|x| x.to_string())?;
+        execute!(io::stdout(), Hide).map_err(|x| x.to_string())?;
         enable_raw_mode().map_err(|x| x.to_string())?;
         Ok(())
     }
@@ -264,7 +255,18 @@ impl TUI {
 
         execute!(io::stdout(), LeaveAlternateScreen).map_err(|x| x.to_string())?;
         execute!(io::stdout(), DisableMouseCapture).map_err(|x| x.to_string())?;
+        execute!(io::stdout(), Show).map_err(|x| x.to_string())?;
         disable_raw_mode().map_err(|x| x.to_string())?;
+        Ok(())
+    }
+
+    pub fn send_table_data(&mut self, data: Vec<String>) -> Result<(), String> {
+        for i in &mut self.regions {
+            if i._type() == RegionType::Table {
+                i.send_data(RegionData::Table(data.clone()))
+            }
+        }
+        
         Ok(())
     }
 }

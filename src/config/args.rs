@@ -7,8 +7,16 @@ pub enum Command {
     CLI,
 }
 
+#[derive(PartialEq)]
+pub enum UIMode {
+    Default,
+    TUI,
+    CLI
+}
+
 pub struct RunContext {
     pub command: Command,
+    pub ui_mode: UIMode
 }
 
 impl RunContext {
@@ -18,21 +26,21 @@ impl RunContext {
         args.retain(|x| !x.ends_with("spotifyQL") && !x.ends_with("spotifyQL.exe")); // remove the binary's name from the args
         println!("{:?}", args);
 
-        let command: Command;
+        let mut command: Command = Command::CLI;
+        let mut ui_mode = UIMode::Default;
 
-        if args.len() == 0 {
-            command = Command::CLI
-        } else {
-            if args[0] == "login" {
+        for arg in args{
+            if arg == "login" {
                 command = Command::Login
-            } else if args[0] == "logout" {
+            } else if arg == "logout" {
                 command = Command::Logout
-            } else {
-                // otherwise ignore args and just enter CLI
-                command = Command::CLI
+            } else if arg == "--no-tui" {
+                ui_mode = UIMode::CLI;
+            } else if arg == "--tui" {
+                ui_mode = UIMode::TUI
             }
         }
 
-        Self { command }
+        Self { command, ui_mode }
     }
 }

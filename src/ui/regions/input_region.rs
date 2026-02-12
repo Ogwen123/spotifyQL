@@ -1,5 +1,5 @@
 use crate::ui::framebuffer::{Cell, FrameBuffer};
-use crate::ui::regions::region::Region;
+use crate::ui::regions::region::{Region, RegionData, RegionType};
 use crate::ui::tui::Colour;
 use crossterm::event::{Event, KeyCode, KeyEvent};
 use crate::utils::utils::bounds_loc;
@@ -22,6 +22,7 @@ impl Region for InputRegion {
             Cell {
                 char: ' ',
                 colour: Colour::White,
+                bold: false
             };
             ((self.width - 2) * (self.height - 2)) as usize
         ];
@@ -31,6 +32,7 @@ impl Region for InputRegion {
                 buffer[index] = Cell {
                     char,
                     colour: Colour::Grey,
+                    bold: false
                 }
             }
         } else {
@@ -38,6 +40,7 @@ impl Region for InputRegion {
                 buffer[index] = Cell {
                     char,
                     colour: Colour::White,
+                    bold: false
                 }
             }
         }
@@ -59,16 +62,19 @@ impl Region for InputRegion {
                         buffer.push(Cell {
                             char: '╭',
                             colour: c,
+                            bold: self.focused
                         })
                     } else if x == self.width - 1 {
                         buffer.push(Cell {
                             char: '╮',
                             colour: c,
+                            bold: self.focused
                         })
                     } else {
                         buffer.push(Cell {
                             char: '─',
                             colour: c,
+                            bold: self.focused
                         })
                     }
                 } else if y == self.height - 1 {
@@ -76,16 +82,19 @@ impl Region for InputRegion {
                         buffer.push(Cell {
                             char: '╰',
                             colour: c,
+                            bold: self.focused
                         })
                     } else if x == self.width - 1 {
                         buffer.push(Cell {
                             char: '╯',
                             colour: c,
+                            bold: self.focused
                         })
                     } else {
                         buffer.push(Cell {
                             char: '─',
                             colour: c,
+                            bold: self.focused
                         })
                     }
                 } else {
@@ -93,6 +102,7 @@ impl Region for InputRegion {
                         buffer.push(Cell {
                             char: '│',
                             colour: c,
+                            bold: self.focused
                         })
                     } else {
                         buffer.push(
@@ -158,4 +168,10 @@ impl Region for InputRegion {
     fn set_focus(&mut self, focus: bool) {
         self.focused = focus;
     }
+
+    fn _type(&self) -> RegionType {
+        RegionType::Input
+    }
+
+    fn send_data(&mut self, data: RegionData) {}
 }

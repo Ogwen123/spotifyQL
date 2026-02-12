@@ -3,7 +3,7 @@ pub mod data_display {
     use crate::query::statements::{Aggregation, AggregationResult};
     use std::collections::HashMap;
 
-    pub fn table<T>(data: Vec<T>, attributes: Vec<String>) -> Result<(), String>
+    pub fn build_table<T>(data: Vec<T>, attributes: Vec<String>) -> Result<Vec<String>, String>
     where
         T: KeyAccess,
     {
@@ -62,21 +62,32 @@ pub mod data_display {
             .collect::<Vec<String>>()
             .join("|");
 
-        println!(
-            "|{}|\n|{}|\n{}",
-            head_buffer.join("|"),
-            sep_line,
-            body_buffer
-                .iter()
-                .map(|x| format!("|{}|", x.join("|")))
-                .collect::<Vec<String>>()
-                .join("\n")
-        );
+        let res = vec![
+            format!("|{}|", head_buffer.join("|")),
+            format!("|{}|", sep_line),
+        ];
+
+        let chained = res
+            .into_iter()
+            .chain(body_buffer.iter().map(|x| format!("|{}|", x.join("|"))))
+            .collect::<Vec<String>>();
+
+        Ok(chained)
+    }
+    pub fn table<T>(data: Vec<T>, attributes: Vec<String>) -> Result<(), String>
+    where
+        T: KeyAccess,
+    {
+        let lines = build_table(data, attributes)?;
+
+        println!("{}", lines.join("\n"));
 
         Ok(())
     }
 
-    pub fn aggregation_table(aggregation: Aggregation, data: HashMap<String, AggregationResult>) {
+    
+    
+    pub fn build_aggregation_table(aggregation: Aggregation, data: HashMap<String, AggregationResult>) -> Vec<String> {
         let mut head_buffer: Vec<String> = Vec::new();
         let mut body_buffer: Vec<String> = Vec::new();
         let mut max_cols: Vec<usize> = Vec::new();
@@ -111,11 +122,16 @@ pub mod data_display {
             .collect::<Vec<String>>()
             .join("|");
 
-        println!(
-            "|{}|\n|{}|\n|{}|",
-            head_buffer.join("|"),
+        vec!(
+            format!("|{}|", head_buffer.join("|")),
             sep_line,
-            body_buffer.join("|")
+            format!("|{}|", body_buffer.join("|"))
         )
+    }
+    
+    pub fn aggregation_table(aggregation: Aggregation, data: HashMap<String, AggregationResult>) {
+        let lines = build_aggregation_table(aggregation, data);
+        
+        println!("{}", lines.join("\n"))
     }
 }

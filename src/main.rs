@@ -8,6 +8,7 @@ use crate::{
     config::args::{Command, RunContext},
 };
 use app_context::AppContext;
+use crate::config::args::UIMode;
 
 mod api;
 mod app_context;
@@ -36,6 +37,12 @@ fn main() {
             return;
         }
     };
+    
+    if rc.ui_mode == UIMode::CLI {
+        cx.user_config.tui = false;
+    } else if rc.ui_mode == UIMode::TUI {
+        cx.user_config.tui = true;
+    }
 
     if rc.command == Command::Login {
         if let Err(err) = login(&mut cx) {
