@@ -18,7 +18,9 @@ use std::fmt::{Display, Formatter};
 use std::io;
 use std::io::Write;
 use std::mem::swap;
+use std::rc::Rc;
 use std::time::Duration;
+use crate::app_context::AppContext;
 use crate::query::data::KeyAccess;
 use crate::query::display::data_display::build_table;
 
@@ -73,6 +75,29 @@ impl Display for Colour {
             }
         )
     }
+}
+
+#[derive(Clone)]
+pub enum Severity {
+    Log,
+    Success,
+    Error
+}
+
+impl Severity {
+    pub fn colour(&self) -> Colour {
+        match self {
+            Severity::Error => Colour::Red,
+            Severity::Log => Colour::Blue,
+            Severity::Success => Colour::Green
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct Log {
+    pub(crate) severity: Severity,
+    pub(crate) content: String
 }
 
 pub struct TUI {
@@ -155,9 +180,11 @@ impl TUI {
         self
     }
 
-    pub fn start(&mut self) -> Result<(), String> {
+    pub fn start(&mut self, cx: &mut AppContext) -> Result<(), String> {
         // enter alternate display buffer
         Self::enter_tui_mode()?;
+
+        let mut log_buffer: Vec<Log> = Vec::new();
 
         loop {
             if !self.run {
@@ -170,10 +197,19 @@ impl TUI {
                 return Ok(());
             }
 
+            if log_buffer.len() != 0 {
+                for i in &mut self.regions {
+                    if i._type() == RegionType::List {
+                        i.send_data(RegionData::List(log_buffer.clone()));
+                    }
+                }
+                log_buffer = Vec::new()
+            }
+
             self.draw();
 
             if poll(Duration::from_millis(100)).map_err(|x| x.to_string())? {
-                self.handle_event(read().map_err(|x| x.to_string())?)
+                self.handle_event(read().map_err(|x| x.to_string())?, cx, &mut log_buffer)
             }
         }
     }
@@ -211,7 +247,7 @@ impl TUI {
         io::stdout().flush().unwrap();
     }
 
-    fn handle_event(&mut self, event: Event) {
+    fn handle_event(&mut self, event: Event, cx: &mut AppContext, lb: &mut Vec<Log>) {
         match event {
             Event::Key(res) => {
                 if res.code == Char('c') && res.modifiers.contains(KeyModifiers::CONTROL) {
@@ -219,7 +255,7 @@ impl TUI {
                     return;
                 }
                 for i in self.regions.iter_mut() {
-                    i.handle_event(event.clone())
+                    i.handle_event(event.clone(), cx, lb)
                 }
             }
             Event::Mouse(res) => {
@@ -266,7 +302,7 @@ impl TUI {
                 i.send_data(RegionData::Table(data.clone()))
             }
         }
-        
+
         Ok(())
     }
 }

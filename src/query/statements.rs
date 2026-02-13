@@ -176,7 +176,8 @@ impl SelectStatement {
             }
             Aggregation::None => {
                 if cx.user_config.tui {
-                    cx.tui.clone().unwrap().borrow_mut().send_table_data(build_table(data, self.targets.clone())?)? // if cx.usee_config.tui is true then .unwrap() is safe
+                    // TODO: error on this line, unwrapping a None value
+                    cx.tui.clone().unwrap().borrow_mut().send_table_data(build_table(data, self.targets.clone())?)? // if cx.user_config.tui is true then .unwrap() is safe
                 } else {
                     table(data, self.targets.clone())?
                 }

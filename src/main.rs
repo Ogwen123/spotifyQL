@@ -75,7 +75,7 @@ fn main() {
         if cx.user_config.tui {
             match TUI::new() {
                 Ok(ref mut res) => {
-                    if let Err(err) = res.start() {
+                    if let Err(err) = res.start(&mut cx) {
                         TUI::leave_tui_mode();
                         fatal!("{}", err)
                     }

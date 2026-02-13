@@ -1,7 +1,8 @@
 use crate::ui::framebuffer::{Cell, FrameBuffer};
 use crate::ui::regions::region::{Region, RegionData, RegionType};
-use crate::ui::tui::Colour;
+use crate::ui::tui::{Colour, Log};
 use crossterm::event::Event;
+use crate::app_context::AppContext;
 use crate::utils::utils::bounds_loc;
 
 pub struct ListRegion {
@@ -11,20 +12,32 @@ pub struct ListRegion {
     pub height: u16,
     pub border_colour: Colour,
     pub focused_border_colour: Colour,
-    pub data: Vec<String>, // vector of lines to be displayed
+    pub data: Vec<Log>, // vector of lines to be displayed
     pub focused: bool,
 }
 
 impl Region for ListRegion {
     fn build_inner_buffer(&self) -> Vec<Cell> {
-        vec![
+        let mut buffer = vec![
             Cell {
                 char: ' ',
                 colour: Colour::White,
                 bold: false
             };
             ((self.width - 2) * (self.height - 2)) as usize
-        ]
+        ];
+
+        for (y, row) in self.data.iter().enumerate() {
+            for (x, char) in row.content.chars().enumerate() {
+                buffer[y * (self.width - 2) as usize + x] = Cell {
+                    char,
+                    colour: row.severity.colour(),
+                    bold: false
+                }
+            }
+        }
+
+        buffer
     }
 
     /// Make a border of the given colour and fill with inner buffer (buffer length is 0)
@@ -106,7 +119,7 @@ impl Region for ListRegion {
         }
     }
 
-    fn handle_event(&mut self, event: Event) {
+    fn handle_event(&mut self, event: Event, cx: &mut AppContext, lb: &mut Vec<Log>) {
         if !self.focused {return}
     }
 
@@ -129,10 +142,10 @@ impl Region for ListRegion {
         RegionType::List
     }
 
-    fn send_data(&mut self, data: RegionData) {
+    fn send_data(&mut self, mut data: RegionData) {
         match data {
-            RegionData::List(res) => {
-                self.data.push(res)
+            RegionData::List(ref mut res) => {
+                self.data.append(res)
             },
             _ => {}
         }

@@ -1,7 +1,10 @@
+use std::rc::Rc;
 use crate::ui::framebuffer::{Cell, FrameBuffer};
 use crate::ui::regions::region::{Region, RegionData, RegionType};
-use crate::ui::tui::Colour;
+use crate::ui::tui::{Colour, Log, Severity};
 use crossterm::event::{Event, KeyCode, KeyEvent};
+use crate::app_context::AppContext;
+use crate::query::run::run_query;
 use crate::utils::utils::bounds_loc;
 
 pub struct InputRegion {
@@ -127,7 +130,7 @@ impl Region for InputRegion {
         }
     }
 
-    fn handle_event(&mut self, event: Event) {
+    fn handle_event(&mut self, event: Event, cx: &mut AppContext, lb: &mut Vec<Log>) {
         if !self.focused {return}
 
         match event {
@@ -141,6 +144,13 @@ impl Region for InputRegion {
                     },
                     KeyCode::Enter => {
                         // run query
+                        match run_query(cx, self.value.clone()) {
+                            Ok(_) => {},
+                            Err(err) => lb.push(Log {
+                                severity: Severity::Error,
+                                content: err
+                            })
+                        };
                         self.value = String::new()
                     }
                     _ => {}

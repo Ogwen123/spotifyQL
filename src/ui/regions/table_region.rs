@@ -1,8 +1,9 @@
 use crate::query::tokenise::Value;
 use crate::ui::framebuffer::{Cell, FrameBuffer};
 use crate::ui::regions::region::{Region, RegionData, RegionType};
-use crate::ui::tui::Colour;
+use crate::ui::tui::{Colour, Log};
 use crossterm::event::Event;
+use crate::app_context::AppContext;
 use crate::query::data::KeyAccess;
 use crate::query::display::data_display::build_table;
 use crate::utils::utils::bounds_loc;
@@ -128,7 +129,7 @@ impl Region for TableRegion {
         }
     }
 
-    fn handle_event(&mut self, event: Event) {
+    fn handle_event(&mut self, event: Event, cx: &mut AppContext, lb: &mut Vec<Log>) {
         if !self.focused {return}
     }
 
