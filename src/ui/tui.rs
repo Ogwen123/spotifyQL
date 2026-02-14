@@ -99,6 +99,7 @@ pub struct Log {
     pub(crate) content: String
 }
 
+
 pub struct TUI {
     width: u16,
     height: u16,
@@ -106,6 +107,7 @@ pub struct TUI {
     current: FrameBuffer,
     previous: FrameBuffer,
     run: bool,
+    external_log_buffer: Vec<Log>
 }
 
 impl TUI {
@@ -129,6 +131,7 @@ impl TUI {
             current: FrameBuffer::new(cols, rows),
             previous: FrameBuffer::new(cols, rows),
             run: true,
+            external_log_buffer: Vec::new()
         }
         .init_regions(cols, rows))
     }
@@ -195,6 +198,9 @@ impl TUI {
                 info!("Exiting");
                 return Ok(());
             }
+
+            log_buffer.append(&mut self.external_log_buffer);
+            self.external_log_buffer = Vec::new();
 
             if log_buffer.len() != 0 {
                 for i in &mut self.regions {
@@ -320,5 +326,9 @@ impl TUI {
         }
 
         Ok(())
+    }
+
+    pub fn log(&mut self, log: Log) {
+        self.external_log_buffer.push(log)
     }
 }

@@ -14,7 +14,7 @@ fn exit() {
 }
 
 fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
-    if cx.user_config.debug {
+    if cx.user_config.debug && !cx.user_config.tui {
         match parsed_input {
             "exit" | "/exit" | "quit" | "/quit" => {
                 exit();

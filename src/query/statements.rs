@@ -49,7 +49,7 @@ impl SelectStatement {
                     None => return Err("Playlist data not fetched.".to_string()),
                 })?;
 
-                if cx.user_config.debug {
+                if cx.user_config.debug && !cx.user_config.tui {
                     info!("Filtered playlists")
                 }
 
@@ -61,7 +61,7 @@ impl SelectStatement {
                     None => return Err("Playlist data not fetched.".to_string()),
                 })?;
 
-                if cx.user_config.debug {
+                if cx.user_config.debug && !cx.user_config.tui {
                     info!("Filtered playlists")
                 }
 
@@ -88,7 +88,7 @@ impl SelectStatement {
 
                 let valid = self.tracks(data.unwrap().clone())?;
 
-                if cx.user_config.debug {
+                if cx.user_config.debug && !cx.user_config.tui {
                     info!("Filtered playlist tracks")
                 }
 
@@ -114,7 +114,7 @@ impl SelectStatement {
 
                 let valid = self.tracks(data.unwrap().clone())?;
 
-                if cx.user_config.debug {
+                if cx.user_config.debug && !cx.user_config.tui {
                     info!("Filtered playlists")
                 }
 
@@ -177,7 +177,6 @@ impl SelectStatement {
             }
             Aggregation::None => {
                 if cx.user_config.tui {
-                    // TODO: error on this line, unwrapping a None value
                     window.unwrap().send_table_data(build_table(data, self.targets.clone())?)? // if cx.user_config.tui is true then .unwrap() is safe
                 } else {
                     table(data, self.targets.clone())?

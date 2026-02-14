@@ -19,10 +19,6 @@ fn split_aggregated_attributes(attributes: String) -> Vec<String> {
 }
 
 pub fn parse(_tokens: Vec<Token>) -> Result<SelectStatement, String> {
-    for i in _tokens.clone() {
-        print!("{} ", i)
-    }
-    println!();
     // if the tokens contain a COUNT then it's a SelectCount, otherwise it's a Select
     if _tokens.len() < 4 {
         return Err(

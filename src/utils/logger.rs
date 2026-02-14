@@ -81,6 +81,17 @@ macro_rules! info_nnl {
 //     }};
 // }
 
+macro_rules! log {
+    ($p: expr, $l: expr, $w: ident) => {
+        if $w.is_some() {
+            $w.as_mut().unwrap().log($l)
+        } else {
+            $p
+        }
+    }
+}
+
+
 pub(crate) use error;
 pub(crate) use fatal;
 pub(crate) use info;
@@ -89,5 +100,8 @@ pub(crate) use warning;
 
 // pub(crate) use fatal_nnl;
 pub(crate) use info_nnl;
+use crate::ui::tui::Severity;
 // pub(crate) use success_nnl;
 // pub(crate) use warning_nnl;
+
+pub(crate) use log;

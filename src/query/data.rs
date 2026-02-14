@@ -205,7 +205,7 @@ pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), S
                 cx.data.playlist_data = Some(APIQuery::get_playlists(cx)?);
                 cx.data.playlist_data_ct = secs_now();
             }
-            if cx.user_config.debug {
+            if cx.user_config.debug && !cx.user_config.tui {
                 info!("Loaded playlist data")
             }
         }
@@ -224,7 +224,7 @@ pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), S
                 cx.data.saved_album_data = Some(APIQuery::get_saved_albums(cx)?);
                 cx.data.saved_album_data_ct = secs_now();
             }
-            if cx.user_config.debug {
+            if cx.user_config.debug && !cx.user_config.tui {
                 info!("Loaded album data")
             }
         }
