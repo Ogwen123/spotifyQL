@@ -1,11 +1,12 @@
 use crate::query::tokenise::Value;
 use crate::ui::framebuffer::{Cell, FrameBuffer};
 use crate::ui::regions::region::{Region, RegionData, RegionType};
-use crate::ui::tui::{Colour, Log};
+use crate::ui::tui::{Colour, Log, TUI};
 use crossterm::event::Event;
 use crate::app_context::AppContext;
 use crate::query::data::KeyAccess;
 use crate::query::display::data_display::build_table;
+use crate::ui::event_action::Action;
 use crate::utils::utils::bounds_loc;
 
 pub struct TableRegion {
@@ -38,7 +39,13 @@ impl Region for TableRegion {
         ];
 
         for (y, row) in self.formatted_table.iter().enumerate() {
+            if y >= (self.height - 2) as usize {
+                break
+            }
             for (x, char) in row.chars().enumerate() {
+                if x >= (self.width - 2) as usize {
+                    break
+                }
                 buffer[y * (self.width - 2) as usize + x] = Cell {
                     char,
                     colour: Colour::White,
@@ -129,8 +136,9 @@ impl Region for TableRegion {
         }
     }
 
-    fn handle_event(&mut self, event: Event, cx: &mut AppContext, lb: &mut Vec<Log>) {
-        if !self.focused {return}
+    fn handle_event(&mut self, event: Event, lb: &mut Vec<Log>) -> Action {
+        if !self.focused {}
+        Action::Internal
     }
 
     fn _debug(&self) {

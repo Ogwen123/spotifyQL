@@ -1,7 +1,8 @@
 use crate::ui::framebuffer::{Cell, FrameBuffer};
 use crossterm::event::Event;
 use crate::app_context::AppContext;
-use crate::ui::tui::Log;
+use crate::ui::event_action::Action;
+use crate::ui::tui::{Log, TUI};
 
 #[derive(PartialEq)]
 pub enum RegionType {
@@ -23,7 +24,7 @@ pub trait Region {
     fn draw(&self, fb: &mut FrameBuffer);
 
     /// Called when an event happens on focused regions as long as the TUI event handler doesn't consume the event
-    fn handle_event(&mut self, event: Event, cx: &mut AppContext, lb: &mut Vec<Log>);
+    fn handle_event(&mut self, event: Event, lb: &mut Vec<Log>) -> Action;
 
     fn _debug(&self);
 

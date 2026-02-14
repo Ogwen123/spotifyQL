@@ -5,8 +5,9 @@ use crate::query::tokenise::tokenise;
 use crate::utils::logger::{info, info_nnl, success};
 use std::io;
 use std::io::Write;
+use crate::ui::tui::TUI;
 
-pub fn run_query(cx: &mut AppContext, query: String) -> Result<(), String> {
+pub fn run_query(query: String, cx: &mut AppContext, window: Option<&mut TUI>) -> Result<(), String> {
     info_nnl!("Tokenising");
     let tokens = tokenise(query)?;
     success!("Processed Tokens");
@@ -32,7 +33,7 @@ pub fn run_query(cx: &mut AppContext, query: String) -> Result<(), String> {
     load_data_source(cx, statement.source.clone())?;
     success!("Loaded Data");
 
-    let _ = statement.run(cx)?;
+    let _ = statement.run(cx, window)?;
 
     Ok(())
 }

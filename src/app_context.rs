@@ -1,9 +1,6 @@
-use std::cell::RefCell;
-use std::rc::Rc;
 use crate::auth::code::AuthFileContent;
 use crate::config::user_config::UserConfig;
 use crate::query::data::Data;
-use crate::ui::tui::TUI;
 use crate::utils::file::{File, read_file};
 
 #[derive(Clone)]
@@ -14,7 +11,6 @@ pub struct AppContext {
     pub expires_after: u64,
     pub data: Data,
     pub user_config: UserConfig,
-    pub tui: Option<Rc<RefCell<TUI>>>
 }
 
 impl AppContext {
@@ -46,8 +42,7 @@ impl Default for AppContext {
             refresh_token: String::new(),
             expires_after: 0,
             data: Default::default(),
-            user_config: UserConfig::default(),
-            tui: None
+            user_config: UserConfig::default()
         }
     }
 }

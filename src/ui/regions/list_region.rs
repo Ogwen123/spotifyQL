@@ -1,10 +1,12 @@
 use crate::ui::framebuffer::{Cell, FrameBuffer};
 use crate::ui::regions::region::{Region, RegionData, RegionType};
-use crate::ui::tui::{Colour, Log};
+use crate::ui::tui::{Colour, Log, TUI};
 use crossterm::event::Event;
 use crate::app_context::AppContext;
+use crate::ui::event_action::Action;
 use crate::utils::utils::bounds_loc;
 
+#[derive(Clone)]
 pub struct ListRegion {
     pub x: u16,
     pub y: u16,
@@ -119,8 +121,9 @@ impl Region for ListRegion {
         }
     }
 
-    fn handle_event(&mut self, event: Event, cx: &mut AppContext, lb: &mut Vec<Log>) {
-        if !self.focused {return}
+    fn handle_event(&mut self, event: Event, lb: &mut Vec<Log>) -> Action {
+        if !self.focused {}
+        Action::Internal
     }
 
     fn _debug(&self) {

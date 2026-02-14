@@ -41,28 +41,33 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
             }
             "/testf" => run_query(
                 // test full run through
-                cx,
                 "SELECT COUNT(name) FROM playlist(All) WHERE \"Arctic Monkeys\" IN artists;".to_string(),
+                cx,
+                None
             )?,
             "/testd" => run_query(
                 // test double attributes
-                cx,
                 "SELECT id, name FROM playlist(All);".to_string(),
+                cx,
+                None
             )?,
             "/testl" => run_query(
                 // test list operators
-                cx,
                 "SELECT id, name FROM playlist(All) WHERE name in [\"Holiday\", \"Shout\"];".to_string(),
+                cx,
+                None
             )?,
             "/testlr" => run_query(
                 // test list operators reversed
-                cx,
                 "SELECT name FROM playlist(All) WHERE \"Arctic Monkeys\" in artists;".to_string(),
+                cx,
+                None
             )?,
             "/tests" => run_query(
                 // test simple query
-                cx,
                 "SELECT name FROM playlist(All);".to_string(),
+                cx,
+                None
             )?,
             "/testa" => println!(
                 // test fetching album data
@@ -71,8 +76,9 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
             ),
             "/testp" => run_query(
                 // test playlist data
-                cx,
                 "SELECT name FROM PLAYLIST(All) WHERE name LIKE \"dancefloor\";".to_string(),
+                cx,
+                None
             )?,
             "/testb" => println!(
                 "{:?}",
@@ -81,21 +87,24 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
                 )?)?
             ), // test booleans in conditions,
             "/testc" => run_query(
-                cx,
                 "SELECT name FROM PLAYLIST(test) WHERE name == \"Shout\" AND id LIKE \"test\" OR id LIKE \"test\" AND id LIKE \"test\";".to_string(),
+                cx,
+                None
             )?,
             "/testni" => run_query(
                 // test NOT IN operator
-                cx,
                 "SELECT COUNT(name) FROM PLAYLIST(All) WHERE \"Arctic Monkeys\" NOT IN artists;".to_string(),
+                cx,
+                None
             )?,
             "/testda" => run_query(
                 // test date
-                cx,
                 "SELECT name, release_date FROM PLAYLIST(All) WHERE release_date > 7-6-2006;".to_string(),
+                cx,
+                None
             )?,
             _ => {
-                run_query(cx, parsed_input.to_string())?
+                run_query(parsed_input.to_string(), cx, None)?
             }
         }
     } else {
@@ -104,7 +113,7 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
                 exit();
                 return Ok(());
             }
-            _ => run_query(cx, parsed_input.to_string())?,
+            _ => run_query(parsed_input.to_string(), cx, None)?,
         }
     }
 

@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use crate::auth::token_refresh::refresh_token;
 use crate::commands::input::input_loop;
 use crate::ui::tui::TUI;
@@ -74,7 +76,7 @@ fn main() {
 
         if cx.user_config.tui {
             match TUI::new() {
-                Ok(ref mut res) => {
+                Ok(mut res) => {
                     if let Err(err) = res.start(&mut cx) {
                         TUI::leave_tui_mode();
                         fatal!("{}", err)

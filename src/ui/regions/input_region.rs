@@ -1,12 +1,14 @@
 use std::rc::Rc;
 use crate::ui::framebuffer::{Cell, FrameBuffer};
 use crate::ui::regions::region::{Region, RegionData, RegionType};
-use crate::ui::tui::{Colour, Log, Severity};
+use crate::ui::tui::{Colour, Log, Severity, TUI};
 use crossterm::event::{Event, KeyCode, KeyEvent};
 use crate::app_context::AppContext;
 use crate::query::run::run_query;
+use crate::ui::event_action::Action;
 use crate::utils::utils::bounds_loc;
 
+#[derive(Clone)]
 pub struct InputRegion {
     pub x: u16,
     pub y: u16,
@@ -130,36 +132,35 @@ impl Region for InputRegion {
         }
     }
 
-    fn handle_event(&mut self, event: Event, cx: &mut AppContext, lb: &mut Vec<Log>) {
-        if !self.focused {return}
+    fn handle_event(&mut self, event: Event, lb: &mut Vec<Log>) -> Action {
+        if !self.focused {return Action::Internal}
 
         match event {
             Event::Key(res) => {
                 match res.code {
                     KeyCode::Char(c) => {
                         self.value.push(c);
+                        Action::Internal
                     },
                     KeyCode::Backspace => {
                         self.value.pop();
+                        Action::Internal
                     },
                     KeyCode::Enter => {
                         // run query
-                        match run_query(cx, self.value.clone()) {
-                            Ok(_) => {},
-                            Err(err) => lb.push(Log {
-                                severity: Severity::Error,
-                                content: err
-                            })
-                        };
-                        self.value = String::new()
+                        let q = self.value.clone();
+                        self.value = String::new();
+                        Action::RunQuery(q)
                     }
-                    _ => {}
+                    _ => {Action::Internal}
                 }
             }
             Event::Mouse(res) => {
-
+                Action::Internal
             }
-            _ => {}
+            _ => {
+                Action::Internal
+            }
         }
 
     }

@@ -6,6 +6,7 @@ use crate::query::tokenise::{DataSource, Value};
 use crate::utils::logger::info;
 use std::collections::HashMap;
 use crate::query::display::data_display::{aggregation_table, build_aggregation_table, build_table, table};
+use crate::ui::tui::TUI;
 
 #[derive(Debug)]
 pub enum Aggregation {
@@ -39,7 +40,7 @@ pub struct SelectStatement {
 }
 
 impl SelectStatement {
-    pub fn run(self, cx: &AppContext) -> Result<(), String> {
+    pub fn run(self, cx: &AppContext, window: Option<&mut TUI>) -> Result<(), String> {
         // gather targets
         match &self.source {
             DataSource::Playlists => {
@@ -52,7 +53,7 @@ impl SelectStatement {
                     info!("Filtered playlists")
                 }
 
-                self.handle_aggregation_and_display(valid, cx)?
+                self.handle_aggregation_and_display(valid, cx, window)?
             }
             DataSource::SavedAlbums => {
                 let valid = self.albums(match &cx.data.saved_album_data {
@@ -64,7 +65,7 @@ impl SelectStatement {
                     info!("Filtered playlists")
                 }
 
-                self.handle_aggregation_and_display(valid, cx)?
+                self.handle_aggregation_and_display(valid, cx, window)?
             }
             DataSource::Playlist(res) => {
                 let mut data: Option<&Vec<TrackData>> = None;
@@ -91,7 +92,7 @@ impl SelectStatement {
                     info!("Filtered playlist tracks")
                 }
 
-                self.handle_aggregation_and_display(valid, cx)?
+                self.handle_aggregation_and_display(valid, cx, window)?
             }
             DataSource::SavedAlbum(res) => {
                 let mut data: Option<&Vec<TrackData>> = None;
@@ -117,7 +118,7 @@ impl SelectStatement {
                     info!("Filtered playlists")
                 }
 
-                self.handle_aggregation_and_display(valid, cx)?
+                self.handle_aggregation_and_display(valid, cx, window)?
             }
         };
 
@@ -126,7 +127,7 @@ impl SelectStatement {
         Ok(())
     }
 
-    fn handle_aggregation_and_display<T>(self, data: Vec<T>, cx: &AppContext) -> Result<(), String>
+    fn handle_aggregation_and_display<T>(self, data: Vec<T>, cx: &AppContext, window: Option<&mut TUI>) -> Result<(), String>
     where
         T: KeyAccess,
     {
@@ -140,7 +141,7 @@ impl SelectStatement {
                 }
 
                 if cx.user_config.tui {
-                    cx.tui.clone().unwrap().borrow_mut().send_table_data(build_aggregation_table(self.aggregation, count_data))? // if cx.usee_config.tui is true then .unwrap() is safe
+                    window.unwrap().send_table_data(build_aggregation_table(self.aggregation, count_data))? // if cx.usee_config.tui is true then .unwrap() is safe
                 } else {
                     aggregation_table(self.aggregation, count_data)
                 }
@@ -169,7 +170,7 @@ impl SelectStatement {
                 }
 
                 if cx.user_config.tui {
-                    cx.tui.clone().unwrap().borrow_mut().send_table_data(build_aggregation_table(self.aggregation, average_data))? // if cx.usee_config.tui is true then .unwrap() is safe
+                    window.unwrap().send_table_data(build_aggregation_table(self.aggregation, average_data))? // if cx.usee_config.tui is true then .unwrap() is safe
                 } else {
                     aggregation_table(self.aggregation, average_data)
                 }
@@ -177,7 +178,7 @@ impl SelectStatement {
             Aggregation::None => {
                 if cx.user_config.tui {
                     // TODO: error on this line, unwrapping a None value
-                    cx.tui.clone().unwrap().borrow_mut().send_table_data(build_table(data, self.targets.clone())?)? // if cx.user_config.tui is true then .unwrap() is safe
+                    window.unwrap().send_table_data(build_table(data, self.targets.clone())?)? // if cx.user_config.tui is true then .unwrap() is safe
                 } else {
                     table(data, self.targets.clone())?
                 }

@@ -18,11 +18,10 @@ use std::fmt::{Display, Formatter};
 use std::io;
 use std::io::Write;
 use std::mem::swap;
-use std::rc::Rc;
 use std::time::Duration;
 use crate::app_context::AppContext;
-use crate::query::data::KeyAccess;
-use crate::query::display::data_display::build_table;
+use crate::query::run::run_query;
+use crate::ui::event_action::Action;
 
 #[derive(Clone, PartialEq)]
 pub enum Colour {
@@ -141,7 +140,7 @@ impl TUI {
             y: 0,
             height: 3,
             width,
-            value: String::new(),
+            value: String::from("SELECT * FROM PLAYLIST(All);"),
             border_colour: Colour::Cyan,
             focused_border_colour: Colour::Green,
             focused: true,
@@ -254,8 +253,25 @@ impl TUI {
                     self.run = false;
                     return;
                 }
+                let mut query: Option<String> = None;
+
                 for i in self.regions.iter_mut() {
-                    i.handle_event(event.clone(), cx, lb)
+                    match i.handle_event(event.clone(), lb) {
+                        Action::RunQuery(q) => {
+                            query = Some(q);
+                        },
+                        Action::Internal => {}
+                    }
+                }
+
+                if let Some(q) = query {
+                    match run_query(q, cx, Some(self)) { // need to be out here as self can't be borrowed as mutable inside the above loop
+                        Ok(_) => {},
+                        Err(err) => lb.push(Log {
+                            severity: Severity::Error,
+                            content: err
+                        })
+                    };
                 }
             }
             Event::Mouse(res) => {
