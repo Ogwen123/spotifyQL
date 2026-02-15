@@ -159,6 +159,8 @@ impl TUI {
             border_colour: Colour::Blue,
             focused_border_colour: Colour::BrightBlue,
             focused: false,
+            vertical_scroll: 0,
+            horizontal_scroll: 0
         };
         // log region
         let log_region = ListRegion {
@@ -289,6 +291,13 @@ impl TUI {
                             i.set_focus(true);
                         } else {
                             i.set_focus(false);
+                        }
+                    }
+                } else {
+                    for i in self.regions.iter_mut() {
+                        match i.handle_event(event.clone(), lb) {
+                            Action::RunQuery(_) => {},
+                            Action::Internal => {}
                         }
                     }
                 }

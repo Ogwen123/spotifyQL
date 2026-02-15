@@ -1,13 +1,13 @@
-use crate::query::tokenise::Value;
-use crate::ui::framebuffer::{Cell, FrameBuffer};
-use crate::ui::regions::region::{Region, RegionData, RegionType};
-use crate::ui::tui::{Colour, Log, TUI};
-use crossterm::event::Event;
 use crate::app_context::AppContext;
 use crate::query::data::KeyAccess;
 use crate::query::display::data_display::build_table;
+use crate::query::tokenise::Value;
 use crate::ui::event_action::Action;
+use crate::ui::framebuffer::{Cell, FrameBuffer};
+use crate::ui::regions::region::{Region, RegionData, RegionType};
+use crate::ui::tui::{Colour, Log, Severity, TUI};
 use crate::utils::utils::bounds_loc;
+use crossterm::event::{Event, MouseEventKind};
 
 pub struct TableRegion {
     pub x: u16,
@@ -18,12 +18,49 @@ pub struct TableRegion {
     pub focused_border_colour: Colour,
     pub formatted_table: Vec<String>,
     pub focused: bool,
+    pub vertical_scroll: usize,
+    pub horizontal_scroll: usize,
 }
 
 impl TableRegion {
-    fn data<T>(&mut self, data: Vec<T>, attributes: Vec<String>) -> Result<(), String> where T: KeyAccess {
+    fn data<T>(&mut self, data: Vec<T>, attributes: Vec<String>) -> Result<(), String>
+    where
+        T: KeyAccess,
+    {
         self.formatted_table = build_table(data, attributes)?;
         Ok(())
+    }
+}
+
+impl TableRegion {
+    fn change_vertical_scroll(&mut self, change: isize) {
+        if self.formatted_table.len() == 0 {
+            return;
+        }
+        if self.formatted_table.len() < self.height as usize {
+            return;
+        }
+
+        let new = self.vertical_scroll.cast_signed() + change;
+
+        if new >= 0 && new <= (self.formatted_table.len() - self.height as usize + 2).cast_signed() { // + 2 accounts for border weirdness
+            self.vertical_scroll = new.cast_unsigned();
+        }
+    }
+
+    fn change_horizontal_scroll(&mut self, change: isize) {
+        if self.formatted_table.len() == 0 {
+            return;
+        }
+        if self.formatted_table[0].len() < self.width as usize {
+            return;
+        }
+
+        let new = self.horizontal_scroll.cast_signed() + change;
+
+        if !(new < 0 || new > (self.formatted_table[0].len() - self.width as usize + 2).cast_signed()) {
+            self.horizontal_scroll = new.cast_unsigned();
+        }
     }
 }
 
@@ -39,17 +76,19 @@ impl Region for TableRegion {
         ];
 
         for (y, row) in self.formatted_table.iter().enumerate() {
-            if y >= (self.height - 2) as usize {
-                break
+            if y < self.vertical_scroll {continue}
+            if (y - self.vertical_scroll) >= (self.height - 2) as usize {
+                break;
             }
             for (x, char) in row.chars().enumerate() {
-                if x >= (self.width - 2) as usize {
-                    break
+                if x < self.horizontal_scroll {continue}
+                if (x - self.horizontal_scroll) >= (self.width - 2) as usize {
+                    break;
                 }
-                buffer[y * (self.width - 2) as usize + x] = Cell {
+                buffer[(y - self.vertical_scroll) * (self.width - 2) as usize + (x - self.horizontal_scroll)] = Cell {
                     char,
                     colour: Colour::White,
-                    bold: false
+                    bold: false,
                 }
             }
         }
@@ -64,26 +103,30 @@ impl Region for TableRegion {
 
         for y in 0..self.height {
             for x in 0..self.width {
-                let c = if self.focused {self.focused_border_colour.clone()} else {self.border_colour.clone()};
+                let c = if self.focused {
+                    self.focused_border_colour.clone()
+                } else {
+                    self.border_colour.clone()
+                };
 
                 if y == 0 {
                     if x == 0 {
                         buffer.push(Cell {
                             char: '╭',
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     } else if x == self.width - 1 {
                         buffer.push(Cell {
                             char: '╮',
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     } else {
                         buffer.push(Cell {
                             char: '─',
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     }
                 } else if y == self.height - 1 {
@@ -91,19 +134,19 @@ impl Region for TableRegion {
                         buffer.push(Cell {
                             char: '╰',
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     } else if x == self.width - 1 {
                         buffer.push(Cell {
                             char: '╯',
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     } else {
                         buffer.push(Cell {
                             char: '─',
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     }
                 } else {
@@ -111,7 +154,7 @@ impl Region for TableRegion {
                         buffer.push(Cell {
                             char: '│',
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     } else {
                         buffer.push(
@@ -137,8 +180,27 @@ impl Region for TableRegion {
     }
 
     fn handle_event(&mut self, event: Event, lb: &mut Vec<Log>) -> Action {
-        if !self.focused {}
-        Action::Internal
+        match event {
+            Event::Mouse(res) => {
+                match res.kind {
+                    MouseEventKind::ScrollUp => {
+                        self.change_vertical_scroll(-1);
+                    }
+                    MouseEventKind::ScrollDown => {
+                        self.change_vertical_scroll(1);
+                    }
+                    MouseEventKind::ScrollLeft => {
+                        self.change_horizontal_scroll(1);
+                    }
+                    MouseEventKind::ScrollRight => {
+                        self.change_horizontal_scroll(-1);
+                    }
+                    _ => {}
+                }
+                Action::Internal
+            }
+            _ => Action::Internal,
+        }
     }
 
     fn _debug(&self) {
@@ -164,7 +226,7 @@ impl Region for TableRegion {
         match data {
             RegionData::Table(res) => {
                 self.formatted_table = res;
-            },
+            }
             _ => {} // ignore non table data
         }
     }
