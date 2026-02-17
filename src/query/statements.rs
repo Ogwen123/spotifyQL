@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use crate::query::display::data_display::{aggregation_table, build_aggregation_table, build_table, table};
 use crate::ui::tui::TUI;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Aggregation {
     Count,
     Average,
@@ -31,7 +31,7 @@ impl Aggregation {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct SelectStatement {
     pub aggregation: Aggregation,
     pub targets: Vec<String>, // list of attribute names

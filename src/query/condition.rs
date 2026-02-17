@@ -133,7 +133,7 @@ pub fn compute_conditions<T: KeyAccess + Debug>(
 
 pub type NextCondition = (Logical, Box<Condition>);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Condition {
     pub attribute: String,
     pub operation: Operator,
