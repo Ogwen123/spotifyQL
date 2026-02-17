@@ -22,9 +22,10 @@ use std::time::Duration;
 use crate::app_context::AppContext;
 use crate::query::data::load_data_source;
 use crate::query::parse::parse;
-use crate::query::run::{run_query, TUIQueryStage};
+use crate::query::run::{run_query, QueryTracker, TUIQueryStage};
 use crate::query::tokenise::tokenise;
 use crate::ui::event_action::Action;
+use crate::utils::utils::micro_secs_now;
 
 #[derive(Clone, PartialEq)]
 pub enum Colour {
@@ -98,10 +99,24 @@ impl Severity {
 
 #[derive(Clone)]
 pub struct Log {
-    pub(crate) severity: Severity,
-    pub(crate) content: String
+    pub severity: Severity,
+    pub content: String
 }
 
+impl Log {
+    pub fn new<T>(content: T, severity: Severity) -> Self where T: Display {
+        Log {
+            content: format!("{} {}", match severity {
+                Severity::Error => "[ERROR]",
+                Severity::Log => "[LOG]",
+                Severity::Success => "[SUCCESS]"
+            },
+            content
+            ),
+            severity
+        }
+    }
+}
 
 pub struct TUI {
     width: u16,
@@ -142,11 +157,14 @@ impl TUI {
     fn init_regions(mut self, width: u16, height: u16) -> Self {
         // input region
         let input_region = InputRegion {
+            name: String::from("Query Input"),
             x: 0,
             y: 0,
             height: 3,
             width,
             value: String::from("SELECT * FROM PLAYLIST(All);"),
+            value_stack: Vec::new(),
+            stack_pos: 0,
             border_colour: Colour::Cyan,
             focused_border_colour: Colour::Green,
             focused: true,
@@ -154,6 +172,7 @@ impl TUI {
         };
         // data region
         let data_region = TableRegion {
+            name: String::from("Output"),
             x: 0,
             y: input_region.height,
             height: (height as f64 * 0.7).ceil() as u16,
@@ -162,20 +181,23 @@ impl TUI {
             border_colour: Colour::Blue,
             focused_border_colour: Colour::BrightBlue,
             focused: false,
-            vertical_scroll: 0,
-            horizontal_scroll: 0
+            vertical_scroll: (0, 0),
+            horizontal_scroll: (0, 0)
         };
         // log region
         let log_region = ListRegion {
+            name: String::from("Log"),
             x: 0,
             y: data_region.y + data_region.height,
             height: height - (data_region.height + input_region.height),
             width,
             data: Vec::new(),
+            longest_log: 0,
             border_colour: Colour::Purple,
             focused_border_colour: Colour::BrightPurple,
-
             focused: false,
+            vertical_scroll: (0, 0),
+            horizontal_scroll: (0, 0)
         };
 
         self.regions = vec![
@@ -192,7 +214,10 @@ impl TUI {
         Self::enter_tui_mode()?;
 
         let mut log_buffer: Vec<Log> = Vec::new();
-        let mut query_stage: TUIQueryStage = TUIQueryStage::NotRunning;
+        let mut query_tracker = QueryTracker {
+            stage: TUIQueryStage::NotRunning,
+            start_time: 0
+        };
 
         loop {
             // handle loop ending
@@ -203,54 +228,58 @@ impl TUI {
             }
 
             // check for and handle any active query processing
-            match query_stage.clone() {
+            match query_tracker.stage.clone() {
                 TUIQueryStage::Queued(query) => {
-                    log_buffer.push(Log {severity: Severity::Log, content: "Tokenising".to_string()});
+                    log_buffer.push(Log::new("Tokenising", Severity::Log));
                     match tokenise(query.clone()) {
                         Ok(res) => {
-                            query_stage = TUIQueryStage::Tokenised(res);
-                            log_buffer.push(Log {severity: Severity::Success, content: "Tokenised".to_string()});
+                            query_tracker.stage = TUIQueryStage::Tokenised(res);
+                            log_buffer.push(Log::new("Tokenised", Severity::Success));
+                            log_buffer.push(Log::new("Parsing", Severity::Log));
                         },
                         Err(err) => {
-                            log_buffer.push(Log {severity: Severity::Error, content: err});
-                            query_stage = TUIQueryStage::NotRunning
+                            log_buffer.push(Log::new(err, Severity::Error));
+                            query_tracker.stage = TUIQueryStage::NotRunning
                         }
                     }
                 },
                 TUIQueryStage::Tokenised(tokens) => {
-                    log_buffer.push(Log {severity: Severity::Log, content: "Parsing".to_string()});
                     match parse(tokens.clone()) {
                         Ok(res) => {
-                            query_stage = TUIQueryStage::Parsed(res);
-                            log_buffer.push(Log {severity: Severity::Success, content: "Parsed".to_string()});
+                            query_tracker.stage = TUIQueryStage::Parsed(res);
+                            log_buffer.push(Log::new("Parsed", Severity::Success));
+                            log_buffer.push(Log::new("Loading Data", Severity::Log));
 
                         },
                         Err(err) => {
-                            log_buffer.push(Log {severity: Severity::Error, content: err});
-                            query_stage = TUIQueryStage::NotRunning
+                            log_buffer.push(Log::new(err, Severity::Error));
+                            query_tracker.stage = TUIQueryStage::NotRunning
                         }
                     }
                 },
                 TUIQueryStage::Parsed(statement) => {
-                    log_buffer.push(Log {severity: Severity::Log, content: "Loading Data".to_string()});
                     match load_data_source(cx, statement.clone().source){
                         Ok(_) => {
-                            query_stage = TUIQueryStage::ParsedWithData(statement);
-                            log_buffer.push(Log {severity: Severity::Success, content: "Loaded Data".to_string()});
+                            query_tracker.stage = TUIQueryStage::ParsedWithData(statement);
+                            log_buffer.push(Log::new("Loaded Data", Severity::Success));
+                            log_buffer.push(Log::new("Running Statement", Severity::Log));
 
                         },
                         Err(err) => {
-                            log_buffer.push(Log {severity: Severity::Error, content: err});
-                            query_stage = TUIQueryStage::NotRunning
+                            log_buffer.push(Log::new(err, Severity::Error));
+                            query_tracker.stage = TUIQueryStage::NotRunning
                         }
                     }
                 },
                 TUIQueryStage::ParsedWithData(statement) => {
                     match statement.clone().run(cx, Some(self)) {
-                        Ok(_) => query_stage = TUIQueryStage::NotRunning,
+                        Ok(_) => {
+                            query_tracker.stage = TUIQueryStage::NotRunning;
+                            log_buffer.push(Log::new(format!("Statement finished running in {:.2}sec", (micro_secs_now() - query_tracker.start_time) as f64 / 1_000_000f64), Severity::Success));
+                        },
                         Err(err) => {
-                            log_buffer.push(Log {severity: Severity::Error, content: err});
-                            query_stage = TUIQueryStage::NotRunning
+                            log_buffer.push(Log::new(err, Severity::Error));
+                            query_tracker.stage = TUIQueryStage::NotRunning
                         }
                     }
                 },
@@ -274,7 +303,7 @@ impl TUI {
 
             // handle events
             if poll(Duration::from_millis(100)).map_err(|x| x.to_string())? {
-                self.handle_event(read().map_err(|x| x.to_string())?, cx, &mut log_buffer, &mut query_stage)
+                self.handle_event(read().map_err(|x| x.to_string())?, cx, &mut log_buffer, &mut query_tracker)
             }
         }
     }
@@ -312,7 +341,7 @@ impl TUI {
         io::stdout().flush().unwrap();
     }
 
-    fn handle_event(&mut self, event: Event, cx: &mut AppContext, lb: &mut Vec<Log>, query_stage: &mut TUIQueryStage) {
+    fn handle_event(&mut self, event: Event, cx: &mut AppContext, lb: &mut Vec<Log>, query_tracker: &mut QueryTracker) {
         match event {
             Event::Key(res) => {
                 if res.code == Char('c') && res.modifiers.contains(KeyModifiers::CONTROL) {
@@ -330,8 +359,9 @@ impl TUI {
                     }
                 }
 
-                if let Some(q) = query && discriminant(query_stage) == discriminant(&TUIQueryStage::NotRunning) {
-                    *query_stage = TUIQueryStage::Queued(q)
+                if let Some(q) = query && discriminant(&query_tracker.stage) == discriminant(&TUIQueryStage::NotRunning) {
+                    query_tracker.stage = TUIQueryStage::Queued(q);
+                    query_tracker.start_time = micro_secs_now();
                 }
             }
             Event::Mouse(res) => {

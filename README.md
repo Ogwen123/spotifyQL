@@ -81,6 +81,12 @@ If using `dd/mm/yy` then 20yy will be used, unless that is in the future in whic
  - [x] add support for NOT IN condition
  - [x] add support for using * as a display target
  - [ ] ORDER BY functionality
- - [ ] make a date struct and change all current dates stored in strings to use it
+ - [x] make a date struct and change all current dates stored in strings to use it
  - [ ] output to a file?
- - [ ] make into a tui app?
+ - [ ] make into a tui app
+   - [x] add region names
+   - [x] add scrolling to log section
+   - [x] add time and severity prefixes to the log section
+   - [x] add debounce to scrolling to allow more fine control
+   - [ ] add terminal min size warning (90x20 minimum)
+   - [ ] add history to input region

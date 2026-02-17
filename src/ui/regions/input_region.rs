@@ -1,15 +1,13 @@
-use std::rc::Rc;
 use crate::ui::framebuffer::{Cell, FrameBuffer};
-use crate::ui::regions::region::{Region, RegionData, RegionType};
-use crate::ui::tui::{Colour, Log, Severity, TUI};
-use crossterm::event::{Event, KeyCode, KeyEvent};
-use crate::app_context::AppContext;
-use crate::query::run::run_query;
+use crate::ui::regions::region::{Region, RegionData, RegionType, REGION_NAME_PADDING};
+use crate::ui::tui::{Colour, Log};
+use crossterm::event::{Event, KeyCode};
 use crate::ui::event_action::Action;
 use crate::utils::utils::bounds_loc;
 
 #[derive(Clone)]
 pub struct InputRegion {
+    pub name: String,
     pub x: u16,
     pub y: u16,
     pub width: u16,
@@ -17,6 +15,9 @@ pub struct InputRegion {
     pub border_colour: Colour,
     pub focused_border_colour: Colour,
     pub value: String, // vector of lines to be displayed
+    pub value_stack: Vec<String>,
+    /// stack_pos is 1 indexed as stack_pos == 0 means just a normal value
+    pub stack_pos: usize,
     pub focused: bool,
     pub placeholder: String,
 }
@@ -58,28 +59,36 @@ impl Region for InputRegion {
         let mut buffer: Vec<Cell> = Vec::new();
         let inner_buffer = self.build_inner_buffer();
 
+        let name_chars = self.name.chars().collect::<Vec<char>>();
+
         for y in 0..self.height {
             for x in 0..self.width {
-                let c = if self.focused {self.focused_border_colour.clone()} else {self.border_colour.clone()};
+                let c = if self.focused {
+                    self.focused_border_colour.clone()
+                } else {
+                    self.border_colour.clone()
+                };
 
                 if y == 0 {
                     if x == 0 {
                         buffer.push(Cell {
                             char: '╭',
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     } else if x == self.width - 1 {
                         buffer.push(Cell {
                             char: '╮',
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     } else {
+                        let char = if x >= REGION_NAME_PADDING && x-REGION_NAME_PADDING < name_chars.len() as u16 {name_chars[(x-REGION_NAME_PADDING) as usize]} else {'─'};
+
                         buffer.push(Cell {
-                            char: '─',
+                            char,
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     }
                 } else if y == self.height - 1 {
@@ -149,9 +158,30 @@ impl Region for InputRegion {
                     KeyCode::Enter => {
                         // run query
                         let q = self.value.clone();
+                        self.value_stack.insert(0, self.value.clone());
+                        self.stack_pos = 0;
                         self.value = String::new();
                         Action::RunQuery(q)
-                    }
+                    },
+                    KeyCode::Down => {
+                        if self.stack_pos > 0 {
+                            self.stack_pos -= 1;
+                            if self.stack_pos == 0 {
+                                self.value = String::new()
+                            } else {
+                                self.value = self.value_stack[self.stack_pos - 1].clone();
+                            }
+                        }
+                        Action::Internal
+                    },
+                    KeyCode::Up => {
+
+                        if self.stack_pos < self.value_stack.len() {
+                            self.stack_pos += 1;
+                            self.value = self.value_stack[self.stack_pos - 1].clone();
+                        }
+                        Action::Internal
+                    },
                     _ => {Action::Internal}
                 }
             }

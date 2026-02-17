@@ -1,8 +1,9 @@
 use crate::ui::framebuffer::{Cell, FrameBuffer};
 use crossterm::event::Event;
-use crate::app_context::AppContext;
 use crate::ui::event_action::Action;
-use crate::ui::tui::{Log, TUI};
+use crate::ui::tui::{Log};
+
+pub static REGION_NAME_PADDING: u16 = 2;
 
 #[derive(PartialEq)]
 pub enum RegionType {

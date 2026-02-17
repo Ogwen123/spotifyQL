@@ -17,6 +17,11 @@ pub enum TUIQueryStage {
     ParsedWithData(SelectStatement),
 }
 
+pub struct QueryTracker {
+    pub stage: TUIQueryStage,
+    pub start_time: u128
+}
+
 /// This run function is now for CLI mode only, when using a TUI the run flow is integrated in the main loop
 pub fn run_query(query: String, cx: &mut AppContext) -> Result<(), String> {
 

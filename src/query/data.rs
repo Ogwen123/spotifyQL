@@ -63,6 +63,7 @@ impl KeyAccess for TrackData {
             "id",
             "name",
             "duration",
+            "release_date",
             "album_name",
             "album_id",
             "artists",
