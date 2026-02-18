@@ -175,7 +175,6 @@ impl Region for InputRegion {
                         Action::Internal
                     },
                     KeyCode::Up => {
-
                         if self.stack_pos < self.value_stack.len() {
                             self.stack_pos += 1;
                             self.value = self.value_stack[self.stack_pos - 1].clone();
@@ -215,4 +214,11 @@ impl Region for InputRegion {
     }
 
     fn send_data(&mut self, data: RegionData) {}
+
+    fn set_geometry(&mut self, x: u16, y: u16, width: u16, height: u16) {
+        self.width = width;
+        self.height = height;
+        self.x = x;
+        self.y = y;
+    }
 }

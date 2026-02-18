@@ -36,4 +36,6 @@ pub trait Region {
     fn _type(&self) -> RegionType;
 
     fn send_data(&mut self, data: RegionData);
+    
+    fn set_geometry(&mut self, x: u16, y: u16, width: u16, height: u16);
 }

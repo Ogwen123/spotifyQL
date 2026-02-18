@@ -89,4 +89,4 @@ If using `dd/mm/yy` then 20yy will be used, unless that is in the future in whic
    - [x] add time and severity prefixes to the log section
    - [x] add debounce to scrolling to allow more fine control
    - [ ] add terminal min size warning (90x20 minimum)
-   - [ ] add history to input region
+   - [x] add history to input region

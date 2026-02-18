@@ -384,9 +384,18 @@ impl TUI {
                     }
                 }
             }
-            Event::Resize(cols, rows) => {
-                self.height = rows;
-                self.width = cols;
+            Event::Resize(width, height) => {
+                self.height = height;
+                self.width = width;
+
+                self.current = FrameBuffer::new(width, height);
+                self.previous = FrameBuffer::new(width, height);
+
+                let input_height = 3;
+                self.regions[0].set_geometry(0, 0, width, input_height);
+                let data_height = (height as f64 * 0.7).ceil() as u16;
+                self.regions[1].set_geometry(0, input_height, width, data_height);
+                self.regions[2].set_geometry(0, data_height + input_height, width, height - (data_height + input_height));
             }
             _ => {}
         }

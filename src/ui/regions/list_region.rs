@@ -253,4 +253,11 @@ impl Region for ListRegion {
             _ => {}
         }
     }
+
+    fn set_geometry(&mut self, x: u16, y: u16, width: u16, height: u16) {
+        self.width = width;
+        self.height = height;
+        self.x = x;
+        self.y = y;
+    }
 }
