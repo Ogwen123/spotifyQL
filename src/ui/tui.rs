@@ -10,9 +10,7 @@ use crossterm::event::{
     DisableMouseCapture, EnableMouseCapture, Event, KeyModifiers, MouseEventKind, poll, read,
 };
 use crossterm::execute;
-use crossterm::terminal::{
-    EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode, size,
-};
+use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode, size, Clear, ClearType};
 use std::cmp::PartialEq;
 use std::fmt::{Display, Formatter};
 use std::io;
@@ -25,6 +23,7 @@ use crate::query::parse::parse;
 use crate::query::run::{run_query, QueryTracker, TUIQueryStage};
 use crate::query::tokenise::tokenise;
 use crate::ui::event_action::Action;
+use crate::ui::regions::text_region::TextRegion;
 use crate::utils::utils::micro_secs_now;
 
 #[derive(Clone, PartialEq)]
@@ -122,6 +121,7 @@ pub struct TUI {
     width: u16,
     height: u16,
     regions: Vec<Box<dyn Region>>,
+    size_warning_region: TextRegion,
     current: FrameBuffer,
     previous: FrameBuffer,
     run: bool,
@@ -129,6 +129,9 @@ pub struct TUI {
 }
 
 impl TUI {
+    const MIN_HEIGHT: u16 = 20;
+    const MIN_WIDTH: u16 = 90;
+
     pub fn new() -> Result<TUI, String> {
         Self::enter_tui_mode()?; // need to enter alt buffer here to get correct size
 
@@ -142,10 +145,22 @@ impl TUI {
             }
         };
 
+        let size_warning_region = TextRegion {
+            width: 40,
+            height: 6,
+            x: 5,
+            y: 5,
+            border_colour: Colour::Red,
+            focused_border_colour: Colour::Red,
+            focused: false,
+            text: vec!["Window too small".to_string(), "Min Size is 90x20".to_string()]
+        };
+
         Ok(TUI {
             width: cols,
             height: rows,
             regions: Vec::new(),
+            size_warning_region,
             current: FrameBuffer::new(cols, rows),
             previous: FrameBuffer::new(cols, rows),
             run: true,
@@ -298,24 +313,37 @@ impl TUI {
                 log_buffer = Vec::new()
             }
 
+            // handle events
+            if poll(Duration::from_millis(100)).map_err(|x| x.to_string())? {
+                self.handle_event(read().map_err(|x| x.to_string())?, cx, &mut log_buffer, &mut query_tracker)?
+            }
+
             // draw regions
             self.draw();
 
-            // handle events
-            if poll(Duration::from_millis(100)).map_err(|x| x.to_string())? {
-                self.handle_event(read().map_err(|x| x.to_string())?, cx, &mut log_buffer, &mut query_tracker)
-            }
         }
     }
 
     fn draw(&mut self) {
-        for region in &self.regions {
-            region.draw(&mut self.current)
+        // draw regions
+        if self.height < Self::MIN_HEIGHT || self.width < Self::MIN_WIDTH {
+            self.size_warning_region.draw(&mut self.current);
+
+            self.flush_diff();
+
+            swap(&mut self.current, &mut self.previous)
+
+        } else {
+            for region in &self.regions {
+                region.draw(&mut self.current)
+            }
+
+            self.flush_diff();
+
+            swap(&mut self.current, &mut self.previous)
         }
 
-        self.flush_diff();
 
-        swap(&mut self.current, &mut self.previous)
     }
 
     fn flush_diff(&mut self) {
@@ -341,12 +369,12 @@ impl TUI {
         io::stdout().flush().unwrap();
     }
 
-    fn handle_event(&mut self, event: Event, cx: &mut AppContext, lb: &mut Vec<Log>, query_tracker: &mut QueryTracker) {
+    fn handle_event(&mut self, event: Event, cx: &mut AppContext, lb: &mut Vec<Log>, query_tracker: &mut QueryTracker) -> Result<(), String> {
         match event {
             Event::Key(res) => {
                 if res.code == Char('c') && res.modifiers.contains(KeyModifiers::CONTROL) {
                     self.run = false;
-                    return;
+                    return Ok(());
                 }
                 let mut query: Option<String> = None;
 
@@ -389,16 +417,19 @@ impl TUI {
                 self.width = width;
 
                 self.current = FrameBuffer::new(width, height);
-                self.previous = FrameBuffer::new(width, height);
+                self.current = FrameBuffer::new(width, height);
 
                 let input_height = 3;
                 self.regions[0].set_geometry(0, 0, width, input_height);
                 let data_height = (height as f64 * 0.7).ceil() as u16;
                 self.regions[1].set_geometry(0, input_height, width, data_height);
                 self.regions[2].set_geometry(0, data_height + input_height, width, height - (data_height + input_height));
+
+                execute!(io::stdout(), Clear(ClearType::All)).map_err(|x| x.to_string())?;
             }
             _ => {}
         }
+        Ok(())
     }
 
     pub fn enter_tui_mode() -> Result<(), String> {

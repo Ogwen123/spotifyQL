@@ -15,7 +15,7 @@ pub struct FrameBuffer {
 
 impl FrameBuffer {
     pub fn new(width: u16, height: u16) -> Self {
-        let size = width as usize * height as usize;
+        let size = (width * height) as usize;
 
         Self {
             width,
@@ -38,10 +38,23 @@ impl FrameBuffer {
 
     pub fn put(&mut self, x: u16, y: u16, cell: Cell) {
         let i = self.loc(x, y);
-        self.cells[i] = cell;
+        if i < (self.width * self.height) as usize {
+            self.cells[i] = cell;
+        }
     }
 
     pub(crate) fn get(&self, x: u16, y: u16) -> Cell {
-        self.cells[self.loc(x, y)].clone()
+        let i = self.loc(x, y);
+
+        if i < (self.width * self.height) as usize {
+            self.cells[i].clone()
+        } else {
+            Cell {
+                char: ' ',
+                colour: Colour::White,
+                bold: false,
+            }
+        }
+
     }
 }
