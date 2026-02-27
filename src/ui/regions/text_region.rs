@@ -1,11 +1,17 @@
-use std::cmp::max;
-use crate::ui::framebuffer::{Cell, FrameBuffer};
-use crate::ui::regions::region::{Region, RegionData, RegionType, REGION_NAME_PADDING};
-use crate::ui::tui::{Colour, Log, TUI};
-use crossterm::event::{Event, KeyModifiers, MouseEventKind};
-use crate::app_context::AppContext;
 use crate::ui::event_action::Action;
-use crate::utils::utils::{bounds_loc, micro_secs_now};
+use crate::ui::framebuffer::{Cell, FrameBuffer};
+use crate::ui::regions::region::{Region, RegionData, RegionType};
+use crate::ui::tui::{Colour, Log};
+use crate::utils::utils::{bounds_loc};
+use crossterm::event::{Event};
+use std::cmp::max;
+
+#[derive(Clone)]
+pub enum TextAlign {
+    Left,
+    Right,
+    Center,
+}
 
 #[derive(Clone)]
 pub struct TextRegion {
@@ -16,7 +22,8 @@ pub struct TextRegion {
     pub border_colour: Colour,
     pub focused_border_colour: Colour,
     pub focused: bool,
-    pub text: Vec<String>
+    pub text: Vec<String>,
+    pub text_align: TextAlign,
 }
 
 impl Region for TextRegion {
@@ -34,11 +41,19 @@ impl Region for TextRegion {
             if y >= (self.height - 2) as usize {
                 break;
             }
+            let offset: usize = match self.text_align {
+                TextAlign::Left => 0,
+                TextAlign::Center => max(
+                    ((self.width as usize - row.len()) as f32 / 2.0).floor() as usize,
+                    0,
+                ),
+                TextAlign::Right => max((self.width as usize - row.len()) as usize, 0),
+            };
             for (x, char) in row.chars().enumerate() {
                 if x >= (self.width - 2) as usize {
                     break;
                 }
-                buffer[y * (self.width - 2) as usize + x] = Cell {
+                buffer[y * (self.width - 2) as usize + x + offset] = Cell {
                     char,
                     colour: Colour::White,
                     bold: false,
@@ -79,7 +94,7 @@ impl Region for TextRegion {
                         buffer.push(Cell {
                             char: '─',
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     }
                 } else if y == self.height - 1 {
@@ -87,19 +102,19 @@ impl Region for TextRegion {
                         buffer.push(Cell {
                             char: '╰',
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     } else if x == self.width - 1 {
                         buffer.push(Cell {
                             char: '╯',
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     } else {
                         buffer.push(Cell {
                             char: '─',
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     }
                 } else {
@@ -107,7 +122,7 @@ impl Region for TextRegion {
                         buffer.push(Cell {
                             char: '│',
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     } else {
                         buffer.push(
@@ -125,14 +140,14 @@ impl Region for TextRegion {
         let content = self.build_region_buffer();
 
         for (loc, cell) in content.into_iter().enumerate() {
-            let local_y = (loc as f64 / fb.width as f64).floor() as u16;
-            let local_x = loc as u16 % fb.width;
+            let local_y = (loc as f64 / self.width as f64).floor() as u16;
+            let local_x = loc as u16 % self.width;
 
             fb.put(local_x + self.x, local_y + self.y, cell)
         }
     }
 
-    fn handle_event(&mut self, event: Event, lb: &mut Vec<Log>) -> Action {
+    fn handle_event(&mut self, _event: Event, _lb: &mut Vec<Log>) -> Action {
         Action::Internal
     }
 
@@ -155,7 +170,7 @@ impl Region for TextRegion {
         RegionType::List
     }
 
-    fn send_data(&mut self, mut data: RegionData) {} //a text region is static
+    fn send_data(&mut self, _data: RegionData) {} //a text region is static
 
     fn set_geometry(&mut self, x: u16, y: u16, width: u16, height: u16) {
         self.width = width;

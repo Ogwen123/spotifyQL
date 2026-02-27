@@ -42,7 +42,7 @@ impl Default for AppContext {
             refresh_token: String::new(),
             expires_after: 0,
             data: Default::default(),
-            user_config: UserConfig::default()
+            user_config: UserConfig::default(),
         }
     }
 }

@@ -1,7 +1,7 @@
-use crate::ui::framebuffer::{Cell, FrameBuffer};
-use crossterm::event::Event;
 use crate::ui::event_action::Action;
-use crate::ui::tui::{Log};
+use crate::ui::framebuffer::{Cell, FrameBuffer};
+use crate::ui::tui::Log;
+use crossterm::event::Event;
 
 pub static REGION_NAME_PADDING: u16 = 2;
 
@@ -9,12 +9,12 @@ pub static REGION_NAME_PADDING: u16 = 2;
 pub enum RegionType {
     Input,
     Table,
-    List
+    List,
 }
 
 pub enum RegionData {
     Table(Vec<String>),
-    List(Vec<Log>)
+    List(Vec<Log>),
 }
 
 pub trait Region {
@@ -36,6 +36,6 @@ pub trait Region {
     fn _type(&self) -> RegionType;
 
     fn send_data(&mut self, data: RegionData);
-    
+
     fn set_geometry(&mut self, x: u16, y: u16, width: u16, height: u16);
 }

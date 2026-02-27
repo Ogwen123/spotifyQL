@@ -11,12 +11,12 @@ pub enum Command {
 pub enum UIMode {
     Default,
     TUI,
-    CLI
+    CLI,
 }
 
 pub struct RunContext {
     pub command: Command,
-    pub ui_mode: UIMode
+    pub ui_mode: UIMode,
 }
 
 impl RunContext {
@@ -29,7 +29,7 @@ impl RunContext {
         let mut command: Command = Command::CLI;
         let mut ui_mode = UIMode::Default;
 
-        for arg in args{
+        for arg in args {
             if arg == "login" {
                 command = Command::Login
             } else if arg == "logout" {

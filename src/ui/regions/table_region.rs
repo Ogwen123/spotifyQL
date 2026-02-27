@@ -1,11 +1,7 @@
-use crate::app_context::AppContext;
-use crate::query::data::KeyAccess;
-use crate::query::display::data_display::build_table;
-use crate::query::tokenise::Value;
 use crate::ui::event_action::Action;
 use crate::ui::framebuffer::{Cell, FrameBuffer};
-use crate::ui::regions::region::{Region, RegionData, RegionType, REGION_NAME_PADDING};
-use crate::ui::tui::{Colour, Log, Severity, TUI};
+use crate::ui::regions::region::{REGION_NAME_PADDING, Region, RegionData, RegionType};
+use crate::ui::tui::{Colour, Log};
 use crate::utils::utils::{bounds_loc, micro_secs_now};
 use crossterm::event::{Event, KeyModifiers, MouseEventKind};
 
@@ -30,7 +26,11 @@ impl TableRegion {
 
     fn change_vertical_scroll(&mut self, change: isize, ignore_debounce: bool) {
         // the debounce is needed because multiple scroll events were firing per notch on the scroll wheel
-        if (micro_secs_now() - self.vertical_scroll.0) < Self::SCROLL_DEBOUNCE_MICRO && !ignore_debounce {return}
+        if (micro_secs_now() - self.vertical_scroll.0) < Self::SCROLL_DEBOUNCE_MICRO
+            && !ignore_debounce
+        {
+            return;
+        }
 
         if self.formatted_table.len() == 0 {
             return;
@@ -41,14 +41,19 @@ impl TableRegion {
 
         let new = self.vertical_scroll.1.cast_signed() + change;
 
-        if new >= 0 && new <= (self.formatted_table.len() - self.height as usize + 2).cast_signed() // + 2 accounts for border weirdness
+        if new >= 0 && new <= (self.formatted_table.len() - self.height as usize + 2).cast_signed()
+        // + 2 accounts for border weirdness
         {
             self.vertical_scroll = (micro_secs_now(), new.cast_unsigned());
         }
     }
 
     fn change_horizontal_scroll(&mut self, change: isize, ignore_debounce: bool) {
-        if (micro_secs_now() - self.horizontal_scroll.0) < Self::SCROLL_DEBOUNCE_MICRO && !ignore_debounce {return}
+        if (micro_secs_now() - self.horizontal_scroll.0) < Self::SCROLL_DEBOUNCE_MICRO
+            && !ignore_debounce
+        {
+            return;
+        }
 
         if self.formatted_table.len() == 0 {
             return;
@@ -133,7 +138,13 @@ impl Region for TableRegion {
                             bold: self.focused,
                         })
                     } else {
-                        let char = if x >= REGION_NAME_PADDING && x-REGION_NAME_PADDING < name_chars.len() as u16 {name_chars[(x-REGION_NAME_PADDING) as usize]} else {'─'};
+                        let char = if x >= REGION_NAME_PADDING
+                            && x - REGION_NAME_PADDING < name_chars.len() as u16
+                        {
+                            name_chars[(x - REGION_NAME_PADDING) as usize]
+                        } else {
+                            '─'
+                        };
 
                         buffer.push(Cell {
                             char,
@@ -191,28 +202,40 @@ impl Region for TableRegion {
         }
     }
 
-    fn handle_event(&mut self, event: Event, lb: &mut Vec<Log>) -> Action {
+    fn handle_event(&mut self, event: Event, _lb: &mut Vec<Log>) -> Action {
         match event {
             Event::Mouse(res) => {
                 match res.kind {
                     MouseEventKind::ScrollUp => {
                         if self.bounds_loc(res.column, res.row) {
-                            self.change_vertical_scroll(-1, res.modifiers.contains(KeyModifiers::CONTROL)) // holding control will ignore the debounce to allow faster scrolling
+                            self.change_vertical_scroll(
+                                -1,
+                                res.modifiers.contains(KeyModifiers::CONTROL),
+                            ) // holding control will ignore the debounce to allow faster scrolling
                         }
                     }
                     MouseEventKind::ScrollDown => {
                         if self.bounds_loc(res.column, res.row) {
-                            self.change_vertical_scroll(1, res.modifiers.contains(KeyModifiers::CONTROL))
+                            self.change_vertical_scroll(
+                                1,
+                                res.modifiers.contains(KeyModifiers::CONTROL),
+                            )
                         }
                     }
                     MouseEventKind::ScrollLeft => {
                         if self.bounds_loc(res.column, res.row) {
-                            self.change_horizontal_scroll(1, res.modifiers.contains(KeyModifiers::CONTROL))
+                            self.change_horizontal_scroll(
+                                1,
+                                res.modifiers.contains(KeyModifiers::CONTROL),
+                            )
                         }
                     }
                     MouseEventKind::ScrollRight => {
                         if self.bounds_loc(res.column, res.row) {
-                            self.change_horizontal_scroll(-1, res.modifiers.contains(KeyModifiers::CONTROL))
+                            self.change_horizontal_scroll(
+                                -1,
+                                res.modifiers.contains(KeyModifiers::CONTROL),
+                            )
                         }
                     }
                     _ => {}
@@ -252,7 +275,7 @@ impl Region for TableRegion {
             _ => {} // ignore non table data
         }
     }
-    
+
     fn set_geometry(&mut self, x: u16, y: u16, width: u16, height: u16) {
         self.width = width;
         self.height = height;

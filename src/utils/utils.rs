@@ -24,7 +24,7 @@ pub fn bounds_loc(box_x: u16, box_y: u16, width: u16, height: u16, loc_x: u16, l
     let l = box_x;
     let b = box_y + height;
     let r = box_x + width;
-    
+
     if loc_x > l && loc_x < r && loc_y > t && loc_y < b {
         true
     } else {

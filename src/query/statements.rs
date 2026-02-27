@@ -1,12 +1,13 @@
 use crate::app_context::AppContext;
 use crate::query::condition::{Condition, compute_conditions};
 use crate::query::data::{AlbumData, KeyAccess, PlaylistData, TrackData};
-use crate::query::display::data_display;
+use crate::query::display::data_display::{
+    aggregation_table, build_aggregation_table, build_table, table,
+};
 use crate::query::tokenise::{DataSource, Value};
+use crate::ui::tui::TUI;
 use crate::utils::logger::info;
 use std::collections::HashMap;
-use crate::query::display::data_display::{aggregation_table, build_aggregation_table, build_table, table};
-use crate::ui::tui::TUI;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Aggregation {
@@ -127,7 +128,12 @@ impl SelectStatement {
         Ok(())
     }
 
-    fn handle_aggregation_and_display<T>(self, data: Vec<T>, cx: &AppContext, window: Option<&mut TUI>) -> Result<(), String>
+    fn handle_aggregation_and_display<T>(
+        self,
+        data: Vec<T>,
+        cx: &AppContext,
+        window: Option<&mut TUI>,
+    ) -> Result<(), String>
     where
         T: KeyAccess,
     {
@@ -141,7 +147,9 @@ impl SelectStatement {
                 }
 
                 if cx.user_config.tui {
-                    window.unwrap().send_table_data(build_aggregation_table(self.aggregation, count_data))? // if cx.usee_config.tui is true then .unwrap() is safe
+                    window
+                        .unwrap()
+                        .send_table_data(build_aggregation_table(self.aggregation, count_data))? // if cx.usee_config.tui is true then .unwrap() is safe
                 } else {
                     aggregation_table(self.aggregation, count_data)
                 }
@@ -170,18 +178,22 @@ impl SelectStatement {
                 }
 
                 if cx.user_config.tui {
-                    window.unwrap().send_table_data(build_aggregation_table(self.aggregation, average_data))? // if cx.usee_config.tui is true then .unwrap() is safe
+                    window
+                        .unwrap()
+                        .send_table_data(build_aggregation_table(self.aggregation, average_data))? // if cx.usee_config.tui is true then .unwrap() is safe
                 } else {
                     aggregation_table(self.aggregation, average_data)
                 }
             }
             Aggregation::None => {
                 if cx.user_config.tui {
-                    window.unwrap().send_table_data(build_table(data, self.targets.clone())?)? // if cx.user_config.tui is true then .unwrap() is safe
+                    window
+                        .unwrap()
+                        .send_table_data(build_table(data, self.targets.clone())?)? // if cx.user_config.tui is true then .unwrap() is safe
                 } else {
                     table(data, self.targets.clone())?
                 }
-            },
+            }
         }
 
         Ok(())

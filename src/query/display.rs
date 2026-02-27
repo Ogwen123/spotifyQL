@@ -85,9 +85,10 @@ pub mod data_display {
         Ok(())
     }
 
-    
-    
-    pub fn build_aggregation_table(aggregation: Aggregation, data: HashMap<String, AggregationResult>) -> Vec<String> {
+    pub fn build_aggregation_table(
+        aggregation: Aggregation,
+        data: HashMap<String, AggregationResult>,
+    ) -> Vec<String> {
         let mut head_buffer: Vec<String> = Vec::new();
         let mut body_buffer: Vec<String> = Vec::new();
         let mut max_cols: Vec<usize> = Vec::new();
@@ -116,22 +117,25 @@ pub mod data_display {
             body_buffer.push(info_line)
         });
 
-        let sep_line = max_cols
-            .iter()
-            .map(|len| return format!("{:-<w$}", "", w = len))
-            .collect::<Vec<String>>()
-            .join("|");
+        let sep_line = format!(
+            "|{}|",
+            max_cols
+                .iter()
+                .map(|len| return format!("{:-<w$}", "", w = len))
+                .collect::<Vec<String>>()
+                .join("|")
+        );
 
-        vec!(
+        vec![
             format!("|{}|", head_buffer.join("|")),
             sep_line,
-            format!("|{}|", body_buffer.join("|"))
-        )
+            format!("|{}|", body_buffer.join("|")),
+        ]
     }
-    
+
     pub fn aggregation_table(aggregation: Aggregation, data: HashMap<String, AggregationResult>) {
         let lines = build_aggregation_table(aggregation, data);
-        
+
         println!("{}", lines.join("\n"))
     }
 }

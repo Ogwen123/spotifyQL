@@ -203,13 +203,17 @@ impl Date {
 
         if self.day.is_some() {
             let mut day = self.day.unwrap().to_string();
-            if day.len() == 1 {day = format!("0{}", day)}
+            if day.len() == 1 {
+                day = format!("0{}", day)
+            }
             buf += (day + "/").as_str();
         }
 
         if self.month.is_some() {
             let mut month = self.month.unwrap().to_string();
-            if month.len() == 1 {month = format!("0{}", month)}
+            if month.len() == 1 {
+                month = format!("0{}", month)
+            }
             buf += (month + "/").as_str();
         }
 

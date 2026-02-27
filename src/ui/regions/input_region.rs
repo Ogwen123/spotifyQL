@@ -1,9 +1,9 @@
-use crate::ui::framebuffer::{Cell, FrameBuffer};
-use crate::ui::regions::region::{Region, RegionData, RegionType, REGION_NAME_PADDING};
-use crate::ui::tui::{Colour, Log};
-use crossterm::event::{Event, KeyCode};
 use crate::ui::event_action::Action;
+use crate::ui::framebuffer::{Cell, FrameBuffer};
+use crate::ui::regions::region::{REGION_NAME_PADDING, Region, RegionData, RegionType};
+use crate::ui::tui::{Colour, Log};
 use crate::utils::utils::bounds_loc;
+use crossterm::event::{Event, KeyCode};
 
 #[derive(Clone)]
 pub struct InputRegion {
@@ -38,7 +38,7 @@ impl Region for InputRegion {
                 buffer[index] = Cell {
                     char,
                     colour: Colour::Grey,
-                    bold: false
+                    bold: false,
                 }
             }
         } else {
@@ -46,7 +46,7 @@ impl Region for InputRegion {
                 buffer[index] = Cell {
                     char,
                     colour: Colour::White,
-                    bold: false
+                    bold: false,
                 }
             }
         }
@@ -83,7 +83,13 @@ impl Region for InputRegion {
                             bold: self.focused,
                         })
                     } else {
-                        let char = if x >= REGION_NAME_PADDING && x-REGION_NAME_PADDING < name_chars.len() as u16 {name_chars[(x-REGION_NAME_PADDING) as usize]} else {'─'};
+                        let char = if x >= REGION_NAME_PADDING
+                            && x - REGION_NAME_PADDING < name_chars.len() as u16
+                        {
+                            name_chars[(x - REGION_NAME_PADDING) as usize]
+                        } else {
+                            '─'
+                        };
 
                         buffer.push(Cell {
                             char,
@@ -96,19 +102,19 @@ impl Region for InputRegion {
                         buffer.push(Cell {
                             char: '╰',
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     } else if x == self.width - 1 {
                         buffer.push(Cell {
                             char: '╯',
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     } else {
                         buffer.push(Cell {
                             char: '─',
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     }
                 } else {
@@ -116,7 +122,7 @@ impl Region for InputRegion {
                         buffer.push(Cell {
                             char: '│',
                             colour: c,
-                            bold: self.focused
+                            bold: self.focused,
                         })
                     } else {
                         buffer.push(
@@ -141,8 +147,10 @@ impl Region for InputRegion {
         }
     }
 
-    fn handle_event(&mut self, event: Event, lb: &mut Vec<Log>) -> Action {
-        if !self.focused {return Action::Internal}
+    fn handle_event(&mut self, event: Event, _lb: &mut Vec<Log>) -> Action {
+        if !self.focused {
+            return Action::Internal;
+        }
 
         match event {
             Event::Key(res) => {
@@ -150,11 +158,11 @@ impl Region for InputRegion {
                     KeyCode::Char(c) => {
                         self.value.push(c);
                         Action::Internal
-                    },
+                    }
                     KeyCode::Backspace => {
                         self.value.pop();
                         Action::Internal
-                    },
+                    }
                     KeyCode::Enter => {
                         // run query
                         let q = self.value.clone();
@@ -162,7 +170,7 @@ impl Region for InputRegion {
                         self.stack_pos = 0;
                         self.value = String::new();
                         Action::RunQuery(q)
-                    },
+                    }
                     KeyCode::Down => {
                         if self.stack_pos > 0 {
                             self.stack_pos -= 1;
@@ -173,25 +181,20 @@ impl Region for InputRegion {
                             }
                         }
                         Action::Internal
-                    },
+                    }
                     KeyCode::Up => {
                         if self.stack_pos < self.value_stack.len() {
                             self.stack_pos += 1;
                             self.value = self.value_stack[self.stack_pos - 1].clone();
                         }
                         Action::Internal
-                    },
-                    _ => {Action::Internal}
+                    }
+                    _ => Action::Internal,
                 }
             }
-            Event::Mouse(res) => {
-                Action::Internal
-            }
-            _ => {
-                Action::Internal
-            }
+            Event::Mouse(_res) => Action::Internal,
+            _ => Action::Internal,
         }
-
     }
 
     fn _debug(&self) {
@@ -213,7 +216,7 @@ impl Region for InputRegion {
         RegionType::Input
     }
 
-    fn send_data(&mut self, data: RegionData) {}
+    fn send_data(&mut self, _data: RegionData) {}
 
     fn set_geometry(&mut self, x: u16, y: u16, width: u16, height: u16) {
         self.width = width;

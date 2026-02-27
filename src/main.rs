@@ -1,7 +1,6 @@
-use std::cell::RefCell;
-use std::rc::Rc;
 use crate::auth::token_refresh::refresh_token;
 use crate::commands::input::input_loop;
+use crate::config::args::UIMode;
 use crate::ui::tui::TUI;
 use crate::utils::logger::{fatal, info_nnl, success, warning};
 use crate::utils::utils::secs_now;
@@ -10,7 +9,6 @@ use crate::{
     config::args::{Command, RunContext},
 };
 use app_context::AppContext;
-use crate::config::args::UIMode;
 
 mod api;
 mod app_context;
@@ -39,7 +37,7 @@ fn main() {
             return;
         }
     };
-    
+
     if rc.ui_mode == UIMode::CLI {
         cx.user_config.tui = false;
     } else if rc.ui_mode == UIMode::TUI {

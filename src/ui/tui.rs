@@ -1,30 +1,33 @@
+use crate::app_context::AppContext;
+use crate::query::data::load_data_source;
+use crate::query::parse::parse;
+use crate::query::run::{QueryTracker, TUIQueryStage};
+use crate::query::tokenise::tokenise;
+use crate::ui::event_action::{Action, PostHandleDirective};
 use crate::ui::framebuffer::FrameBuffer;
 use crate::ui::regions::input_region::InputRegion;
 use crate::ui::regions::list_region::ListRegion;
 use crate::ui::regions::region::{Region, RegionData, RegionType};
 use crate::ui::regions::table_region::TableRegion;
+use crate::ui::regions::text_region::{TextAlign, TextRegion};
 use crate::utils::logger::info;
+use crate::utils::utils::micro_secs_now;
 use crossterm::cursor::{Hide, Show};
 use crossterm::event::KeyCode::Char;
 use crossterm::event::{
     DisableMouseCapture, EnableMouseCapture, Event, KeyModifiers, MouseEventKind, poll, read,
 };
 use crossterm::execute;
-use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode, size, Clear, ClearType};
+use crossterm::terminal::{
+    Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode,
+    enable_raw_mode, size,
+};
 use std::cmp::PartialEq;
 use std::fmt::{Display, Formatter};
 use std::io;
 use std::io::Write;
 use std::mem::{discriminant, swap};
 use std::time::Duration;
-use crate::app_context::AppContext;
-use crate::query::data::load_data_source;
-use crate::query::parse::parse;
-use crate::query::run::{run_query, QueryTracker, TUIQueryStage};
-use crate::query::tokenise::tokenise;
-use crate::ui::event_action::Action;
-use crate::ui::regions::text_region::TextRegion;
-use crate::utils::utils::micro_secs_now;
 
 #[derive(Clone, PartialEq)]
 pub enum Colour {
@@ -83,7 +86,7 @@ impl Display for Colour {
 pub enum Severity {
     Log,
     Success,
-    Error
+    Error,
 }
 
 impl Severity {
@@ -91,7 +94,7 @@ impl Severity {
         match self {
             Severity::Error => Colour::Red,
             Severity::Log => Colour::Blue,
-            Severity::Success => Colour::Green
+            Severity::Success => Colour::Green,
         }
     }
 }
@@ -99,20 +102,25 @@ impl Severity {
 #[derive(Clone)]
 pub struct Log {
     pub severity: Severity,
-    pub content: String
+    pub content: String,
 }
 
 impl Log {
-    pub fn new<T>(content: T, severity: Severity) -> Self where T: Display {
+    pub fn new<T>(content: T, severity: Severity) -> Self
+    where
+        T: Display,
+    {
         Log {
-            content: format!("{} {}", match severity {
-                Severity::Error => "[ERROR]",
-                Severity::Log => "[LOG]",
-                Severity::Success => "[SUCCESS]"
-            },
-            content
+            content: format!(
+                "{} {}",
+                match severity {
+                    Severity::Error => "[ERROR]",
+                    Severity::Log => "[LOG]",
+                    Severity::Success => "[SUCCESS]",
+                },
+                content
             ),
-            severity
+            severity,
         }
     }
 }
@@ -125,7 +133,7 @@ pub struct TUI {
     current: FrameBuffer,
     previous: FrameBuffer,
     run: bool,
-    external_log_buffer: Vec<Log>
+    external_log_buffer: Vec<Log>,
 }
 
 impl TUI {
@@ -153,7 +161,12 @@ impl TUI {
             border_colour: Colour::Red,
             focused_border_colour: Colour::Red,
             focused: false,
-            text: vec!["Window too small".to_string(), "Min Size is 90x20".to_string()]
+            text: vec![
+                "".to_string(),
+                "Window too small".to_string(),
+                "Min Size is 90x20".to_string(),
+            ],
+            text_align: TextAlign::Center,
         };
 
         Ok(TUI {
@@ -164,7 +177,7 @@ impl TUI {
             current: FrameBuffer::new(cols, rows),
             previous: FrameBuffer::new(cols, rows),
             run: true,
-            external_log_buffer: Vec::new()
+            external_log_buffer: Vec::new(),
         }
         .init_regions(cols, rows))
     }
@@ -197,7 +210,7 @@ impl TUI {
             focused_border_colour: Colour::BrightBlue,
             focused: false,
             vertical_scroll: (0, 0),
-            horizontal_scroll: (0, 0)
+            horizontal_scroll: (0, 0),
         };
         // log region
         let log_region = ListRegion {
@@ -212,7 +225,7 @@ impl TUI {
             focused_border_colour: Colour::BrightPurple,
             focused: false,
             vertical_scroll: (0, 0),
-            horizontal_scroll: (0, 0)
+            horizontal_scroll: (0, 0),
         };
 
         self.regions = vec![
@@ -231,7 +244,7 @@ impl TUI {
         let mut log_buffer: Vec<Log> = Vec::new();
         let mut query_tracker = QueryTracker {
             stage: TUIQueryStage::NotRunning,
-            start_time: 0
+            start_time: 0,
         };
 
         loop {
@@ -251,53 +264,56 @@ impl TUI {
                             query_tracker.stage = TUIQueryStage::Tokenised(res);
                             log_buffer.push(Log::new("Tokenised", Severity::Success));
                             log_buffer.push(Log::new("Parsing", Severity::Log));
-                        },
+                        }
                         Err(err) => {
                             log_buffer.push(Log::new(err, Severity::Error));
                             query_tracker.stage = TUIQueryStage::NotRunning
                         }
                     }
-                },
-                TUIQueryStage::Tokenised(tokens) => {
-                    match parse(tokens.clone()) {
-                        Ok(res) => {
-                            query_tracker.stage = TUIQueryStage::Parsed(res);
-                            log_buffer.push(Log::new("Parsed", Severity::Success));
-                            log_buffer.push(Log::new("Loading Data", Severity::Log));
-
-                        },
-                        Err(err) => {
-                            log_buffer.push(Log::new(err, Severity::Error));
-                            query_tracker.stage = TUIQueryStage::NotRunning
-                        }
+                }
+                TUIQueryStage::Tokenised(tokens) => match parse(tokens.clone()) {
+                    Ok(res) => {
+                        query_tracker.stage = TUIQueryStage::Parsed(res);
+                        log_buffer.push(Log::new("Parsed", Severity::Success));
+                        log_buffer.push(Log::new("Loading Data", Severity::Log));
+                    }
+                    Err(err) => {
+                        log_buffer.push(Log::new(err, Severity::Error));
+                        query_tracker.stage = TUIQueryStage::NotRunning
                     }
                 },
                 TUIQueryStage::Parsed(statement) => {
-                    match load_data_source(cx, statement.clone().source){
+                    match load_data_source(cx, statement.clone().source) {
                         Ok(_) => {
                             query_tracker.stage = TUIQueryStage::ParsedWithData(statement);
                             log_buffer.push(Log::new("Loaded Data", Severity::Success));
                             log_buffer.push(Log::new("Running Statement", Severity::Log));
-
-                        },
+                        }
                         Err(err) => {
                             log_buffer.push(Log::new(err, Severity::Error));
                             query_tracker.stage = TUIQueryStage::NotRunning
                         }
                     }
-                },
+                }
                 TUIQueryStage::ParsedWithData(statement) => {
                     match statement.clone().run(cx, Some(self)) {
                         Ok(_) => {
                             query_tracker.stage = TUIQueryStage::NotRunning;
-                            log_buffer.push(Log::new(format!("Statement finished running in {:.2}sec", (micro_secs_now() - query_tracker.start_time) as f64 / 1_000_000f64), Severity::Success));
-                        },
+                            log_buffer.push(Log::new(
+                                format!(
+                                    "Statement finished running in {:.2}sec",
+                                    (micro_secs_now() - query_tracker.start_time) as f64
+                                        / 1_000_000f64
+                                ),
+                                Severity::Success,
+                            ));
+                        }
                         Err(err) => {
                             log_buffer.push(Log::new(err, Severity::Error));
                             query_tracker.stage = TUIQueryStage::NotRunning
                         }
                     }
-                },
+                }
                 _ => {}
             }
 
@@ -314,25 +330,36 @@ impl TUI {
             }
 
             // handle events
+            let mut directive = PostHandleDirective::None;
             if poll(Duration::from_millis(100)).map_err(|x| x.to_string())? {
-                self.handle_event(read().map_err(|x| x.to_string())?, cx, &mut log_buffer, &mut query_tracker)?
+                directive = self.handle_event(
+                    read().map_err(|x| x.to_string())?,
+                    cx,
+                    &mut log_buffer,
+                    &mut query_tracker,
+                )?
             }
 
             // draw regions
-            self.draw();
-
+            if directive != PostHandleDirective::SkipDraw {
+                self.draw();
+            }
         }
     }
 
     fn draw(&mut self) {
         // draw regions
         if self.height < Self::MIN_HEIGHT || self.width < Self::MIN_WIDTH {
+            // centre region
+            
+            self.size_warning_region.x = (self.width / 2) - (self.size_warning_region.width / 2);
+            self.size_warning_region.y = (self.height / 2) - (self.size_warning_region.height / 2);
+            
             self.size_warning_region.draw(&mut self.current);
 
             self.flush_diff();
 
             swap(&mut self.current, &mut self.previous)
-
         } else {
             for region in &self.regions {
                 region.draw(&mut self.current)
@@ -342,8 +369,6 @@ impl TUI {
 
             swap(&mut self.current, &mut self.previous)
         }
-
-
     }
 
     fn flush_diff(&mut self) {
@@ -369,12 +394,18 @@ impl TUI {
         io::stdout().flush().unwrap();
     }
 
-    fn handle_event(&mut self, event: Event, cx: &mut AppContext, lb: &mut Vec<Log>, query_tracker: &mut QueryTracker) -> Result<(), String> {
+    fn handle_event(
+        &mut self,
+        event: Event,
+        _cx: &mut AppContext,
+        lb: &mut Vec<Log>,
+        query_tracker: &mut QueryTracker,
+    ) -> Result<PostHandleDirective, String> {
         match event {
             Event::Key(res) => {
                 if res.code == Char('c') && res.modifiers.contains(KeyModifiers::CONTROL) {
                     self.run = false;
-                    return Ok(());
+                    return Ok(PostHandleDirective::None);
                 }
                 let mut query: Option<String> = None;
 
@@ -382,12 +413,15 @@ impl TUI {
                     match i.handle_event(event.clone(), lb) {
                         Action::RunQuery(q) => {
                             query = Some(q);
-                        },
+                        }
                         Action::Internal => {}
                     }
                 }
 
-                if let Some(q) = query && discriminant(&query_tracker.stage) == discriminant(&TUIQueryStage::NotRunning) {
+                if let Some(q) = query
+                    && discriminant(&query_tracker.stage)
+                        == discriminant(&TUIQueryStage::NotRunning)
+                {
                     query_tracker.stage = TUIQueryStage::Queued(q);
                     query_tracker.start_time = micro_secs_now();
                 }
@@ -406,7 +440,7 @@ impl TUI {
                 } else {
                     for i in self.regions.iter_mut() {
                         match i.handle_event(event.clone(), lb) {
-                            Action::RunQuery(_) => {},
+                            Action::RunQuery(_) => {}
                             Action::Internal => {}
                         }
                     }
@@ -417,19 +451,25 @@ impl TUI {
                 self.width = width;
 
                 self.current = FrameBuffer::new(width, height);
-                self.current = FrameBuffer::new(width, height);
+                self.previous = FrameBuffer::new(width, height);
 
                 let input_height = 3;
                 self.regions[0].set_geometry(0, 0, width, input_height);
                 let data_height = (height as f64 * 0.7).ceil() as u16;
                 self.regions[1].set_geometry(0, input_height, width, data_height);
-                self.regions[2].set_geometry(0, data_height + input_height, width, height - (data_height + input_height));
+                self.regions[2].set_geometry(
+                    0,
+                    data_height + input_height,
+                    width,
+                    height - (data_height + input_height),
+                );
 
-                execute!(io::stdout(), Clear(ClearType::All)).map_err(|x| x.to_string())?;
+                Self::clear()?;
+                return Ok(PostHandleDirective::SkipDraw);
             }
             _ => {}
         }
-        Ok(())
+        Ok(PostHandleDirective::None)
     }
 
     pub fn enter_tui_mode() -> Result<(), String> {
@@ -461,5 +501,10 @@ impl TUI {
 
     pub fn log(&mut self, log: Log) {
         self.external_log_buffer.push(log)
+    }
+
+    fn clear() -> Result<(), String> {
+        execute!(io::stdout(), Clear(ClearType::All)).map_err(|x| x.to_string())?;
+        Ok(())
     }
 }

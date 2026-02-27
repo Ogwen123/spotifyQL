@@ -4,7 +4,7 @@ use crate::ui::tui::Colour;
 pub struct Cell {
     pub char: char,
     pub colour: Colour,
-    pub bold: bool
+    pub bold: bool,
 }
 
 pub struct FrameBuffer {
@@ -55,6 +55,5 @@ impl FrameBuffer {
                 bold: false,
             }
         }
-
     }
 }
