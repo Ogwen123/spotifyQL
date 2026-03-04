@@ -1,5 +1,6 @@
 use crate::query::data::KeyAccess;
-use crate::query::tokenise::{Logical, Operator, Value};
+use crate::query::tokenise::{Logical, Operator};
+use crate::query::value::Value;
 use std::fmt::Debug;
 
 pub fn compute_conditions<T: KeyAccess + Debug>(

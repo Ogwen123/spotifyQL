@@ -4,10 +4,13 @@ use crate::query::data::{AlbumData, KeyAccess, PlaylistData, TrackData};
 use crate::query::display::data_display::{
     aggregation_table, build_aggregation_table, build_table, table,
 };
-use crate::query::tokenise::{DataSource, Value};
+use crate::query::tokenise::{DataSource, Order};
+use crate::query::value::Value;
 use crate::ui::tui::TUI;
 use crate::utils::logger::info;
+use crate::utils::sort::mergesort;
 use std::collections::HashMap;
+use std::fmt::Debug;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Aggregation {
@@ -32,11 +35,14 @@ impl Aggregation {
     }
 }
 
+pub type OrderBy = (Vec<String>, Order);
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct SelectStatement {
     pub aggregation: Aggregation,
     pub targets: Vec<String>, // list of attribute names
     pub source: DataSource,
+    pub order: Option<OrderBy>,
     pub conditions: Option<Condition>,
 }
 
@@ -45,7 +51,7 @@ impl SelectStatement {
         // gather targets
         match &self.source {
             DataSource::Playlists => {
-                let valid = self.playlists(match &cx.data.playlist_data {
+                let mut valid = self.playlists(match &cx.data.playlist_data {
                     Some(playlists) => playlists.clone(),
                     None => return Err("Playlist data not fetched.".to_string()),
                 })?;
@@ -54,16 +60,24 @@ impl SelectStatement {
                     info!("Filtered playlists")
                 }
 
+                if self.order.is_some() {
+                    Self::order(&mut valid, self.order.clone().unwrap())?;
+                }
+
                 self.handle_aggregation_and_display(valid, cx, window)?
             }
             DataSource::SavedAlbums => {
-                let valid = self.albums(match &cx.data.saved_album_data {
+                let mut valid = self.albums(match &cx.data.saved_album_data {
                     Some(albums) => albums.clone(),
                     None => return Err("Playlist data not fetched.".to_string()),
                 })?;
 
                 if cx.user_config.debug && !cx.user_config.tui {
                     info!("Filtered playlists")
+                }
+
+                if self.order.is_some() {
+                    Self::order(&mut valid, self.order.clone().unwrap())?;
                 }
 
                 self.handle_aggregation_and_display(valid, cx, window)?
@@ -87,10 +101,14 @@ impl SelectStatement {
                     return Err(format!("No playlist with the name {}.", res));
                 }
 
-                let valid = self.tracks(data.unwrap().clone())?;
+                let mut valid = self.tracks(data.unwrap().clone())?;
 
                 if cx.user_config.debug && !cx.user_config.tui {
                     info!("Filtered playlist tracks")
+                }
+
+                if self.order.is_some() {
+                    Self::order(&mut valid, self.order.clone().unwrap())?;
                 }
 
                 self.handle_aggregation_and_display(valid, cx, window)?
@@ -113,10 +131,14 @@ impl SelectStatement {
                     return Err(format!("No saved album with the name {}.", res));
                 }
 
-                let valid = self.tracks(data.unwrap().clone())?;
+                let mut valid = self.tracks(data.unwrap().clone())?;
 
                 if cx.user_config.debug && !cx.user_config.tui {
                     info!("Filtered playlists")
+                }
+
+                if self.order.is_some() {
+                    Self::order(&mut valid, self.order.clone().unwrap())?;
                 }
 
                 self.handle_aggregation_and_display(valid, cx, window)?
@@ -239,5 +261,20 @@ impl SelectStatement {
         }
 
         Ok(valid)
+    }
+
+    fn order<T>(valid: &mut Vec<T>, (attributes, order): OrderBy) -> Result<(), String>
+    where
+        T: KeyAccess + Clone + Default + Debug,
+    {
+        let mut temp = mergesort(valid, &attributes)?;
+        println!("{:?}", temp);
+        if order == Order::Descending {
+            temp.reverse()
+        }
+
+        *valid = temp;
+
+        Ok(())
     }
 }

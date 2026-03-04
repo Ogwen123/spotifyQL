@@ -1,6 +1,6 @@
 use crate::api::APIQuery;
 use crate::app_context::AppContext;
-use crate::query::{tokenise::DataSource, tokenise::Value as DValue};
+use crate::query::{tokenise::DataSource, value::Value as DValue};
 use crate::utils::date::Date;
 use crate::utils::logger::info;
 use crate::utils::utils::secs_now;
@@ -16,7 +16,7 @@ pub trait KeyAccess {
     fn attributes() -> Vec<String>;
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct TrackData {
     pub id: String,
     pub name: String,
@@ -75,7 +75,7 @@ impl KeyAccess for TrackData {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct PlaylistData {
     pub id: String,
     pub name: String,
@@ -109,7 +109,7 @@ impl KeyAccess for PlaylistData {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct AlbumData {
     pub id: String,
     pub name: String,

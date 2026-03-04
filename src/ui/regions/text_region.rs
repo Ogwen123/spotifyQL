@@ -2,8 +2,8 @@ use crate::ui::event_action::Action;
 use crate::ui::framebuffer::{Cell, FrameBuffer};
 use crate::ui::regions::region::{Region, RegionData, RegionType};
 use crate::ui::tui::{Colour, Log};
-use crate::utils::utils::{bounds_loc};
-use crossterm::event::{Event};
+use crate::utils::utils::bounds_loc;
+use crossterm::event::Event;
 use std::cmp::max;
 
 #[derive(Clone)]

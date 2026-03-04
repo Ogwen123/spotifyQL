@@ -95,6 +95,11 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
                 "SELECT name, release_date FROM PLAYLIST(All) WHERE release_date > 7-6-2006;".to_string(),
                 cx
             )?,
+            "/testo" => run_query(
+                // test order by
+                "SELECT name, duration FROM PLAYLIST(All) ORDER BY duration DESC WHERE duration > 300000;".to_string(),
+                cx
+            )?,
             _ => {
                 run_query(parsed_input.to_string(), cx)?
             }

@@ -22,7 +22,13 @@ pub enum DateScope {
     Year,  // yyyy
 }
 
-#[derive(Debug, Clone)]
+impl Default for DateScope {
+    fn default() -> Self {
+        DateScope::Year
+    }
+}
+
+#[derive(Debug, Clone, Default)]
 pub struct Date {
     scope: DateScope,
     year: u32,

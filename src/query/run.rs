@@ -30,7 +30,7 @@ pub fn run_query(query: String, cx: &mut AppContext) -> Result<(), String> {
     if cx.user_config.debug && !cx.user_config.tui {
         info!("Tokens");
         for i in &tokens {
-            print!("{}   ", i)
+            println!("{}   ", i.to_string())
         }
     }
 

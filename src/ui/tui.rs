@@ -351,10 +351,10 @@ impl TUI {
         // draw regions
         if self.height < Self::MIN_HEIGHT || self.width < Self::MIN_WIDTH {
             // centre region
-            
+
             self.size_warning_region.x = (self.width / 2) - (self.size_warning_region.width / 2);
             self.size_warning_region.y = (self.height / 2) - (self.size_warning_region.height / 2);
-            
+
             self.size_warning_region.draw(&mut self.current);
 
             self.flush_diff();
