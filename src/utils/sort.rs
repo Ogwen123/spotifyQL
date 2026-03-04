@@ -25,7 +25,7 @@ where
     }
 
     let mut res: Vec<T> = Vec::with_capacity(valid.len());
-    res.resize(10, T::default()); // init array with default values
+    res.resize_with(valid.len(), T::default); // init array with default values
 
     let mut data: Vec<T> = valid.clone().to_vec();
 
@@ -37,7 +37,7 @@ where
     let mut i: usize = 0;
     let mut j: usize = 0;
     let mut k: usize = 0;
-
+    
     while i < rhs.len() && j < lhs.len() {
         if bigger(&rhs[i], &lhs[j], attributes)? {
             res[k] = lhs[j].clone();
@@ -48,6 +48,19 @@ where
         }
         k += 1
     }
-
+    
+    while i < rhs.len() {
+        res[k] = rhs[i].clone();
+        i += 1;
+        k += 1;
+    }
+    
+    while j < lhs.len() {
+        res[k] = lhs[j].clone();
+        j += 1;
+        k += 1;
+    }
+    
     Ok(res)
 }
+

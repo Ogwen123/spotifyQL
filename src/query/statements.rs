@@ -267,8 +267,9 @@ impl SelectStatement {
     where
         T: KeyAccess + Clone + Default + Debug,
     {
+        //println!("{:?}", valid);
         let mut temp = mergesort(valid, &attributes)?;
-        println!("{:?}", temp);
+        //println!("{:?}", temp);
         if order == Order::Descending {
             temp.reverse()
         }
