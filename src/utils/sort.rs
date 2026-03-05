@@ -37,7 +37,7 @@ where
     let mut i: usize = 0;
     let mut j: usize = 0;
     let mut k: usize = 0;
-    
+
     while i < rhs.len() && j < lhs.len() {
         if bigger(&rhs[i], &lhs[j], attributes)? {
             res[k] = lhs[j].clone();
@@ -48,19 +48,18 @@ where
         }
         k += 1
     }
-    
+
     while i < rhs.len() {
         res[k] = rhs[i].clone();
         i += 1;
         k += 1;
     }
-    
+
     while j < lhs.len() {
         res[k] = lhs[j].clone();
         j += 1;
         k += 1;
     }
-    
+
     Ok(res)
 }
-

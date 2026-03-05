@@ -18,13 +18,14 @@ pub enum TUIQueryStage {
 
 pub struct QueryTracker {
     pub stage: TUIQueryStage,
+    pub query_string: String,
     pub start_time: u128,
 }
 
 /// This run function is now for CLI mode only, when using a TUI the run flow is integrated in the main loop
 pub fn run_query(query: String, cx: &mut AppContext) -> Result<(), String> {
     info_nnl!("Tokenising");
-    let tokens: Vec<Token> = tokenise(query)?;
+    let tokens: Vec<Token> = tokenise(query.clone())?;
     success!("Processed Tokens");
 
     if cx.user_config.debug && !cx.user_config.tui {
@@ -48,7 +49,7 @@ pub fn run_query(query: String, cx: &mut AppContext) -> Result<(), String> {
     load_data_source(cx, statement.source.clone())?;
     success!("Loaded Data");
 
-    let _ = statement.run(cx, None)?;
+    let _ = statement.run(cx, None, query)?;
 
     Ok(())
 }

@@ -1,4 +1,9 @@
+use chrono::Utc;
 use std::time::{SystemTime, UNIX_EPOCH};
+
+pub fn iso_str() -> String {
+    Utc::now().to_rfc3339()
+}
 
 pub fn secs_now() -> u64 {
     let start = SystemTime::now();

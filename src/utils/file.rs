@@ -1,3 +1,6 @@
+use crate::app_context::AppContext;
+use crate::query::data::KeyAccess;
+use crate::utils::utils::iso_str;
 use std::env::home_dir;
 use std::fs::{OpenOptions, create_dir_all, remove_file};
 use std::io::{Read, Write};
@@ -6,6 +9,7 @@ use std::path::PathBuf;
 pub enum File {
     Auth,
     Config,
+    Other(String),
 }
 
 impl File {
@@ -38,6 +42,7 @@ impl File {
         match self {
             File::Auth => folder.push("auth.json"),
             File::Config => folder.push("config.json"),
+            File::Other(res) => return Ok(PathBuf::from(res)),
         }
 
         Ok(folder)
@@ -99,4 +104,46 @@ pub fn delete_file(file: File) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+fn csv<T>(data: T) -> String
+where
+    T: KeyAccess,
+{
+    let mut res: Vec<String> = Vec::new();
+    for attr in T::attributes() {
+        res.push(data.access(attr).unwrap().to_string()) // attr is guaranteed to be an attribute because of where it comes from so this unwrap is safe
+    }
+
+    res.join(",")
+}
+
+/// Output format
+///
+/// query \n
+/// iso time \n
+/// line1 \n
+/// line2 \n
+/// etc
+pub fn write_result<T>(cx: &AppContext, valid: Vec<T>, query: String) -> Result<(), String>
+where
+    T: KeyAccess,
+{
+    if cx.save_file.is_none() {
+        return Err("No save file specified".to_string());
+    }
+    let mut output: Vec<String> = Vec::new();
+
+    output.push(query);
+    output.push(iso_str());
+
+    for i in valid {
+        output.push(csv(i));
+    }
+
+    write_file(
+        File::Other(cx.save_file.clone().unwrap()),
+        output.join("\n"),
+        WriteMode::Overwrite,
+    )
 }

@@ -51,13 +51,13 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
             )?,
             "/testl" => run_query(
                 // test list operators
-                "SELECT id, name FROM playlist(All) WHERE name in [\"Holiday\", \"Shout\"];".to_string(),
+                "SELECT id, name FROM playlist(All) WHERE name IN [\"Holiday\", \"Shout\"];".to_string(),
                 cx,
                 
             )?,
             "/testlr" => run_query(
                 // test list operators reversed
-                "SELECT name FROM playlist(All) WHERE \"Arctic Monkeys\" in artists;".to_string(),
+                "SELECT name FROM playlist(All) WHERE \"Arctic Monkeys\" IN artists;".to_string(),
                 cx,
             )?,
             "/tests" => run_query(

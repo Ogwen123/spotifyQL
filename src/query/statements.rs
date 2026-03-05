@@ -7,6 +7,7 @@ use crate::query::display::data_display::{
 use crate::query::tokenise::{DataSource, Order};
 use crate::query::value::Value;
 use crate::ui::tui::TUI;
+use crate::utils::file::write_result;
 use crate::utils::logger::info;
 use crate::utils::sort::mergesort;
 use std::collections::HashMap;
@@ -47,7 +48,12 @@ pub struct SelectStatement {
 }
 
 impl SelectStatement {
-    pub fn run(self, cx: &AppContext, window: Option<&mut TUI>) -> Result<(), String> {
+    pub fn run(
+        self,
+        cx: &AppContext,
+        window: Option<&mut TUI>,
+        query_string: String,
+    ) -> Result<(), String> {
         // gather targets
         match &self.source {
             DataSource::Playlists => {
@@ -64,7 +70,11 @@ impl SelectStatement {
                     Self::order(&mut valid, self.order.clone().unwrap())?;
                 }
 
-                self.handle_aggregation_and_display(valid, cx, window)?
+                self.handle_aggregation_and_display(valid.clone(), cx, window)?;
+
+                if cx.save_file.is_some() {
+                    write_result(cx, valid, query_string)?
+                }
             }
             DataSource::SavedAlbums => {
                 let mut valid = self.albums(match &cx.data.saved_album_data {
@@ -80,7 +90,11 @@ impl SelectStatement {
                     Self::order(&mut valid, self.order.clone().unwrap())?;
                 }
 
-                self.handle_aggregation_and_display(valid, cx, window)?
+                self.handle_aggregation_and_display(valid.clone(), cx, window)?;
+
+                if cx.save_file.is_some() {
+                    write_result(cx, valid, query_string)?
+                }
             }
             DataSource::Playlist(res) => {
                 let mut data: Option<&Vec<TrackData>> = None;
@@ -111,7 +125,11 @@ impl SelectStatement {
                     Self::order(&mut valid, self.order.clone().unwrap())?;
                 }
 
-                self.handle_aggregation_and_display(valid, cx, window)?
+                self.handle_aggregation_and_display(valid.clone(), cx, window)?;
+
+                if cx.save_file.is_some() {
+                    write_result(cx, valid, query_string)?
+                }
             }
             DataSource::SavedAlbum(res) => {
                 let mut data: Option<&Vec<TrackData>> = None;
@@ -141,11 +159,13 @@ impl SelectStatement {
                     Self::order(&mut valid, self.order.clone().unwrap())?;
                 }
 
-                self.handle_aggregation_and_display(valid, cx, window)?
+                self.handle_aggregation_and_display(valid.clone(), cx, window)?;
+
+                if cx.save_file.is_some() {
+                    write_result(cx, valid, query_string)?
+                }
             }
         };
-
-        // apply aggregations
 
         Ok(())
     }

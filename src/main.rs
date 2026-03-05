@@ -44,6 +44,8 @@ fn main() {
         cx.user_config.tui = true;
     }
 
+    cx.save_file = rc.file_output;
+
     if rc.command == Command::Login {
         if let Err(err) = login(&mut cx) {
             fatal!("{}", err)

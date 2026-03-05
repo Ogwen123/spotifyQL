@@ -244,6 +244,7 @@ impl TUI {
         let mut log_buffer: Vec<Log> = Vec::new();
         let mut query_tracker = QueryTracker {
             stage: TUIQueryStage::NotRunning,
+            query_string: String::new(),
             start_time: 0,
         };
 
@@ -259,6 +260,7 @@ impl TUI {
             match query_tracker.stage.clone() {
                 TUIQueryStage::Queued(query) => {
                     log_buffer.push(Log::new("Tokenising", Severity::Log));
+                    query_tracker.query_string = query.clone();
                     match tokenise(query.clone()) {
                         Ok(res) => {
                             query_tracker.stage = TUIQueryStage::Tokenised(res);
@@ -296,7 +298,10 @@ impl TUI {
                     }
                 }
                 TUIQueryStage::ParsedWithData(statement) => {
-                    match statement.clone().run(cx, Some(self)) {
+                    match statement
+                        .clone()
+                        .run(cx, Some(self), query_tracker.query_string.clone())
+                    {
                         Ok(_) => {
                             query_tracker.stage = TUIQueryStage::NotRunning;
                             log_buffer.push(Log::new(
