@@ -1,5 +1,6 @@
 use crate::app_context::AppContext;
-use crate::query::data::{AlbumData, PlaylistData, TrackData, result_parser};
+use crate::query::data::{AlbumData, PlaylistData, TrackData};
+use crate::query::deserialise::result_parser;
 use crate::utils::logger::fatal;
 use crate::utils::url::build_url;
 use regex::Regex;

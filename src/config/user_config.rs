@@ -6,12 +6,14 @@ use serde::Deserialize;
 pub struct UserConfig {
     pub debug: bool,
     pub tui: bool,
+    pub cache: bool,
 }
 
 #[derive(Deserialize)]
 struct ConfigFileContent {
     debug: bool,
     tui: bool,
+    cache: bool,
 }
 
 impl UserConfig {
@@ -30,6 +32,8 @@ impl UserConfig {
             serde_json::from_str(config_file_contents.as_str()).map_err(|x| x.to_string())?;
 
         cx.debug = user_config.debug;
+        cx.tui = user_config.tui;
+        cx.cache = user_config.cache;
 
         Ok(cx)
     }
@@ -40,6 +44,7 @@ impl Default for UserConfig {
         Self {
             debug: false,
             tui: true,
+            cache: false,
         }
     }
 }

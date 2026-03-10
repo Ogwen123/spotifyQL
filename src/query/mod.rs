@@ -1,5 +1,6 @@
 pub mod condition;
 pub mod data;
+pub mod deserialise;
 pub mod display;
 pub mod parse;
 pub mod run;

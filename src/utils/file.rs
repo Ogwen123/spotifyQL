@@ -9,6 +9,7 @@ use std::path::PathBuf;
 pub enum File {
     Auth,
     Config,
+    Cache,
     Other(String),
 }
 
@@ -36,12 +37,13 @@ impl File {
         Ok(home)
     }
 
-    fn path(&self) -> Result<PathBuf, String> {
+    pub fn path(&self) -> Result<PathBuf, String> {
         let mut folder = File::folder_path()?;
 
         match self {
             File::Auth => folder.push("auth.json"),
             File::Config => folder.push("config.json"),
+            File::Cache => folder.push("cache.txt"),
             File::Other(res) => return Ok(PathBuf::from(res)),
         }
 

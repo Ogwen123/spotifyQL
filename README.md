@@ -83,7 +83,7 @@ If using `dd/mm/yy` then 20yy will be used, unless that is in the future in whic
  - [x] ORDER BY functionality
  - [ ] sub-query functionality
  - [x] make a date struct and change all current dates stored in strings to use it
- - [ ] output to a file?
+ - [x] output to a file?
  - [x] make into a tui app
    - [x] add region names
    - [x] add scrolling to log section
