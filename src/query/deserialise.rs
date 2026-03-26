@@ -433,7 +433,7 @@ pub mod result_parser {
                         album_name: track_data.4,
                         release_date: Date::new(track_data.5, DateSource::Spotify)?,
                         artists: track_data.6,
-                        added_at,
+                        added_at: Date::from_iso8601(added_at)?,
                         popularity: track_data.7,
                     })
                 }

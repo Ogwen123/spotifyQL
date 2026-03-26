@@ -163,6 +163,16 @@ impl Date {
         .validate()?)
     }
 
+    pub fn from_iso8601(iso8601: String) -> Result<Date, String> {
+        if !iso8601.contains("T") {
+            return Err("Invalid ISO 8601 format".to_string());
+        }
+        Self::new(
+            iso8601.split("T").next().unwrap().to_string(),
+            DateSource::Spotify,
+        )
+    }
+
     pub fn year(year: u32) -> Result<Date, String> {
         Date {
             scope: DateScope::Year,
