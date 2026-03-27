@@ -227,6 +227,27 @@ pub struct Data {
     pub saved_album_data: Option<Vec<AlbumData>>,
 }
 
+impl Data {
+    fn count_cache_lines(&self) -> usize {
+        let mut count: usize = 1;
+        if self.playlist_data.is_some() {
+            for i in self.playlist_data.clone().clone().unwrap() {
+                count += 2;
+                count += i.track_count as usize;
+            }
+        }
+
+        if self.saved_album_data.is_some() {
+            for i in self.saved_album_data.clone().unwrap() {
+                count += 2;
+                count += i.track_count as usize;
+            }
+        }
+
+        count
+    }
+}
+
 impl Default for Data {
     fn default() -> Self {
         Self {
@@ -304,26 +325,14 @@ fn deserialise_cache(data: String) -> Result<DeserialisedCache, String> {
 /// <track 1 data as csv>
 /// <track 2 data as csv>
 /// ...
-fn serialise_cache(cx: &AppContext) -> Result<(), String> {
+fn serialise_cache(cx: &AppContext) -> Result<String, String> {
     let pd = cx.data.playlist_data.clone();
     let ad = cx.data.saved_album_data.clone();
 
-    let mut count: usize = 0;
-    if pd.is_some() {
-        for i in pd.clone().unwrap() {
-            count += 2;
-            count += i.track_count as usize;
-        }
-    }
+    let count= cx.data.count_cache_lines();
+    let mut write_buffer: Vec<String> = Vec::with_capacity(count);
 
-    if ad.is_some() {
-        for i in ad.clone().unwrap() {
-            count += 2;
-            count += i.track_count as usize;
-        }
-    }
-
-    let mut write_buffer: Vec<String> = vec![secs_now().to_string(); count];
+    write_buffer.push(secs_now().to_string());
 
     if pd.is_some() {
         for i in pd.unwrap() {
@@ -345,7 +354,7 @@ fn serialise_cache(cx: &AppContext) -> Result<(), String> {
         }
     }
 
-    write_file(FileType::Cache, write_buffer.join("\n"), WriteMode::Overwrite)
+    Ok(write_buffer.join("\n"))
 }
 
 pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), String> {
@@ -354,9 +363,9 @@ pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), S
     // if there is missing data fetch correct data
     // overwrite cache with new data
 
-    if let Some(cache_text) = load_cache()? {
-        let data = deserialise_cache(cache_text)?;
-    }
+    // if let Some(cache_text) = load_cache()? {
+    //     let data = deserialise_cache(cache_text)?;
+    // }
 
     //check playlist data
     match source {
@@ -378,6 +387,10 @@ pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), S
             if cx.user_config.debug && !cx.user_config.tui {
                 info!("Loaded playlist data")
             }
+            if cx.user_config.cache {
+                let sd = serialise_cache(&cx)?;
+                write_file(FileType::Cache, sd, WriteMode::Overwrite)?
+            }
         }
         DataSource::SavedAlbum(_) | DataSource::SavedAlbums => {
             let mut load = false;
@@ -396,6 +409,10 @@ pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), S
             }
             if cx.user_config.debug && !cx.user_config.tui {
                 info!("Loaded album data")
+            }
+            if cx.user_config.cache {
+                let sd = serialise_cache(&cx)?;
+                write_file(FileType::Cache, sd, WriteMode::Overwrite)?
             }
         }
     }
