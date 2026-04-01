@@ -1,15 +1,13 @@
 use crate::api::APIQuery;
 use crate::app_context::AppContext;
+use crate::cache::serialise_cache;
 use crate::query::{tokenise::DataSource, value::Value as DValue};
 use crate::utils::date::Date;
-use crate::utils::file::{write_file, File as _File, WriteMode};
+use crate::utils::file::File as FileType;
+use crate::utils::file::{WriteMode, write_file};
 use crate::utils::logger::info;
 use crate::utils::utils::secs_now;
 use std::fmt::Display;
-use std::fs::File;
-use crate::utils::file::File as FileType;
-use std::io::{BufRead, BufReader};
-use std::str::FromStr;
 
 pub const DATA_TTL: u64 = 60 * 30;
 
@@ -19,10 +17,6 @@ pub trait KeyAccess {
         T: AsRef<str> + Display;
 
     fn attributes() -> Vec<String>;
-}
-
-trait ToCSV {
-    fn csv(&self) -> String;
 }
 
 #[derive(Clone, Debug, Default)]
@@ -84,23 +78,6 @@ impl KeyAccess for TrackData {
     }
 }
 
-impl ToCSV for TrackData {
-    fn csv(&self) -> String {
-        format!(
-            "{},{},{},{},{},{},{},{},{}",
-            self.id,
-            self.name,
-            self.duration,
-            self.release_date.format(),
-            self.album_name,
-            self.album_id,
-            self.artists.join("|"), // connected with pipes to not interfere with over CSV
-            self.added_at.format(),
-            self.popularity
-        )
-    }
-}
-
 #[derive(Clone, Debug, Default)]
 pub struct PlaylistData {
     pub id: String,
@@ -132,15 +109,6 @@ impl KeyAccess for PlaylistData {
             .iter()
             .map(|x| x.to_string())
             .collect::<Vec<String>>()
-    }
-}
-
-impl ToCSV for PlaylistData {
-    fn csv(&self) -> String {
-        format!(
-            "{}, {}, {}, {}",
-            self.id, self.name, self.tracks_api, self.track_count
-        )
     }
 }
 
@@ -201,22 +169,6 @@ impl KeyAccess for AlbumData {
     }
 }
 
-impl ToCSV for AlbumData {
-    fn csv(&self) -> String {
-        format!(
-            "{},{},{},{},{},{},{},{}",
-            self.id,
-            self.name,
-            self.track_count,
-            self.popularity,
-            self.album_type,
-            self.release_date.format(),
-            self.artists.join("|"),
-            self.saved_at
-        )
-    }
-}
-
 #[derive(Clone)]
 pub struct Data {
     /// Creation time of the playlist data
@@ -228,7 +180,7 @@ pub struct Data {
 }
 
 impl Data {
-    fn count_cache_lines(&self) -> usize {
+    pub(crate) fn count_cache_lines(&self) -> usize {
         let mut count: usize = 1;
         if self.playlist_data.is_some() {
             for i in self.playlist_data.clone().clone().unwrap() {
@@ -257,104 +209,6 @@ impl Default for Data {
             saved_album_data: None,
         }
     }
-}
-
-fn load_cache() -> Result<Option<String>, String> {
-    let Ok(cache_file) = File::open(_File::Cache.path()?) else {
-        return Ok(None);
-    };
-    let cache_file_reader = BufReader::new(cache_file);
-
-    let mut cache_iter = cache_file_reader
-        .lines()
-        .map(|x| x.expect("Failed to read line."));
-
-    let Some(epoch_line) = cache_iter.next() else {
-        return Err("Could not read cache epoch line.".to_string());
-    };
-
-    let epoch = u64::from_str(epoch_line.as_str())
-        .map_err(|x| format!("Could not parse cache epoch ({})", x))?;
-
-    if epoch + DATA_TTL < secs_now() {
-        return Ok(None);
-    }
-
-    Ok(Some(cache_iter.collect()))
-}
-
-#[derive(Default)]
-struct DeserialisedCache {
-    playlists: Vec<PlaylistData>,
-    albums: Vec<AlbumData>,
-}
-
-enum DataType {
-    Playlist,
-    Album,
-}
-
-/// Doesn't do that much error checking, relies on the format being correct
-fn deserialise_cache(data: String) -> Result<DeserialisedCache, String> {
-    let mut data_iter = data.split("\n");
-
-    let mut playlists: Vec<PlaylistData> = Vec::new();
-    let mut albums: Vec<AlbumData> = Vec::new();
-
-    let mut currently_reading: DataType = DataType::Playlist;
-
-    loop {
-        let line = match data_iter.next() {
-            Some(res) => res,
-            None => break,
-        };
-        match line.split(" ").next().unwrap() {
-            // there must be at least one item in the iter
-            "ALBUM" => currently_reading = DataType::Album,
-            "PLAYLIST" => currently_reading = DataType::Playlist,
-            _ => return Err("Unknown block identifier reached".to_string()),
-        };
-        break;
-    }
-    Ok(DeserialisedCache { playlists, albums })
-}
-
-/// Cache format
-/// PLAYLIST
-/// <playlist data as csv>
-/// <track 1 data as csv>
-/// <track 2 data as csv>
-/// ...
-fn serialise_cache(cx: &AppContext) -> Result<String, String> {
-    let pd = cx.data.playlist_data.clone();
-    let ad = cx.data.saved_album_data.clone();
-
-    let count= cx.data.count_cache_lines();
-    let mut write_buffer: Vec<String> = Vec::with_capacity(count);
-
-    write_buffer.push(secs_now().to_string());
-
-    if pd.is_some() {
-        for i in pd.unwrap() {
-            let mut buf: Vec<String> = vec!["PLAYLIST".to_string(), i.csv()];
-            for j in i.tracks {
-                buf.push(j.csv())
-            }
-            write_buffer.append(&mut buf);
-        }
-    }
-
-    if ad.is_some() {
-        for i in ad.unwrap() {
-            let mut buf: Vec<String> = vec!["ALBUM".to_string(), i.csv()];
-            for j in i.tracks {
-                buf.push(j.csv())
-            }
-            write_buffer.append(&mut buf);
-        }
-    }
-
-    Ok(write_buffer.join("\n"))
 }
 
 pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), String> {

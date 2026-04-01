@@ -13,6 +13,7 @@ use app_context::AppContext;
 mod api;
 mod app_context;
 mod auth;
+mod cache;
 mod commands;
 mod config;
 mod query;
