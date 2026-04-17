@@ -122,7 +122,7 @@ pub struct AlbumData {
     pub album_type: String,
     pub release_date: Date,
     pub artists: Vec<String>,
-    pub saved_at: String,
+    pub saved_at: Date,
 }
 
 impl KeyAccess for AlbumData {
@@ -144,7 +144,7 @@ impl KeyAccess for AlbumData {
                     .map(|x| DValue::Str(x))
                     .collect(),
             )),
-            "saved_at" => Ok(DValue::Str(self.saved_at.clone())),
+            "saved_at" => Ok(DValue::Date(self.saved_at.clone())),
             _ => Err(format!(
                 "SYNTAX ERROR: {} is not a valid attribute for album data.",
                 key

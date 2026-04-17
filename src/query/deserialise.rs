@@ -246,7 +246,7 @@ pub mod result_parser {
                         album_type: album_data.4,
                         release_date: Date::new(album_data.5, DateSource::Spotify)?,
                         artists: album_data.6,
-                        saved_at: added_at,
+                        saved_at: Date::from_iso8601(added_at)?,
                     })
                 }
                 _ => {

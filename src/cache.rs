@@ -1,5 +1,6 @@
 use crate::app_context::AppContext;
 use crate::query::data::{AlbumData, DATA_TTL, PlaylistData, TrackData};
+use crate::utils::date::{Date, DateSource};
 use crate::utils::file::File as _File;
 use crate::utils::utils::secs_now;
 use std::cmp::PartialEq;
@@ -48,7 +49,7 @@ impl ToCSV for AlbumData {
             self.album_type,
             self.release_date.format(),
             self.artists.join("|"),
-            self.saved_at
+            self.saved_at.format()
         )
     }
 }
@@ -107,7 +108,35 @@ impl DeserialiseCache for AlbumData {
             return Err("Must provide at least the album data line when deserialising".to_string());
         }
 
-        let data = AlbumData::default();
+        let mut data = AlbumData::default();
+
+        let split = lines[0]
+            .split(",")
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>();
+
+        if split.len() != 8 {
+            return Err("Album data CSV line does not contain 8 values.".to_string());
+        }
+
+        data.id = split[0].clone();
+        data.name = split[1].clone();
+        data.track_count = split[2]
+            .parse()
+            .map_err(|_| "Could not parse track count into a u64.".to_string())?;
+        data.popularity = split[3]
+            .parse()
+            .map_err(|_| "Could not parse popularity into a u64.".to_string())?;
+        data.album_type = split[4].clone();
+        data.release_date = Date::new(split[5].clone(), DateSource::User)?;
+        data.artists = split[6].clone().split("|").map(|x| x.to_string()).collect();
+        data.saved_at = Date::new(split[7].clone(), DateSource::User)?;
+
+        data.tracks = lines[1..]
+            .to_vec()
+            .into_iter()
+            .map(|x| deserialise_track_data(x))
+            .collect::<Vec<TrackData>>();
 
         Ok(data)
     }
@@ -182,11 +211,13 @@ pub fn deserialise_cache(data: String) -> Result<DeserialisedCache, String> {
                 break;
             }
 
-            lines.push(data_line.unwrap())
+            lines.push(data_line.unwrap().to_string())
         }
 
         if currently_reading == DataType::Playlist {
+            playlists.push(PlaylistData::deserialise(lines)?)
         } else {
+            albums.push(AlbumData::deserialise(lines)?)
         }
         break;
     }

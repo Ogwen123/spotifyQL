@@ -175,6 +175,19 @@ impl Value {
     }
 }
 
+fn perform_comparison<T>(res1: T, res2: T) -> Option<Ordering>
+where
+    T: PartialOrd,
+{
+    Some(if res1 < res2 {
+        Ordering::Less
+    } else if res1 > res2 {
+        Ordering::Greater
+    } else {
+        Ordering::Equal
+    })
+}
+
 impl PartialOrd for Value {
     /// If None is returned it is because the provided attribute is not orderable, e.g. list or bool
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -185,49 +198,25 @@ impl PartialOrd for Value {
         match self {
             Value::Int(res1) => {
                 if let Value::Int(res2) = other {
-                    return Some(if res1 < res2 {
-                        Ordering::Less
-                    } else if res1 > res2 {
-                        Ordering::Greater
-                    } else {
-                        Ordering::Equal
-                    });
+                    return perform_comparison(res1, res2);
                 }
                 None
             }
             Value::Float(res1) => {
                 if let Value::Float(res2) = other {
-                    return Some(if res1 < res2 {
-                        Ordering::Less
-                    } else if res1 > res2 {
-                        Ordering::Greater
-                    } else {
-                        Ordering::Equal
-                    });
+                    return perform_comparison(res1, res2);
                 }
                 None
             }
             Value::Str(res1) => {
                 if let Value::Str(res2) = other {
-                    return Some(if res1 < res2 {
-                        Ordering::Less
-                    } else if res1 > res2 {
-                        Ordering::Greater
-                    } else {
-                        Ordering::Equal
-                    });
+                    return perform_comparison(res1, res2);
                 }
                 None
             }
             Value::Date(res1) => {
                 if let Value::Date(res2) = other {
-                    return Some(if res1 < res2 {
-                        Ordering::Less
-                    } else if res1 > res2 {
-                        Ordering::Greater
-                    } else {
-                        Ordering::Equal
-                    });
+                    return perform_comparison(res1, res2);
                 }
                 None
             }

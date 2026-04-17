@@ -118,8 +118,8 @@ pub enum Token {
     AVERAGE(String),
     FROM,
     ORDER,
-    BY,
     /// Only ever part of the ORDER BY compound keyword
+    BY,
     OrderDirection(Order),
     WHERE,
     Attribute(String),
