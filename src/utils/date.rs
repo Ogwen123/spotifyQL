@@ -165,7 +165,7 @@ impl Date {
 
     pub fn from_iso8601(iso8601: String) -> Result<Date, String> {
         if !iso8601.contains("T") {
-            return Err("Invalid ISO 8601 format".to_string());
+            return Err(format!("Invalid ISO 8601 format ({})", iso8601));
         }
         Self::new(
             iso8601.split("T").next().unwrap().to_string(),
@@ -214,6 +214,9 @@ impl Date {
         Ok(self)
     }
 
+    /// Format into an ISO 8601 date
+    /// Incomplete dates default to the earliest possible time
+    /// e.g. given just the year it will default to the 1st of jan of that year
     pub fn format(&self) -> String {
         let mut buf: String = String::new();
 
@@ -223,6 +226,8 @@ impl Date {
                 day = format!("0{}", day)
             }
             buf += (day + "/").as_str();
+        } else {
+            buf += "01/"
         }
 
         if self.month.is_some() {
@@ -231,11 +236,15 @@ impl Date {
                 month = format!("0{}", month)
             }
             buf += (month + "/").as_str();
+        } else {
+            buf += "01/"
         }
 
         buf += self.year.to_string().as_str();
 
-        buf
+        let date = NaiveDate::parse_from_str(&*buf, "%d/%m/%Y").unwrap();
+        let datetime = date.and_hms_milli_opt(0, 0, 0, 0).unwrap();
+        datetime.format("%Y-%m-%dT%H:%M:%S%.3f").to_string()
     }
 }
 

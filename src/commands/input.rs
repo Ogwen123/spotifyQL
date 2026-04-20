@@ -62,7 +62,7 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
             )?,
             "/tests" => run_query(
                 // test simple query
-                "SELECT name FROM playlist(All);".to_string(),
+                "SELECT * FROM playlist(All);".to_string(),
                 cx,
             )?,
             "/testa" => println!(

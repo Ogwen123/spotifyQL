@@ -1,6 +1,6 @@
 use crate::api::APIQuery;
 use crate::app_context::AppContext;
-use crate::cache::serialise_cache;
+use crate::cache::{deserialise_cache, load_cache, serialise_cache};
 use crate::query::{tokenise::DataSource, value::Value as DValue};
 use crate::utils::date::Date;
 use crate::utils::file::File as FileType;
@@ -217,11 +217,25 @@ pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), S
     // if there is missing data fetch correct data
     // overwrite cache with new data
 
-    // if let Some(cache_text) = load_cache()? {
-    //     let data = deserialise_cache(cache_text)?;
-    // }
+    if let Some(cache_text) = load_cache()? {
+        let data = deserialise_cache(cache_text)?;
 
-    //check playlist data
+        cx.data.playlist_data = if data.playlists.len() > 0 {
+            println!("{:?}", data.playlists);
+            Some(data.playlists)
+        } else {
+            None
+        };
+        cx.data.playlist_data_ct = secs_now();
+
+        cx.data.saved_album_data = if data.albums.len() > 0 {
+            Some(data.albums)
+        } else {
+            None
+        };
+        cx.data.saved_album_data_ct = secs_now();
+    }
+
     match source {
         DataSource::Playlist(_) | DataSource::Playlists => {
             let mut load = false;

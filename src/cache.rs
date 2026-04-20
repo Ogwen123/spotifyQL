@@ -54,19 +54,48 @@ impl ToCSV for AlbumData {
     }
 }
 
-fn deserialise_track_data(line: String) -> TrackData {
-    let data = TrackData::default();
-
-    data
-}
-
-trait DeserialiseCache {
+trait FromCSV {
     fn deserialise(lines: Vec<String>) -> Result<Self, String>
     where
         Self: Sized;
 }
 
-impl DeserialiseCache for PlaylistData {
+impl FromCSV for Vec<TrackData> {
+    fn deserialise(lines: Vec<String>) -> Result<Self, String>
+    where
+        Self: Sized
+    {
+        let mut tracks: Vec<TrackData> = Vec::new();
+        for line in lines {
+            let mut data = TrackData::default();
+
+            let split = line
+                .split(",")
+                .map(|x| x.to_string())
+                .collect::<Vec<String>>();
+
+            data.id = split[0].to_string();
+            data.name = split[1].to_string();
+            data.duration = split[2]
+                .parse()
+                .map_err(|_| "Could not parse track duration into u64")?;
+            data.release_date = Date::from_iso8601(split[3].clone())?;
+            data.album_name = split[4].clone();
+            data.album_id = split[5].clone();
+            data.artists = split[6].clone().split("|").map(|x| x.to_string()).collect();
+            data.added_at = Date::from_iso8601(split[7].clone())?;
+            data.popularity = split[8]
+                .parse()
+                .map_err(|_| "Cloud not parse track popularity into u8")?;
+
+            tracks.push(data)
+        }
+
+        Ok(tracks)
+    }
+}
+
+impl FromCSV for PlaylistData {
     fn deserialise(lines: Vec<String>) -> Result<Self, String> {
         if lines.len() < 1 {
             return Err(
@@ -91,18 +120,13 @@ impl DeserialiseCache for PlaylistData {
         data.track_count = split[3]
             .parse()
             .map_err(|_| "Could not parse track count into a u64.".to_string())?;
-
-        data.tracks = lines[1..]
-            .to_vec()
-            .into_iter()
-            .map(|x| deserialise_track_data(x))
-            .collect::<Vec<TrackData>>();
+        data.tracks = <Vec<TrackData> as FromCSV>::deserialise(lines[1..].to_vec())?;
 
         Ok(data)
     }
 }
 
-impl DeserialiseCache for AlbumData {
+impl FromCSV for AlbumData {
     fn deserialise(lines: Vec<String>) -> Result<Self, String> {
         if lines.len() < 1 {
             return Err("Must provide at least the album data line when deserialising".to_string());
@@ -131,18 +155,13 @@ impl DeserialiseCache for AlbumData {
         data.release_date = Date::new(split[5].clone(), DateSource::User)?;
         data.artists = split[6].clone().split("|").map(|x| x.to_string()).collect();
         data.saved_at = Date::new(split[7].clone(), DateSource::User)?;
-
-        data.tracks = lines[1..]
-            .to_vec()
-            .into_iter()
-            .map(|x| deserialise_track_data(x))
-            .collect::<Vec<TrackData>>();
+        data.tracks = <Vec<TrackData> as FromCSV>::deserialise(lines[1..].to_vec())?;
 
         Ok(data)
     }
 }
 
-pub fn load_cache() -> Result<Option<String>, String> {
+pub fn load_cache() -> Result<Option<impl Iterator<Item = String>>, String> {
     let Ok(cache_file) = File::open(_File::Cache.path()?) else {
         return Ok(None);
     };
@@ -163,13 +182,13 @@ pub fn load_cache() -> Result<Option<String>, String> {
         return Ok(None);
     }
 
-    Ok(Some(cache_iter.collect()))
+    Ok(Some(cache_iter))
 }
 
 #[derive(Default)]
-struct DeserialisedCache {
-    playlists: Vec<PlaylistData>,
-    albums: Vec<AlbumData>,
+pub struct DeserialisedCache {
+    pub playlists: Vec<PlaylistData>,
+    pub albums: Vec<AlbumData>,
 }
 
 #[derive(PartialEq)]
@@ -179,35 +198,41 @@ enum DataType {
 }
 
 /// Doesn't do that much error checking, relies on the format being correct
-pub fn deserialise_cache(data: String) -> Result<DeserialisedCache, String> {
-    let mut data_iter = data.split("\n").peekable();
+pub fn deserialise_cache(data: impl Iterator<Item = String>) -> Result<DeserialisedCache, String> {
+    let mut data_iter = data.peekable();
 
     let mut playlists: Vec<PlaylistData> = Vec::new();
     let mut albums: Vec<AlbumData> = Vec::new();
 
-    let mut currently_reading: DataType = DataType::Playlist;
+    let mut currently_reading: DataType;
 
     loop {
         let line = match data_iter.next() {
             Some(res) => res,
-            None => break,
+            None => {
+                println!("breaking");
+                break
+            },
         };
-        match line.split(" ").next().unwrap() {
+
+        let bi = line.split(" ").next().unwrap();
+        match bi {
             // there must be at least one item in the iter
             "ALBUM" => currently_reading = DataType::Album,
             "PLAYLIST" => currently_reading = DataType::Playlist,
-            _ => return Err("Unknown block identifier reached".to_string()),
+            _ => return Err(format!("Unknown block identifier reached ({})", bi)),
         };
 
         let mut lines = Vec::new();
         loop {
             let p = data_iter.peek();
-            if p.is_some() && vec!["ALBUM", "PLAYLIST"].contains(p.clone().unwrap()) {
+            if p.is_some() && vec!["ALBUM", "PLAYLIST"].contains(&p.clone().unwrap().as_str()) {
                 break;
             }
 
             let data_line = data_iter.next();
             if data_line.is_none() {
+                println!("breaking");
                 break;
             }
 
@@ -219,7 +244,6 @@ pub fn deserialise_cache(data: String) -> Result<DeserialisedCache, String> {
         } else {
             albums.push(AlbumData::deserialise(lines)?)
         }
-        break;
     }
     Ok(DeserialisedCache { playlists, albums })
 }
