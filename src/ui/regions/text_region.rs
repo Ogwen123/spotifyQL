@@ -6,14 +6,15 @@ use crate::utils::utils::bounds_loc;
 use crossterm::event::Event;
 use std::cmp::max;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub enum TextAlign {
+    #[default]
     Left,
     Right,
     Center,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct TextRegion {
     pub x: u16,
     pub y: u16,

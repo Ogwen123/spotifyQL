@@ -1,34 +1,6 @@
+use urlencoding::encode;
+
 type Params<K, V> = Vec<(K, V)>;
-
-pub fn url_encode(unencoded: String) -> String {
-    let mut str: String = String::new();
-
-    for c in unencoded.split("") {
-        str += match c {
-            "!" => "%21",
-            "#" => "%23",
-            "$" => "%24",
-            "&" => "%26",
-            "'" => "%27",
-            "(" => "%28",
-            ")" => "%29",
-            "*" => "%2A",
-            "+" => "%2B",
-            "," => "%2C",
-            "/" => "%2F",
-            ":" => "%3A",
-            ";" => "%3B",
-            "=" => "%3D",
-            "?" => "%3F",
-            "@" => "%40",
-            "[" => "%5B",
-            "]" => "%5D",
-            _ => c,
-        }
-    }
-
-    str
-}
 
 pub fn build_url<K: AsRef<str>, V: AsRef<str>, S: ToString>(
     base: S,
@@ -43,7 +15,7 @@ pub fn build_url<K: AsRef<str>, V: AsRef<str>, S: ToString>(
     for (index, (k, v)) in params.iter().enumerate() {
         res += k.as_ref();
         res += "=";
-        res += url_encode(v.as_ref().to_string()).as_str();
+        res += &*encode(v.as_ref());
         if index != params.len() - 1 {
             res += "&"
         }

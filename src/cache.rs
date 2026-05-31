@@ -7,6 +7,7 @@ use std::cmp::PartialEq;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::str::FromStr;
+use urlencoding::{decode, encode};
 
 pub trait ToCSV {
     fn csv(&self) -> String;
@@ -16,15 +17,15 @@ impl ToCSV for TrackData {
     fn csv(&self) -> String {
         format!(
             "{},{},{},{},{},{},{},{},{}",
-            self.id,
-            self.name,
-            self.duration,
-            self.release_date.format(),
-            self.album_name,
-            self.album_id,
-            self.artists.join("|"), // connected with pipes to not interfere with over CSV
-            self.added_at.format(),
-            self.popularity
+            encode(self.id.as_str()),
+            encode(self.name.as_str()),
+            encode(self.duration.to_string().as_str()),
+            encode(self.release_date.format().as_str()),
+            encode(self.album_name.as_str()),
+            encode(self.album_id.as_str()),
+            encode(self.artists.join("|").as_str()), // connected with pipes to not interfere with over CSV
+            encode(self.added_at.format().as_str()),
+            encode(self.popularity.to_string().as_str())
         )
     }
 }
@@ -33,7 +34,7 @@ impl ToCSV for PlaylistData {
     fn csv(&self) -> String {
         format!(
             "{},{},{},{}",
-            self.id, self.name, self.tracks_api, self.track_count
+            encode(self.id.as_str()), encode(self.name.as_str()), encode(self.tracks_api.as_str()), encode(self.track_count.to_string().as_str())
         )
     }
 }
@@ -42,14 +43,14 @@ impl ToCSV for AlbumData {
     fn csv(&self) -> String {
         format!(
             "{},{},{},{},{},{},{},{}",
-            self.id,
-            self.name,
-            self.track_count,
-            self.popularity,
-            self.album_type,
-            self.release_date.format(),
-            self.artists.join("|"),
-            self.saved_at.format()
+            encode(self.id.as_str()),
+            encode(self.name.as_str()),
+            encode(self.track_count.to_string().as_str()),
+            encode(self.popularity.to_string().as_str()),
+            encode(self.album_type.as_str()),
+            encode(self.release_date.format().as_str()),
+            encode(self.artists.join("|").as_str()),
+            encode(self.saved_at.format().as_str())
         )
     }
 }
@@ -58,6 +59,12 @@ trait FromCSV {
     fn deserialise(lines: Vec<String>) -> Result<Self, String>
     where
         Self: Sized;
+}
+
+macro_rules! decode {
+    ($s:expr) => {
+        decode($s).map_err(|x| x.to_string())?.to_string()
+    };
 }
 
 impl FromCSV for Vec<TrackData> {
@@ -71,20 +78,19 @@ impl FromCSV for Vec<TrackData> {
 
             let split = line
                 .split(",")
-                .map(|x| x.to_string())
-                .collect::<Vec<String>>();
+                .collect::<Vec<&str>>();
 
-            data.id = split[0].to_string();
-            data.name = split[1].to_string();
-            data.duration = split[2]
+            data.id = decode!(split[0]);
+            data.name = decode!(split[1]);
+            data.duration = decode!(split[2])
                 .parse()
-                .map_err(|_| "Could not parse track duration into u64")?;
-            data.release_date = Date::from_iso8601(split[3].clone())?;
-            data.album_name = split[4].clone();
-            data.album_id = split[5].clone();
-            data.artists = split[6].clone().split("|").map(|x| x.to_string()).collect();
-            data.added_at = Date::from_iso8601(split[7].clone())?;
-            data.popularity = split[8]
+                .map_err(|_| format!("Could not parse track duration into u64 ({})", split[2]))?;
+            data.release_date = Date::from_iso8601(decode!(split[3]))?;
+            data.album_name = decode!(split[4]);
+            data.album_id = decode!(split[5]);
+            data.artists = decode!(split[6]).split("|").map(|x| x.to_string()).collect();
+            data.added_at = Date::from_iso8601(decode!(split[7]))?;
+            data.popularity = decode!(split[8])
                 .parse()
                 .map_err(|_| "Cloud not parse track popularity into u8")?;
 
@@ -107,17 +113,16 @@ impl FromCSV for PlaylistData {
 
         let split = lines[0]
             .split(",")
-            .map(|x| x.to_string())
-            .collect::<Vec<String>>();
+            .collect::<Vec<&str>>();
 
         if split.len() != 4 {
             return Err("Playlist data CSV line does not contain 4 values.".to_string());
         }
 
-        data.id = split[0].clone();
-        data.name = split[1].clone();
-        data.tracks_api = split[2].clone();
-        data.track_count = split[3]
+        data.id = decode!(split[0]);
+        data.name = decode!(split[1]);
+        data.tracks_api = decode!(split[2]);
+        data.track_count = decode!(split[3])
             .parse()
             .map_err(|_| "Could not parse track count into a u64.".to_string())?;
         data.tracks = <Vec<TrackData> as FromCSV>::deserialise(lines[1..].to_vec())?;
@@ -136,32 +141,31 @@ impl FromCSV for AlbumData {
 
         let split = lines[0]
             .split(",")
-            .map(|x| x.to_string())
-            .collect::<Vec<String>>();
+            .collect::<Vec<&str>>();
 
         if split.len() != 8 {
             return Err("Album data CSV line does not contain 8 values.".to_string());
         }
 
-        data.id = split[0].clone();
-        data.name = split[1].clone();
-        data.track_count = split[2]
+        data.id = decode!(split[0]);
+        data.name = decode!(split[1]);
+        data.track_count = decode!(split[2])
             .parse()
             .map_err(|_| "Could not parse track count into a u64.".to_string())?;
-        data.popularity = split[3]
+        data.popularity = decode!(split[3])
             .parse()
             .map_err(|_| "Could not parse popularity into a u64.".to_string())?;
-        data.album_type = split[4].clone();
-        data.release_date = Date::new(split[5].clone(), DateSource::User)?;
+        data.album_type = decode!(split[4]);
+        data.release_date = Date::from_iso8601(decode!(split[5]))?;
         data.artists = split[6].clone().split("|").map(|x| x.to_string()).collect();
-        data.saved_at = Date::new(split[7].clone(), DateSource::User)?;
+        data.saved_at = Date::from_iso8601(decode!(split[7]))?;
         data.tracks = <Vec<TrackData> as FromCSV>::deserialise(lines[1..].to_vec())?;
 
         Ok(data)
     }
 }
 
-pub fn load_cache() -> Result<Option<impl Iterator<Item = String>>, String> {
+pub fn load_cache() -> Result<Option<(impl Iterator<Item = String>, u64)>, String> {
     let Ok(cache_file) = File::open(_File::Cache.path()?) else {
         return Ok(None);
     };
@@ -182,7 +186,7 @@ pub fn load_cache() -> Result<Option<impl Iterator<Item = String>>, String> {
         return Ok(None);
     }
 
-    Ok(Some(cache_iter))
+    Ok(Some((cache_iter, epoch)))
 }
 
 #[derive(Default)]
@@ -210,7 +214,6 @@ pub fn deserialise_cache(data: impl Iterator<Item = String>) -> Result<Deseriali
         let line = match data_iter.next() {
             Some(res) => res,
             None => {
-                println!("breaking");
                 break
             },
         };
@@ -232,7 +235,6 @@ pub fn deserialise_cache(data: impl Iterator<Item = String>) -> Result<Deseriali
 
             let data_line = data_iter.next();
             if data_line.is_none() {
-                println!("breaking");
                 break;
             }
 

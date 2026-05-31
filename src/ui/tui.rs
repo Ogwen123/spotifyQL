@@ -29,13 +29,15 @@ use std::io::Write;
 use std::mem::{discriminant, swap};
 use std::time::Duration;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Default)]
 pub enum Colour {
     Green,
     Blue,
     Purple,
     Red,
+    Yellow,
     Cyan,
+    #[default]
     White,
     Grey,
     BrightGreen,
@@ -50,6 +52,7 @@ impl Colour {
             Colour::Blue => "34m",
             Colour::Purple => "35m",
             Colour::Red => "31m",
+            Colour::Yellow => "33m",
             Colour::Cyan => "36m",
             Colour::White => "37m",
             Colour::Grey => "90m",
@@ -71,6 +74,7 @@ impl Display for Colour {
                 Colour::Blue => "\x1b[34m",
                 Colour::Purple => "\x1b[35m",
                 Colour::Red => "\x1b[31m",
+                Colour::Yellow => "\x1b[33m",
                 Colour::Cyan => "\x1b[36m",
                 Colour::White => "\x1b[37m",
                 Colour::Grey => "\x1b[90m",
@@ -86,6 +90,7 @@ impl Display for Colour {
 pub enum Severity {
     Log,
     Success,
+    Warning,
     Error,
 }
 
@@ -94,6 +99,7 @@ impl Severity {
         match self {
             Severity::Error => Colour::Red,
             Severity::Log => Colour::Blue,
+            Severity::Warning => Colour::Yellow,
             Severity::Success => Colour::Green,
         }
     }
@@ -116,6 +122,7 @@ impl Log {
                 match severity {
                     Severity::Error => "[ERROR]",
                     Severity::Log => "[LOG]",
+                    Severity::Warning => "[NOTICE]",
                     Severity::Success => "[SUCCESS]",
                 },
                 content
@@ -125,6 +132,7 @@ impl Log {
     }
 }
 
+#[derive(Default)]
 pub struct TUI {
     width: u16,
     height: u16,
@@ -285,7 +293,7 @@ impl TUI {
                     }
                 },
                 TUIQueryStage::Parsed(statement) => {
-                    match load_data_source(cx, statement.clone().source) {
+                    match load_data_source(cx, statement.clone().source, Some(self)) {
                         Ok(_) => {
                             query_tracker.stage = TUIQueryStage::ParsedWithData(statement);
                             log_buffer.push(Log::new("Loaded Data", Severity::Success));

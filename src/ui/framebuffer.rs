@@ -7,6 +7,7 @@ pub struct Cell {
     pub bold: bool,
 }
 
+#[derive(Default)]
 pub struct FrameBuffer {
     pub width: u16,
     pub height: u16,

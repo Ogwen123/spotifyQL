@@ -5,9 +5,10 @@ use crate::query::{tokenise::DataSource, value::Value as DValue};
 use crate::utils::date::Date;
 use crate::utils::file::File as FileType;
 use crate::utils::file::{WriteMode, write_file};
-use crate::utils::logger::info;
+use crate::utils::logger::{info, warning};
 use crate::utils::utils::secs_now;
 use std::fmt::Display;
+use crate::ui::tui::{Log, Severity, TUI};
 
 pub const DATA_TTL: u64 = 60 * 30;
 
@@ -211,29 +212,48 @@ impl Default for Data {
     }
 }
 
-pub fn load_data_source(cx: &mut AppContext, source: DataSource) -> Result<(), String> {
+pub fn load_data_source(cx: &mut AppContext, source: DataSource, _tui: Option<&mut TUI>) -> Result<(), String> {
     // load in cache
     // check for any missing data (e.g. there is only album data but the query needs playlist data
     // if there is missing data fetch correct data
     // overwrite cache with new data
+    let mut tui: &mut TUI = &mut (TUI::default());
+    let mut has_tui = false;
+
+    if _tui.is_some() {
+        has_tui = true;
+        tui = _tui.unwrap();
+    }
+    if cx.user_config.debug && !cx.user_config.tui {
+        info!("Checking Cache")
+    } else if cx.user_config.tui && has_tui {
+        tui.log(Log::new("Checking Cache", Severity::Log))
+    }
 
     if let Some(cache_text) = load_cache()? {
-        let data = deserialise_cache(cache_text)?;
+        let data = deserialise_cache(cache_text.0)?;
 
         cx.data.playlist_data = if data.playlists.len() > 0 {
-            println!("{:?}", data.playlists);
+            tui.log(Log::new("Loaded playlists from cache", Severity::Success));
             Some(data.playlists)
         } else {
             None
         };
-        cx.data.playlist_data_ct = secs_now();
+        cx.data.playlist_data_ct = cache_text.1;
 
         cx.data.saved_album_data = if data.albums.len() > 0 {
+            tui.log(Log::new("Loaded albums from cache", Severity::Success));
             Some(data.albums)
         } else {
             None
         };
         cx.data.saved_album_data_ct = secs_now();
+    } else {
+        if cx.user_config.debug && !cx.user_config.tui {
+            warning!("Cache Outdated")
+        } else if cx.user_config.tui && has_tui {
+            tui.log(Log::new("Cache Outdated", Severity::Warning))
+        }
     }
 
     match source {
