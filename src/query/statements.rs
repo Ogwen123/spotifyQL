@@ -60,7 +60,7 @@ impl SelectStatement {
                 let mut valid = self.playlists(match &cx.data.playlist_data {
                     Some(playlists) => playlists.clone(),
                     None => return Err("Playlist data not fetched.".to_string()),
-                })?;
+                }, cx)?;
 
                 if cx.user_config.debug && !cx.user_config.tui {
                     info!("Filtered playlists")
@@ -80,7 +80,7 @@ impl SelectStatement {
                 let mut valid = self.albums(match &cx.data.saved_album_data {
                     Some(albums) => albums.clone(),
                     None => return Err("Playlist data not fetched.".to_string()),
-                })?;
+                }, cx)?;
 
                 if cx.user_config.debug && !cx.user_config.tui {
                     info!("Filtered playlists")
@@ -115,7 +115,7 @@ impl SelectStatement {
                     return Err(format!("No playlist with the name {}.", res));
                 }
 
-                let mut valid = self.tracks(data.unwrap().clone())?;
+                let mut valid = self.tracks(data.unwrap().clone(), cx)?;
 
                 if cx.user_config.debug && !cx.user_config.tui {
                     info!("Filtered playlist tracks")
@@ -149,7 +149,7 @@ impl SelectStatement {
                     return Err(format!("No saved album with the name {}.", res));
                 }
 
-                let mut valid = self.tracks(data.unwrap().clone())?;
+                let mut valid = self.tracks(data.unwrap().clone(), cx)?;
 
                 if cx.user_config.debug && !cx.user_config.tui {
                     info!("Filtered playlists")
@@ -241,12 +241,12 @@ impl SelectStatement {
         Ok(())
     }
 
-    fn tracks(&self, data: Vec<TrackData>) -> Result<Vec<TrackData>, String> {
+    fn tracks(&self, data: Vec<TrackData>, cx: &AppContext) -> Result<Vec<TrackData>, String> {
         let mut valid: Vec<TrackData> = Vec::new();
 
         for i in data {
             if self.conditions.is_none()
-                || compute_conditions(&i, self.conditions.clone().unwrap())?
+                || compute_conditions(&i, self.conditions.clone().unwrap(), cx)?
             {
                 valid.push(i);
             }
@@ -255,12 +255,12 @@ impl SelectStatement {
         Ok(valid)
     }
 
-    fn playlists(&self, data: Vec<PlaylistData>) -> Result<Vec<PlaylistData>, String> {
+    fn playlists(&self, data: Vec<PlaylistData>, cx: &AppContext) -> Result<Vec<PlaylistData>, String> {
         let mut valid: Vec<PlaylistData> = Vec::new();
 
         for i in data {
             if self.conditions.is_none()
-                || compute_conditions(&i, self.conditions.clone().unwrap())?
+                || compute_conditions(&i, self.conditions.clone().unwrap(), cx)?
             {
                 valid.push(i);
             }
@@ -269,12 +269,12 @@ impl SelectStatement {
         Ok(valid)
     }
 
-    fn albums(&self, data: Vec<AlbumData>) -> Result<Vec<AlbumData>, String> {
+    fn albums(&self, data: Vec<AlbumData>, cx: &AppContext) -> Result<Vec<AlbumData>, String> {
         let mut valid: Vec<AlbumData> = Vec::new();
 
         for i in data {
             if self.conditions.is_none()
-                || compute_conditions(&i, self.conditions.clone().unwrap())?
+                || compute_conditions(&i, self.conditions.clone().unwrap(), cx)?
             {
                 valid.push(i);
             }

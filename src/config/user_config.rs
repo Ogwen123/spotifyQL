@@ -7,6 +7,7 @@ pub struct UserConfig {
     pub debug: bool,
     pub tui: bool,
     pub cache: bool,
+    pub case_sensitive: bool,
 }
 
 #[derive(Deserialize)]
@@ -14,6 +15,7 @@ struct ConfigFileContent {
     debug: bool,
     tui: bool,
     cache: bool,
+    case_sensitive: bool
 }
 
 impl UserConfig {
@@ -34,6 +36,7 @@ impl UserConfig {
         cx.debug = user_config.debug;
         cx.tui = user_config.tui;
         cx.cache = user_config.cache;
+        cx.case_sensitive = user_config.case_sensitive;
 
         Ok(cx)
     }
@@ -45,6 +48,7 @@ impl Default for UserConfig {
             debug: false,
             tui: true,
             cache: false,
+            case_sensitive: false,
         }
     }
 }

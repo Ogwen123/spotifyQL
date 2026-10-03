@@ -3,6 +3,7 @@ use crate::utils::date::Date;
 use std::cmp::Ordering;
 use std::fmt::{Display, Formatter};
 use std::mem::discriminant;
+use crate::app_context::AppContext;
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum Value {
@@ -36,7 +37,7 @@ impl Display for Value {
 }
 
 impl Value {
-    pub fn compare(&self, value: Value, operator: Operator) -> Result<bool, String> {
+    pub fn compare(&self, value: Value, operator: Operator, cx: &AppContext) -> Result<bool, String> {
         if let Value::Date(attr) = self {
             // standalone years get tokenised as ints so need toc convert to date if the attr is a date
             let target: &Date = match &value {
@@ -59,13 +60,13 @@ impl Value {
         match operator {
             Operator::Equals => self.equals(value),
             Operator::NotEquals => Ok(!self.equals(value)?),
-            Operator::Like => self.like(value),
-            Operator::In => self.in_list(value),
+            Operator::Like => self.like(value, cx),
+            Operator::In => self.in_list(value, cx),
             Operator::Less => self.less_than(value),
             Operator::LessEqual => self.less_than_or_equal(value),
             Operator::Greater => self.greater_than(value),
             Operator::GreaterEqual => self.greater_than_or_equal(value),
-            Operator::NotIn => Ok(!self.in_list(value)?),
+            Operator::NotIn => Ok(!self.in_list(value, cx)?),
         }
     }
 
@@ -73,11 +74,22 @@ impl Value {
         if self == &value { Ok(true) } else { Ok(false) }
     }
 
-    fn like(&self, value: Value) -> Result<bool, String> {
-        if let Value::Str(first) = self
-            && let Value::Str(second) = &value
+    fn like(&self, value: Value, cx: &AppContext) -> Result<bool, String> {
+
+        if let Value::Str(f) = self
+            && let Value::Str(s) = &value
         {
-            if first.to_lowercase().contains(second) {
+            let first: String;
+            let second: String;
+
+            if cx.user_config.case_sensitive {
+                first = f.clone();
+                second = s.clone();
+            } else {
+                first = f.to_lowercase();
+                second = s.to_lowercase();
+            }
+            if first.contains(&second) {
                 Ok(true)
             } else {
                 Ok(false)
@@ -87,10 +99,28 @@ impl Value {
         }
     }
 
-    fn inner_in_list(list: Vec<Value>, val: Value) -> Result<bool, String> {
-        if list.len() == 0 {
+    fn inner_in_list(_list: Vec<Value>, _val: Value, cx: &AppContext) -> Result<bool, String> {
+        if _list.len() == 0 {
             return Ok(false);
         }
+        let list: Vec<Value>;
+        let val: Value;
+        let is_string = match &_list[0] {
+            Value::Str(_) => true,
+            default => false
+        };
+        if cx.user_config.case_sensitive || !is_string {
+            list = _list;
+            val = _val;
+        } else {
+            list = _list.into_iter().map(|x| if let Value::Str(str) = x {Value::Str(str)} else {Value::Str(String::new())}).collect::<Vec<Value>>();
+            if let Value::Str(str) = _val {
+                val = Value::Str(str.to_lowercase())
+            } else {
+                val = Value::Str(String::new())
+            };
+        }
+
         if discriminant(&list[0]) == discriminant(&val) {
             if list.contains(&val) {
                 Ok(true)
@@ -102,11 +132,11 @@ impl Value {
         }
     }
 
-    fn in_list(&self, value: Value) -> Result<bool, String> {
+    fn in_list(&self, value: Value, cx: &AppContext) -> Result<bool, String> {
         if let Value::List(res) = self {
-            Self::inner_in_list(res.clone(), value)
+            Self::inner_in_list(res.clone(), value, cx)
         } else if let Value::List(res) = value {
-            Self::inner_in_list(res, self.clone())
+            Self::inner_in_list(res, self.clone(), cx)
         } else {
             return Err(
                 "SYNTAX ERROR: IN operator only valued between a list and a value.".to_string(),
