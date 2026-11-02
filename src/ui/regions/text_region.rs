@@ -182,6 +182,13 @@ impl Region for TextRegion {
     }
 
     fn get_border_data(&self) -> (u16, u16, bool, &Colour, &Colour, &String) {
-        (self.width, self.height, self.focused, &self.border_colour, &self.focused_border_colour, &self.name)
+        (
+            self.width,
+            self.height,
+            self.focused,
+            &self.border_colour,
+            &self.focused_border_colour,
+            &self.name,
+        )
     }
 }

@@ -79,7 +79,7 @@ fn main() {
             match TUI::new() {
                 Ok(mut res) => {
                     if let Err(err) = res.run(&mut cx) {
-                        TUI::leave_tui_mode();
+                        let _ = TUI::leave_tui_mode();
                         fatal!("{}", err)
                     }
                 }

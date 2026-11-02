@@ -1,7 +1,13 @@
 # spotifyQL
 A SQL like query language for your spotify statistics
 
-### Examples
+### Basic Query In The TUI
+![TUI Example](./src/assets/example.png)
+
+### Settings Dialog
+WIP
+
+## Examples
 ```SQL
 SELECT COUNT(name) FROM PLAYLIST(pl1) WHERE "Arctic Monkeys" IN artists;
 ```

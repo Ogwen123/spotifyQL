@@ -57,10 +57,13 @@ impl SelectStatement {
         // gather targets
         match &self.source {
             DataSource::Playlists => {
-                let mut valid = self.playlists(match &cx.data.playlist_data {
-                    Some(playlists) => playlists.clone(),
-                    None => return Err("Playlist data not fetched.".to_string()),
-                }, cx)?;
+                let mut valid = self.playlists(
+                    match &cx.data.playlist_data {
+                        Some(playlists) => playlists.clone(),
+                        None => return Err("Playlist data not fetched.".to_string()),
+                    },
+                    cx,
+                )?;
 
                 if cx.user_config.debug && !cx.user_config.tui {
                     info!("Filtered playlists")
@@ -77,10 +80,13 @@ impl SelectStatement {
                 }
             }
             DataSource::SavedAlbums => {
-                let mut valid = self.albums(match &cx.data.saved_album_data {
-                    Some(albums) => albums.clone(),
-                    None => return Err("Playlist data not fetched.".to_string()),
-                }, cx)?;
+                let mut valid = self.albums(
+                    match &cx.data.saved_album_data {
+                        Some(albums) => albums.clone(),
+                        None => return Err("Playlist data not fetched.".to_string()),
+                    },
+                    cx,
+                )?;
 
                 if cx.user_config.debug && !cx.user_config.tui {
                     info!("Filtered playlists")
@@ -255,7 +261,11 @@ impl SelectStatement {
         Ok(valid)
     }
 
-    fn playlists(&self, data: Vec<PlaylistData>, cx: &AppContext) -> Result<Vec<PlaylistData>, String> {
+    fn playlists(
+        &self,
+        data: Vec<PlaylistData>,
+        cx: &AppContext,
+    ) -> Result<Vec<PlaylistData>, String> {
         let mut valid: Vec<PlaylistData> = Vec::new();
 
         for i in data {

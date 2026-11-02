@@ -1,6 +1,6 @@
 use crate::ui::event_action::Action;
 use crate::ui::framebuffer::{Cell, FrameBuffer};
-use crate::ui::regions::region::{REGION_NAME_PADDING, Region, RegionData, RegionType};
+use crate::ui::regions::region::{Region, RegionData, RegionType};
 use crate::ui::tui::{Colour, Log};
 use crate::utils::utils::bounds_loc;
 use crossterm::event::{Event, KeyCode};
@@ -144,6 +144,13 @@ impl Region for InputRegion {
     }
 
     fn get_border_data(&self) -> (u16, u16, bool, &Colour, &Colour, &String) {
-        (self.width, self.height, self.focused, &self.border_colour, &self.focused_border_colour, &self.name)
+        (
+            self.width,
+            self.height,
+            self.focused,
+            &self.border_colour,
+            &self.focused_border_colour,
+            &self.name,
+        )
     }
 }

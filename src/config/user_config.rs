@@ -15,7 +15,7 @@ struct ConfigFileContent {
     debug: bool,
     tui: bool,
     cache: bool,
-    case_sensitive: bool
+    case_sensitive: bool,
 }
 
 impl UserConfig {

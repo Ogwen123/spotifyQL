@@ -1,2 +1,2 @@
-pub mod setting;
 mod component;
+pub mod setting;

@@ -2,13 +2,13 @@ use crate::api::APIQuery;
 use crate::app_context::AppContext;
 use crate::cache::{deserialise_cache, load_cache, serialise_cache};
 use crate::query::{tokenise::DataSource, value::Value as DValue};
+use crate::ui::tui::{Log, Severity, TUI};
 use crate::utils::date::Date;
 use crate::utils::file::File as FileType;
 use crate::utils::file::{WriteMode, write_file};
 use crate::utils::logger::{info, warning};
 use crate::utils::utils::secs_now;
 use std::fmt::Display;
-use crate::ui::tui::{Log, Severity, TUI};
 
 pub const DATA_TTL: u64 = 60 * 30;
 
@@ -212,7 +212,11 @@ impl Default for Data {
     }
 }
 
-pub fn load_data_source(cx: &mut AppContext, source: DataSource, _tui: Option<&mut TUI>) -> Result<(), String> {
+pub fn load_data_source(
+    cx: &mut AppContext,
+    source: DataSource,
+    _tui: Option<&mut TUI>,
+) -> Result<(), String> {
     // load in cache
     // check for any missing data (e.g. there is only album data but the query needs playlist data
     // if there is missing data fetch correct data

@@ -1,3 +1,1 @@
-pub struct Dialog {
-    
-}
+pub struct Dialog {}

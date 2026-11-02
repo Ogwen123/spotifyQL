@@ -1,6 +1,6 @@
 use crate::app_context::AppContext;
 use crate::query::data::{AlbumData, DATA_TTL, PlaylistData, TrackData};
-use crate::utils::date::{Date, DateSource};
+use crate::utils::date::Date;
 use crate::utils::file::File as _File;
 use crate::utils::utils::secs_now;
 use std::cmp::PartialEq;
@@ -34,7 +34,10 @@ impl ToCSV for PlaylistData {
     fn csv(&self) -> String {
         format!(
             "{},{},{},{}",
-            encode(self.id.as_str()), encode(self.name.as_str()), encode(self.tracks_api.as_str()), encode(self.track_count.to_string().as_str())
+            encode(self.id.as_str()),
+            encode(self.name.as_str()),
+            encode(self.tracks_api.as_str()),
+            encode(self.track_count.to_string().as_str())
         )
     }
 }
@@ -70,15 +73,13 @@ macro_rules! decode {
 impl FromCSV for Vec<TrackData> {
     fn deserialise(lines: Vec<String>) -> Result<Self, String>
     where
-        Self: Sized
+        Self: Sized,
     {
         let mut tracks: Vec<TrackData> = Vec::new();
         for line in lines {
             let mut data = TrackData::default();
 
-            let split = line
-                .split(",")
-                .collect::<Vec<&str>>();
+            let split = line.split(",").collect::<Vec<&str>>();
 
             data.id = decode!(split[0]);
             data.name = decode!(split[1]);
@@ -88,7 +89,10 @@ impl FromCSV for Vec<TrackData> {
             data.release_date = Date::from_iso8601(decode!(split[3]))?;
             data.album_name = decode!(split[4]);
             data.album_id = decode!(split[5]);
-            data.artists = decode!(split[6]).split("|").map(|x| x.to_string()).collect();
+            data.artists = decode!(split[6])
+                .split("|")
+                .map(|x| x.to_string())
+                .collect();
             data.added_at = Date::from_iso8601(decode!(split[7]))?;
             data.popularity = decode!(split[8])
                 .parse()
@@ -111,9 +115,7 @@ impl FromCSV for PlaylistData {
 
         let mut data = PlaylistData::default();
 
-        let split = lines[0]
-            .split(",")
-            .collect::<Vec<&str>>();
+        let split = lines[0].split(",").collect::<Vec<&str>>();
 
         if split.len() != 4 {
             return Err("Playlist data CSV line does not contain 4 values.".to_string());
@@ -139,9 +141,7 @@ impl FromCSV for AlbumData {
 
         let mut data = AlbumData::default();
 
-        let split = lines[0]
-            .split(",")
-            .collect::<Vec<&str>>();
+        let split = lines[0].split(",").collect::<Vec<&str>>();
 
         if split.len() != 8 {
             return Err("Album data CSV line does not contain 8 values.".to_string());
@@ -157,7 +157,7 @@ impl FromCSV for AlbumData {
             .map_err(|_| "Could not parse popularity into a u64.".to_string())?;
         data.album_type = decode!(split[4]);
         data.release_date = Date::from_iso8601(decode!(split[5]))?;
-        data.artists = split[6].clone().split("|").map(|x| x.to_string()).collect();
+        data.artists = split[6].split("|").map(|x| x.to_string()).collect();
         data.saved_at = Date::from_iso8601(decode!(split[7]))?;
         data.tracks = <Vec<TrackData> as FromCSV>::deserialise(lines[1..].to_vec())?;
 
@@ -213,9 +213,7 @@ pub fn deserialise_cache(data: impl Iterator<Item = String>) -> Result<Deseriali
     loop {
         let line = match data_iter.next() {
             Some(res) => res,
-            None => {
-                break
-            },
+            None => break,
         };
 
         let bi = line.split(" ").next().unwrap();

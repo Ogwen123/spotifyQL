@@ -145,10 +145,8 @@ pub fn fetch_access_token(
 #[derive(Deserialize, Clone)]
 pub struct AccessTokenResponse {
     pub access_token: String,
-    pub token_type: String,
     pub expires_in: u64,
     pub refresh_token: String,
-    pub scope: String,
 }
 
 pub fn parse_access_token_res(res: String) -> Result<AccessTokenResponse, String> {

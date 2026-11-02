@@ -1,9 +1,9 @@
+use crate::app_context::AppContext;
 use crate::query::tokenise::Operator;
 use crate::utils::date::Date;
 use std::cmp::Ordering;
 use std::fmt::{Display, Formatter};
 use std::mem::discriminant;
-use crate::app_context::AppContext;
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum Value {
@@ -37,7 +37,12 @@ impl Display for Value {
 }
 
 impl Value {
-    pub fn compare(&self, value: Value, operator: Operator, cx: &AppContext) -> Result<bool, String> {
+    pub fn compare(
+        &self,
+        value: Value,
+        operator: Operator,
+        cx: &AppContext,
+    ) -> Result<bool, String> {
         if let Value::Date(attr) = self {
             // standalone years get tokenised as ints so need toc convert to date if the attr is a date
             let target: &Date = match &value {
@@ -75,7 +80,6 @@ impl Value {
     }
 
     fn like(&self, value: Value, cx: &AppContext) -> Result<bool, String> {
-
         if let Value::Str(f) = self
             && let Value::Str(s) = &value
         {
@@ -107,13 +111,22 @@ impl Value {
         let val: Value;
         let is_string = match &_list[0] {
             Value::Str(_) => true,
-            default => false
+            _ => false,
         };
         if cx.user_config.case_sensitive || !is_string {
             list = _list;
             val = _val;
         } else {
-            list = _list.into_iter().map(|x| if let Value::Str(str) = x {Value::Str(str)} else {Value::Str(String::new())}).collect::<Vec<Value>>();
+            list = _list
+                .into_iter()
+                .map(|x| {
+                    if let Value::Str(str) = x {
+                        Value::Str(str)
+                    } else {
+                        Value::Str(String::new())
+                    }
+                })
+                .collect::<Vec<Value>>();
             if let Value::Str(str) = _val {
                 val = Value::Str(str.to_lowercase())
             } else {

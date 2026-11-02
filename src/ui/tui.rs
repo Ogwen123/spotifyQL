@@ -417,10 +417,22 @@ impl TUI {
     ) -> Result<PostHandleDirective, String> {
         match event {
             Event::Key(res) => {
-                if res.code == Char('c') && res.modifiers.contains(KeyModifiers::CONTROL) {
-                    self.run = false;
-                    return Ok(PostHandleDirective::None);
+                // key bind handling
+                if res.modifiers.contains(KeyModifiers::CONTROL)
+                    && let Char(c) = res.code
+                {
+                    match c {
+                        'c' => {
+                            self.run = false;
+                            return Ok(PostHandleDirective::None);
+                        }
+                        's' => {
+                            //open settings
+                        }
+                        _ => {}
+                    }
                 }
+
                 let mut query: Option<String> = None;
 
                 for i in self.regions.iter_mut() {

@@ -161,7 +161,7 @@ fn parse_where(tokens: &mut dyn Iterator<Item = Token>) -> Result<Option<Conditi
 
 fn parse_order(tokens: &mut dyn Iterator<Item = Token>) -> Result<Option<OrderBy>, String> {
     let mut attributes: Vec<String> = Vec::new();
-    let mut order: Order = Order::Ascending;
+    let order: Order;
 
     match tokens.next() {
         Some(res) => {

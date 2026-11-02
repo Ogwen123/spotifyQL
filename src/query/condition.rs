@@ -1,8 +1,8 @@
+use crate::app_context::AppContext;
 use crate::query::data::KeyAccess;
 use crate::query::tokenise::{Logical, Operator};
 use crate::query::value::Value;
 use std::fmt::Debug;
-use crate::app_context::AppContext;
 
 pub fn compute_conditions<T: KeyAccess + Debug>(
     data: &T,
@@ -15,9 +15,11 @@ pub fn compute_conditions<T: KeyAccess + Debug>(
     let mut current_op: Logical;
 
     // do the first condition outside loop to set up the tree
-    let res = data
-        .access(current_condition.attribute)?
-        .compare(current_condition.value, current_condition.operation, cx)?;
+    let res = data.access(current_condition.attribute)?.compare(
+        current_condition.value,
+        current_condition.operation,
+        cx,
+    )?;
 
     let mut result_tree = ConditionResult {
         val: res,
@@ -32,9 +34,11 @@ pub fn compute_conditions<T: KeyAccess + Debug>(
             break;
         }
 
-        let res = data
-            .access(current_condition.attribute)?
-            .compare(current_condition.value, current_condition.operation, cx)?;
+        let res = data.access(current_condition.attribute)?.compare(
+            current_condition.value,
+            current_condition.operation,
+            cx,
+        )?;
 
         result_tree.add_next_condition(current_op, res)
     }

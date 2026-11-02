@@ -1,7 +1,7 @@
 use crate::ui::components::component::Component;
 
 pub enum SettingType {
-    Bool
+    Bool,
 }
 
 pub struct Setting {

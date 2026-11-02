@@ -2,6 +2,7 @@ use crate::ui::event_action::Action;
 use crate::ui::framebuffer::{Cell, FrameBuffer};
 use crate::ui::tui::{Colour, Log};
 use crossterm::event::Event;
+use crate::ui::char;
 
 pub static REGION_NAME_PADDING: u16 = 2;
 
@@ -10,7 +11,7 @@ pub enum RegionType {
     Input,
     Table,
     List,
-    Dialog
+    Dialog,
 }
 
 pub enum RegionData {
@@ -24,9 +25,10 @@ pub trait Region {
     fn build_region_buffer(&self) -> Vec<Cell> {
         let mut buffer: Vec<Cell> = Vec::new();
         let inner_buffer = self.build_inner_buffer();
-        
-        let (width, height, focused, border_colour, focused_border_colour, name) = self.get_border_data();
-        
+
+        let (width, height, focused, border_colour, focused_border_colour, name) =
+            self.get_border_data();
+
         let name_chars = name.chars().collect::<Vec<char>>();
 
         for y in 0..height {
@@ -40,13 +42,13 @@ pub trait Region {
                 if y == 0 {
                     if x == 0 {
                         buffer.push(Cell {
-                            char: '╭',
+                            char: char::TL_PIPE,
                             colour: c,
                             bold: focused,
                         })
                     } else if x == width - 1 {
                         buffer.push(Cell {
-                            char: '╮',
+                            char: char::TR_PIPE,
                             colour: c,
                             bold: focused,
                         })
@@ -56,7 +58,7 @@ pub trait Region {
                         {
                             name_chars[(x - REGION_NAME_PADDING) as usize]
                         } else {
-                            '─'
+                            char::HORIZONTAL_PIPE
                         };
 
                         buffer.push(Cell {
@@ -68,19 +70,19 @@ pub trait Region {
                 } else if y == height - 1 {
                     if x == 0 {
                         buffer.push(Cell {
-                            char: '╰',
+                            char: char::BL_PIPE,
                             colour: c,
                             bold: focused,
                         })
                     } else if x == width - 1 {
                         buffer.push(Cell {
-                            char: '╯',
+                            char: char::BR_PIPE,
                             colour: c,
                             bold: focused,
                         })
                     } else {
                         buffer.push(Cell {
-                            char: '─',
+                            char: char::HORIZONTAL_PIPE,
                             colour: c,
                             bold: focused,
                         })
@@ -88,14 +90,13 @@ pub trait Region {
                 } else {
                     if x == 0 || x == width - 1 {
                         buffer.push(Cell {
-                            char: '│',
+                            char: char::VERTICAL_PIPE,
                             colour: c,
                             bold: focused,
                         })
                     } else {
-                        buffer.push(
-                            inner_buffer[((y - 1) * (width - 2) + (x - 1)) as usize].clone(),
-                        )
+                        buffer
+                            .push(inner_buffer[((y - 1) * (width - 2) + (x - 1)) as usize].clone())
                     }
                 }
             }
