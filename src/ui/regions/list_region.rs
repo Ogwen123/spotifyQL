@@ -110,88 +110,6 @@ impl Region for ListRegion {
         buffer
     }
 
-    /// Make a border of the given colour and fill with inner buffer (buffer length is 0)
-    fn build_region_buffer(&self) -> Vec<Cell> {
-        let mut buffer: Vec<Cell> = Vec::new();
-        let inner_buffer = self.build_inner_buffer();
-
-        let name_chars = self.name.chars().collect::<Vec<char>>();
-
-        for y in 0..self.height {
-            for x in 0..self.width {
-                let c = if self.focused {
-                    self.focused_border_colour.clone()
-                } else {
-                    self.border_colour.clone()
-                };
-
-                if y == 0 {
-                    if x == 0 {
-                        buffer.push(Cell {
-                            char: '╭',
-                            colour: c,
-                            bold: self.focused,
-                        })
-                    } else if x == self.width - 1 {
-                        buffer.push(Cell {
-                            char: '╮',
-                            colour: c,
-                            bold: self.focused,
-                        })
-                    } else {
-                        let char = if x >= REGION_NAME_PADDING
-                            && x - REGION_NAME_PADDING < name_chars.len() as u16
-                        {
-                            name_chars[(x - REGION_NAME_PADDING) as usize]
-                        } else {
-                            '─'
-                        };
-
-                        buffer.push(Cell {
-                            char,
-                            colour: c,
-                            bold: self.focused,
-                        })
-                    }
-                } else if y == self.height - 1 {
-                    if x == 0 {
-                        buffer.push(Cell {
-                            char: '╰',
-                            colour: c,
-                            bold: self.focused,
-                        })
-                    } else if x == self.width - 1 {
-                        buffer.push(Cell {
-                            char: '╯',
-                            colour: c,
-                            bold: self.focused,
-                        })
-                    } else {
-                        buffer.push(Cell {
-                            char: '─',
-                            colour: c,
-                            bold: self.focused,
-                        })
-                    }
-                } else {
-                    if x == 0 || x == self.width - 1 {
-                        buffer.push(Cell {
-                            char: '│',
-                            colour: c,
-                            bold: self.focused,
-                        })
-                    } else {
-                        buffer.push(
-                            inner_buffer[((y - 1) * (self.width - 2) + (x - 1)) as usize].clone(),
-                        )
-                    }
-                }
-            }
-        }
-
-        buffer
-    }
-
     fn draw(&self, fb: &mut FrameBuffer) {
         let content = self.build_region_buffer();
 
@@ -290,5 +208,9 @@ impl Region for ListRegion {
         self.height = height;
         self.x = x;
         self.y = y;
+    }
+
+    fn get_border_data(&self) -> (u16, u16, bool, &Colour, &Colour, &String) {
+        (self.width, self.height, self.focused, &self.border_colour, &self.focused_border_colour, &self.name)
     }
 }

@@ -162,6 +162,7 @@ impl TUI {
         };
 
         let size_warning_region = TextRegion {
+            name: String::new(),
             width: 40,
             height: 6,
             x: 5,

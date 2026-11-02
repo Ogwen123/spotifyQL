@@ -16,6 +16,7 @@ pub enum TextAlign {
 
 #[derive(Clone, Default)]
 pub struct TextRegion {
+    pub name: String,
     pub x: u16,
     pub y: u16,
     pub width: u16,
@@ -178,5 +179,9 @@ impl Region for TextRegion {
         self.height = height;
         self.x = x;
         self.y = y;
+    }
+
+    fn get_border_data(&self) -> (u16, u16, bool, &Colour, &Colour, &String) {
+        (self.width, self.height, self.focused, &self.border_colour, &self.focused_border_colour, &self.name)
     }
 }
