@@ -1,6 +1,6 @@
 use crate::ui::event_action::Action;
-use crate::ui::framebuffer::{Cell, FrameBuffer};
-use crate::ui::regions::region::{Region, RegionData, RegionType};
+use crate::ui::framebuffer::Cell;
+use crate::ui::regions::region::{Region, RegionData, RegionType, ScrollTrack};
 use crate::ui::tui::{Colour, Log};
 use crate::utils::utils::{bounds_loc, micro_secs_now};
 use crossterm::event::{Event, KeyModifiers, MouseEventKind};
@@ -16,9 +16,9 @@ pub struct TableRegion {
     pub formatted_table: Vec<String>,
     pub focused: bool,
     ///stored as (last scroll time, scroll position)
-    pub vertical_scroll: (u128, usize),
+    pub vertical_scroll: ScrollTrack,
     ///stored as (last scroll time, scroll position)
-    pub horizontal_scroll: (u128, usize),
+    pub horizontal_scroll: ScrollTrack,
 }
 
 impl TableRegion {
@@ -107,17 +107,6 @@ impl Region for TableRegion {
         }
 
         buffer
-    }
-
-    fn draw(&self, fb: &mut FrameBuffer) {
-        let content = self.build_region_buffer();
-
-        for (loc, cell) in content.into_iter().enumerate() {
-            let local_y = (loc as f64 / fb.width as f64).floor() as u16;
-            let local_x = loc as u16 % fb.width;
-
-            fb.put(local_x + self.x, local_y + self.y, cell)
-        }
     }
 
     fn handle_event(&mut self, event: Event, _lb: &mut Vec<Log>) -> Action {
@@ -210,5 +199,9 @@ impl Region for TableRegion {
             &self.focused_border_colour,
             &self.name,
         )
+    }
+
+    fn get_pos(&self) -> (u16, u16) {
+        (self.x, self.y)
     }
 }

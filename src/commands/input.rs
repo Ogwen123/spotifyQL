@@ -53,7 +53,6 @@ fn input_inner(cx: &mut AppContext, parsed_input: &str) -> Result<(), String> {
                 // test list operators
                 "SELECT id, name FROM playlist(All) WHERE name IN [\"Holiday\", \"Shout\"];".to_string(),
                 cx,
-                
             )?,
             "/testlr" => run_query(
                 // test list operators reversed

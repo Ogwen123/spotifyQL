@@ -21,6 +21,9 @@ SELECT id, name FROM ALBUM(Whatever people say ...) WHERE popularity > 50 && rel
 SELECT COUNT(name) FROM PLAYLISTS;
 ```
 
+## Features
+ - Holding control when scrolling on a scrollable region will disable debouncing and allow you to scroll much faster at the cost of accuracy
+
 ## Attributes
 the data available is the following
 
@@ -55,8 +58,8 @@ Playlist data is used when the data source is just `PLAYLISTS`
  - saved_at: String
 
 Album data is used when the data source is just `ALBUMS`
-
-## Process
+## Implementation
+### Process
 1. tokenise input
 2. parse tokens into a struct
 3. fetch necessary data
@@ -65,35 +68,9 @@ Album data is used when the data source is just `ALBUMS`
 
 fetched data is cached in-memory so if the program is restarted all data needs to be refreshed, in-memory cached data has a TTL of 30 minutes.
 
-## Dates
+### Dates
 Dates must be delimited by either `-` or `/` and must in the `dd/mm/yyyy` or `dd/mm/yy` layout.
 
 You can also provide just the year (`yyyy`) or just the month and year (`mm/yyyy` or `mm/yy`)
 
 If using `dd/mm/yy` then 20yy will be used, unless that is in the future in which case 19yy will be used
-
-## TODO
- - [x] fix api query returning invalid access token
- - [x] code verifier must be hashed incorrectly
- - [x] implement token refreshing
- - [x] check for errors on api response
- - [x] gathering targets
- - [x] applying conditions
- - [x] displaying data
- - [ ] add user following data querying
- - [ ] cache data
- - [x] add support for IN keyword with arrays
- - [x] add support for >, <, >=, <= for ints and floats
- - [x] add support for NOT IN condition
- - [x] add support for using * as a display target
- - [x] ORDER BY functionality
- - [ ] sub-query functionality
- - [x] make a date struct and change all current dates stored in strings to use it
- - [x] output to a file?
- - [x] make into a tui app
-   - [x] add region names
-   - [x] add scrolling to log section
-   - [x] add time and severity prefixes to the log section
-   - [x] add debounce to scrolling to allow more fine control
-   - [x] add terminal min size warning (90x20 minimum)
-   - [x] add history to input region

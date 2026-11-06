@@ -1,10 +1,12 @@
+use crate::ui::char;
 use crate::ui::event_action::Action;
 use crate::ui::framebuffer::{Cell, FrameBuffer};
 use crate::ui::tui::{Colour, Log};
 use crossterm::event::Event;
-use crate::ui::char;
 
 pub static REGION_NAME_PADDING: u16 = 2;
+
+pub type ScrollTrack = (u128, usize);
 
 #[derive(PartialEq)]
 pub enum RegionType {
@@ -105,7 +107,18 @@ pub trait Region {
         buffer
     }
 
-    fn draw(&self, fb: &mut FrameBuffer);
+    fn draw(&self, fb: &mut FrameBuffer) {
+        let content = self.build_region_buffer();
+        
+        let (x, y) = self.get_pos();
+        
+        for (loc, cell) in content.into_iter().enumerate() {
+            let local_y = (loc as f64 / fb.width as f64).floor() as u16;
+            let local_x = loc as u16 % fb.width;
+
+            fb.put(local_x + x, local_y + y, cell)
+        }
+    }
 
     /// Called when an event happens on focused regions as long as the TUI event handler doesn't consume the event
     fn handle_event(&mut self, event: Event, lb: &mut Vec<Log>) -> Action;
@@ -122,4 +135,5 @@ pub trait Region {
 
     fn set_geometry(&mut self, x: u16, y: u16, width: u16, height: u16);
     fn get_border_data(&self) -> (u16, u16, bool, &Colour, &Colour, &String);
+    fn get_pos(&self) -> (u16, u16);
 }

@@ -1,5 +1,5 @@
 use crate::ui::event_action::Action;
-use crate::ui::framebuffer::{Cell, FrameBuffer};
+use crate::ui::framebuffer::Cell;
 use crate::ui::regions::region::{Region, RegionData, RegionType};
 use crate::ui::tui::{Colour, Log};
 use crate::utils::utils::bounds_loc;
@@ -138,17 +138,6 @@ impl Region for TextRegion {
         buffer
     }
 
-    fn draw(&self, fb: &mut FrameBuffer) {
-        let content = self.build_region_buffer();
-
-        for (loc, cell) in content.into_iter().enumerate() {
-            let local_y = (loc as f64 / self.width as f64).floor() as u16;
-            let local_x = loc as u16 % self.width;
-
-            fb.put(local_x + self.x, local_y + self.y, cell)
-        }
-    }
-
     fn handle_event(&mut self, _event: Event, _lb: &mut Vec<Log>) -> Action {
         Action::Internal
     }
@@ -190,5 +179,9 @@ impl Region for TextRegion {
             &self.focused_border_colour,
             &self.name,
         )
+    }
+
+    fn get_pos(&self) -> (u16, u16) {
+        (self.x, self.y)
     }
 }
