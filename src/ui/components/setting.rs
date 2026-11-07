@@ -18,10 +18,10 @@ impl Setting {
     pub fn init(&mut self) {
         self.height = self.get_height();
     }
-    
+
     pub fn get_height(&self) -> u16 {
         match self.setting_type {
-            SettingType::Bool => 10
+            SettingType::Bool => 10,
         }
     }
 

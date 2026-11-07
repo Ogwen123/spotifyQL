@@ -142,13 +142,6 @@ impl Region for TextRegion {
         Action::Internal
     }
 
-    fn _debug(&self) {
-        println!(
-            "width: {}, height: {}, x: {}, y: {}",
-            self.width, self.height, self.x, self.y
-        );
-    }
-
     fn bounds_loc(&self, x: u16, y: u16) -> bool {
         bounds_loc(self.x, self.y, self.width, self.height, x, y)
     }
@@ -159,6 +152,13 @@ impl Region for TextRegion {
 
     fn _type(&self) -> RegionType {
         RegionType::List
+    }
+
+    fn _debug(&self) {
+        println!(
+            "width: {}, height: {}, x: {}, y: {}",
+            self.width, self.height, self.x, self.y
+        );
     }
 
     fn send_data(&mut self, _data: RegionData) {} //a text region is static

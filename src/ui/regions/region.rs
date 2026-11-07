@@ -109,9 +109,9 @@ pub trait Region {
 
     fn draw(&self, fb: &mut FrameBuffer) {
         let content = self.build_region_buffer();
-        
+
         let (x, y) = self.get_pos();
-        
+
         for (loc, cell) in content.into_iter().enumerate() {
             let local_y = (loc as f64 / fb.width as f64).floor() as u16;
             let local_x = loc as u16 % fb.width;
@@ -122,18 +122,13 @@ pub trait Region {
 
     /// Called when an event happens on focused regions as long as the TUI event handler doesn't consume the event
     fn handle_event(&mut self, event: Event, lb: &mut Vec<Log>) -> Action;
-
-    fn _debug(&self);
-
     fn bounds_loc(&self, x: u16, y: u16) -> bool;
-
     fn set_focus(&mut self, focus: bool);
-
     fn _type(&self) -> RegionType;
-
+    fn _debug(&self);
     fn send_data(&mut self, data: RegionData);
-
     fn set_geometry(&mut self, x: u16, y: u16, width: u16, height: u16);
     fn get_border_data(&self) -> (u16, u16, bool, &Colour, &Colour, &String);
     fn get_pos(&self) -> (u16, u16);
+    fn clear_buffer(&mut self) {}
 }

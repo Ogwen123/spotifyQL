@@ -153,13 +153,6 @@ impl Region for TableRegion {
         }
     }
 
-    fn _debug(&self) {
-        println!(
-            "width: {}, height: {}, x: {}, y: {}",
-            self.width, self.height, self.x, self.y
-        );
-    }
-
     fn bounds_loc(&self, x: u16, y: u16) -> bool {
         bounds_loc(self.x, self.y, self.width, self.height, x, y)
     }
@@ -170,6 +163,13 @@ impl Region for TableRegion {
 
     fn _type(&self) -> RegionType {
         RegionType::Table
+    }
+
+    fn _debug(&self) {
+        println!(
+            "width: {}, height: {}, x: {}, y: {}",
+            self.width, self.height, self.x, self.y
+        );
     }
 
     fn send_data(&mut self, data: RegionData) {
@@ -203,5 +203,8 @@ impl Region for TableRegion {
 
     fn get_pos(&self) -> (u16, u16) {
         (self.x, self.y)
+    }
+    fn clear_buffer(&mut self) {
+        self.formatted_table.clear()
     }
 }

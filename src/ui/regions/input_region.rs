@@ -104,13 +104,6 @@ impl Region for InputRegion {
         }
     }
 
-    fn _debug(&self) {
-        println!(
-            "width: {}, height: {}, x: {}, y: {}",
-            self.width, self.height, self.x, self.y
-        );
-    }
-
     fn bounds_loc(&self, x: u16, y: u16) -> bool {
         bounds_loc(self.x, self.y, self.width, self.height, x, y)
     }
@@ -121,6 +114,13 @@ impl Region for InputRegion {
 
     fn _type(&self) -> RegionType {
         RegionType::Input
+    }
+
+    fn _debug(&self) {
+        println!(
+            "width: {}, height: {}, x: {}, y: {}",
+            self.width, self.height, self.x, self.y
+        );
     }
 
     fn send_data(&mut self, _data: RegionData) {}
@@ -145,5 +145,9 @@ impl Region for InputRegion {
 
     fn get_pos(&self) -> (u16, u16) {
         (self.x, self.y)
+    }
+
+    fn clear_buffer(&mut self) {
+        self.value.clear();
     }
 }

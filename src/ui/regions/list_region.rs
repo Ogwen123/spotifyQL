@@ -3,7 +3,7 @@ use crate::ui::framebuffer::Cell;
 use crate::ui::regions::region::{Region, RegionData, RegionType, ScrollTrack};
 use crate::ui::tui::{Colour, Log};
 use crate::utils::utils::{bounds_loc, micro_secs_now};
-use crossterm::event::{Event, KeyModifiers, MouseEventKind};
+use crossterm::event::{Event, KeyCode, KeyModifiers, MouseEventKind};
 use std::cmp::max;
 
 #[derive(Clone)]
@@ -16,7 +16,7 @@ pub struct ListRegion {
     pub border_colour: Colour,
     pub focused_border_colour: Colour,
     pub data: Vec<Log>, // vector of lines to be displayed
-    pub longest_log: usize,
+    pub longest_member: usize,
     pub focused: bool,
     ///stored as (last scroll time, scroll position)
     pub vertical_scroll: ScrollTrack,
@@ -58,16 +58,16 @@ impl ListRegion {
             return;
         }
 
-        if self.longest_log == 0 {
+        if self.longest_member == 0 {
             return;
         }
-        if self.longest_log < self.width as usize {
+        if self.longest_member < self.width as usize {
             return;
         }
 
         let new = self.horizontal_scroll.1.cast_signed() + change;
 
-        if !(new < 0 || new > (self.longest_log - self.width as usize + 2).cast_signed()) {
+        if !(new < 0 || new > (self.longest_member - self.width as usize + 2).cast_signed()) {
             self.horizontal_scroll = (micro_secs_now(), new.cast_unsigned());
         }
     }
@@ -150,15 +150,18 @@ impl Region for ListRegion {
                 }
                 Action::Internal
             }
+            Event::Key(res) => match res.code {
+                KeyCode::Char(c) => {
+                    match c {
+                        'c' => self.clear_buffer(),
+                        _ => {}
+                    }
+                    Action::Internal
+                }
+                _ => Action::Internal,
+            },
             _ => Action::Internal,
         }
-    }
-
-    fn _debug(&self) {
-        println!(
-            "width: {}, height: {}, x: {}, y: {}",
-            self.width, self.height, self.x, self.y
-        );
     }
 
     fn bounds_loc(&self, x: u16, y: u16) -> bool {
@@ -173,12 +176,19 @@ impl Region for ListRegion {
         RegionType::List
     }
 
+    fn _debug(&self) {
+        println!(
+            "width: {}, height: {}, x: {}, y: {}",
+            self.width, self.height, self.x, self.y
+        );
+    }
+
     fn send_data(&mut self, mut data: RegionData) {
         match data {
             RegionData::List(ref mut res) => {
                 for i in res.iter() {
-                    if i.content.len() > self.longest_log {
-                        self.longest_log = i.content.len()
+                    if i.content.len() > self.longest_member {
+                        self.longest_member = i.content.len()
                     }
                 }
                 self.data.append(res);
@@ -212,5 +222,9 @@ impl Region for ListRegion {
 
     fn get_pos(&self) -> (u16, u16) {
         (self.x, self.y)
+    }
+
+    fn clear_buffer(&mut self) {
+        self.data.clear()
     }
 }

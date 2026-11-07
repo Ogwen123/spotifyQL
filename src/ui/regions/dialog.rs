@@ -1,10 +1,10 @@
-use crossterm::event::{Event, KeyCode, KeyModifiers, MouseEventKind};
 use crate::ui::components::component::Component;
 use crate::ui::event_action::Action;
 use crate::ui::framebuffer::Cell;
 use crate::ui::regions::region::{Region, RegionData, RegionType, ScrollTrack};
 use crate::ui::tui::{Colour, Log};
 use crate::utils::utils::micro_secs_now;
+use crossterm::event::{Event, KeyCode, KeyModifiers, MouseEventKind};
 
 pub struct Dialog {
     pub name: String,
@@ -15,7 +15,7 @@ pub struct Dialog {
 }
 
 impl Dialog {
-    const SCROLL_DEBOUNCE_MICRO: u128 = 30_000; // 100 milliseconds
+    const SCROLL_DEBOUNCE_MICRO: u128 = 30_000; // 30 milliseconds
 
     fn change_vertical_scroll(&mut self, change: isize, ignore_debounce: bool) {
         // the debounce is needed because multiple scroll events were firing per notch on the scroll wheel
@@ -68,10 +68,6 @@ impl Region for Dialog {
         }
     }
 
-    fn _debug(&self) {
-        todo!()
-    }
-
     fn bounds_loc(&self, x: u16, y: u16) -> bool {
         todo!()
     }
@@ -81,6 +77,10 @@ impl Region for Dialog {
     }
 
     fn _type(&self) -> RegionType {
+        todo!()
+    }
+
+    fn _debug(&self) {
         todo!()
     }
 
