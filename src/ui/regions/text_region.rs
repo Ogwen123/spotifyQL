@@ -181,7 +181,7 @@ impl Region for TextRegion {
         )
     }
 
-    fn get_pos(&self) -> (u16, u16) {
-        (self.x, self.y)
+    fn get_pos(&self) -> (u16, u16, i16) {
+        (self.x, self.y, 0)
     }
 }

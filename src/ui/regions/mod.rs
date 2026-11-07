@@ -1,4 +1,4 @@
-pub mod dialog;
+pub mod component_dialog;
 pub mod input_region;
 pub mod list_region;
 pub mod region;

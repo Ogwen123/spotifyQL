@@ -5,7 +5,7 @@ use crate::query::run::{QueryTracker, TUIQueryStage};
 use crate::query::tokenise::tokenise;
 use crate::ui::event_action::{Action, PostHandleDirective};
 use crate::ui::framebuffer::FrameBuffer;
-use crate::ui::regions::dialog::Dialog;
+use crate::ui::regions::component_dialog::Dialog;
 use crate::ui::regions::input_region::InputRegion;
 use crate::ui::regions::list_region::ListRegion;
 use crate::ui::regions::region::{Region, RegionData, RegionType};
@@ -138,7 +138,7 @@ pub struct TUI {
     width: u16,
     height: u16,
     regions: Vec<Box<dyn Region>>,
-    dialogs: Vec<Box<Dialog>>,
+    dialogs: Vec<Box<dyn Region>>,
     size_warning_region: TextRegion,
     current: FrameBuffer,
     previous: FrameBuffer,
@@ -382,7 +382,7 @@ impl TUI {
                 region.draw(&mut self.current)
             }
 
-            self.dialogs.sort_by_key(|x| x.z_index);
+            self.dialogs.sort_by_key(|x| x.get_pos().2);
 
             for dialog in &self.dialogs {
                 dialog.draw(&mut self.current);

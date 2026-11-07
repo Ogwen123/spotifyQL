@@ -220,8 +220,8 @@ impl Region for ListRegion {
         )
     }
 
-    fn get_pos(&self) -> (u16, u16) {
-        (self.x, self.y)
+    fn get_pos(&self) -> (u16, u16, i16) {
+        (self.x, self.y, 0)
     }
 
     fn clear_buffer(&mut self) {

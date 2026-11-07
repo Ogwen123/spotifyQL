@@ -8,7 +8,7 @@ use crossterm::event::{Event, KeyCode, KeyModifiers, MouseEventKind};
 
 pub struct Dialog {
     pub name: String,
-    pub z_index: isize,
+    pub z_index: i16,
     pub height: usize,
     pub components: Vec<Box<dyn Component>>,
     pub vertical_scroll: ScrollTrack,
@@ -96,7 +96,7 @@ impl Region for Dialog {
         todo!()
     }
 
-    fn get_pos(&self) -> (u16, u16) {
-        todo!()
+    fn get_pos(&self) -> (u16, u16, i16) {
+        (0, 0, self.z_index)
     }
 }
