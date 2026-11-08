@@ -114,7 +114,7 @@ impl Region for TableRegion {
             Event::Mouse(res) => {
                 match res.kind {
                     MouseEventKind::ScrollUp => {
-                        if self.bounds_loc(res.column, res.row) {
+                        if self.bounds_coords(res.column, res.row) {
                             self.change_vertical_scroll(
                                 -1,
                                 res.modifiers.contains(KeyModifiers::CONTROL),
@@ -122,7 +122,7 @@ impl Region for TableRegion {
                         }
                     }
                     MouseEventKind::ScrollDown => {
-                        if self.bounds_loc(res.column, res.row) {
+                        if self.bounds_coords(res.column, res.row) {
                             self.change_vertical_scroll(
                                 1,
                                 res.modifiers.contains(KeyModifiers::CONTROL),
@@ -130,7 +130,7 @@ impl Region for TableRegion {
                         }
                     }
                     MouseEventKind::ScrollLeft => {
-                        if self.bounds_loc(res.column, res.row) {
+                        if self.bounds_coords(res.column, res.row) {
                             self.change_horizontal_scroll(
                                 1,
                                 res.modifiers.contains(KeyModifiers::CONTROL),
@@ -138,7 +138,7 @@ impl Region for TableRegion {
                         }
                     }
                     MouseEventKind::ScrollRight => {
-                        if self.bounds_loc(res.column, res.row) {
+                        if self.bounds_coords(res.column, res.row) {
                             self.change_horizontal_scroll(
                                 -1,
                                 res.modifiers.contains(KeyModifiers::CONTROL),
@@ -153,7 +153,7 @@ impl Region for TableRegion {
         }
     }
 
-    fn bounds_loc(&self, x: u16, y: u16) -> bool {
+    fn bounds_coords(&self, x: u16, y: u16) -> bool {
         bounds_loc(self.x, self.y, self.width, self.height, x, y)
     }
 

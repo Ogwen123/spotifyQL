@@ -142,7 +142,7 @@ impl Region for TextRegion {
         Action::Internal
     }
 
-    fn bounds_loc(&self, x: u16, y: u16) -> bool {
+    fn bounds_coords(&self, x: u16, y: u16) -> bool {
         bounds_loc(self.x, self.y, self.width, self.height, x, y)
     }
 

@@ -8,14 +8,19 @@ use crossterm::event::{Event, KeyCode, KeyModifiers, MouseEventKind};
 
 pub struct Dialog {
     pub name: String,
+    pub width: u16,
+    pub height: u16,
     pub z_index: i16,
-    pub height: usize,
     pub components: Vec<Box<dyn Component>>,
     pub vertical_scroll: ScrollTrack,
 }
 
 impl Dialog {
     const SCROLL_DEBOUNCE_MICRO: u128 = 30_000; // 30 milliseconds
+
+    fn content_height(&self) -> u16 {
+        self.components.iter().map(|x| x.get_geometry().1).sum()
+    }
 
     fn change_vertical_scroll(&mut self, change: isize, ignore_debounce: bool) {
         // the debounce is needed because multiple scroll events were firing per notch on the scroll wheel
@@ -45,7 +50,7 @@ impl Region for Dialog {
             Event::Mouse(res) => {
                 match res.kind {
                     MouseEventKind::ScrollUp => {
-                        if self.bounds_loc(res.column, res.row) {
+                        if self.bounds_coords(res.column, res.row) {
                             self.change_vertical_scroll(
                                 -1,
                                 res.modifiers.contains(KeyModifiers::CONTROL),
@@ -53,7 +58,7 @@ impl Region for Dialog {
                         }
                     }
                     MouseEventKind::ScrollDown => {
-                        if self.bounds_loc(res.column, res.row) {
+                        if self.bounds_coords(res.column, res.row) {
                             self.change_vertical_scroll(
                                 1,
                                 res.modifiers.contains(KeyModifiers::CONTROL),
@@ -68,13 +73,11 @@ impl Region for Dialog {
         }
     }
 
-    fn bounds_loc(&self, x: u16, y: u16) -> bool {
+    fn bounds_coords(&self, x: u16, y: u16) -> bool {
         todo!()
     }
 
-    fn set_focus(&mut self, focus: bool) {
-        todo!()
-    }
+    fn set_focus(&mut self, focus: bool) {}
 
     fn _type(&self) -> RegionType {
         todo!()

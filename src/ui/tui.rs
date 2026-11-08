@@ -466,7 +466,7 @@ impl TUI {
                     && button.is_left()
                 {
                     for i in self.regions.iter_mut() {
-                        if i.bounds_loc(res.column, res.row) {
+                        if i.bounds_coords(res.column, res.row) {
                             i.set_focus(true);
                         } else {
                             i.set_focus(false);

@@ -122,12 +122,16 @@ pub trait Region {
 
     /// Called when an event happens on focused regions as long as the TUI event handler doesn't consume the event
     fn handle_event(&mut self, event: Event, lb: &mut Vec<Log>) -> Action;
-    fn bounds_loc(&self, x: u16, y: u16) -> bool;
+    /// Calculates whether the region bounds the given coords.
+    fn bounds_coords(&self, x: u16, y: u16) -> bool;
     fn set_focus(&mut self, focus: bool);
     fn _type(&self) -> RegionType;
     fn _debug(&self);
     fn send_data(&mut self, data: RegionData);
     fn set_geometry(&mut self, x: u16, y: u16, width: u16, height: u16);
+    /// Used for getting border data to allow build_region_buffer have a default implementation
+    /// ## Returns
+    ///(`width`, `height`, `focused`, `border_colour`, `focused_border_colour`, `name`)
     fn get_border_data(&self) -> (u16, u16, bool, &Colour, &Colour, &String);
     fn get_pos(&self) -> (u16, u16, i16);
     fn clear_buffer(&mut self) {}

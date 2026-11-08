@@ -11,7 +11,7 @@ WIP
 ```SQL
 SELECT COUNT(name) FROM PLAYLIST(pl1) WHERE "Arctic Monkeys" IN artists;
 ```
-would could the number of arctic monkeys songs in the playlist pl1
+would count the number of arctic monkeys songs in the playlist pl1
 
 ```SQL
 SELECT id, name FROM ALBUM(Whatever people say ...) WHERE popularity > 50 && release_date < 2014-01-01;

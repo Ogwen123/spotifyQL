@@ -23,9 +23,7 @@ pub struct RunContext {
 impl RunContext {
     pub fn new() -> Self {
         let mut _args = env::args().collect::<Vec<String>>();
-        println!("{:?}", _args);
         _args.retain(|x| !x.ends_with("spotifyQL") && !x.ends_with("spotifyQL.exe")); // remove the binary's name from the args
-        println!("{:?}", _args);
 
         let mut args = _args.into_iter().peekable();
 

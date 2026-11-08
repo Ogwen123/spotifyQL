@@ -1,3 +1,5 @@
+use crate::ui::tui::{Log, Severity};
+use arboard::{Clipboard, GetExtLinux, LinuxClipboardKind};
 use chrono::Utc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -35,4 +37,35 @@ pub fn bounds_loc(box_x: u16, box_y: u16, width: u16, height: u16, loc_x: u16, l
     } else {
         false
     }
+}
+
+pub fn get_clipboard_item(_lb: Option<&mut Vec<Log>>) -> String {
+    let clipboard_res = Clipboard::new();
+    let mut clipboard = match clipboard_res {
+        Ok(res) => res,
+        Err(err) => {
+            if let Some(lb) = _lb {
+                lb.push(Log::new(
+                    format!("Could not access clipboard ({})", err),
+                    Severity::Error,
+                ));
+            }
+            return String::new();
+        }
+    };
+    
+    let text = match clipboard.get().clipboard(LinuxClipboardKind::Clipboard).text() {
+        Ok(res) => res,
+        Err(err) => {
+            if let Some(lb) = _lb {
+                lb.push(Log::new(
+                    format!("Could not access clipboard ({})", err),
+                    Severity::Error,
+                ));
+            }
+            return String::new();
+        }
+    };
+
+    text
 }

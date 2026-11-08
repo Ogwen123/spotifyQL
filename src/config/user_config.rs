@@ -9,7 +9,7 @@ pub struct UserConfig {
     pub cache: bool,
     pub case_sensitive: bool,
     /// Scroll debounce in microseconds for scrollable regions
-    scroll_debounce: u128
+    scroll_debounce: u128,
 }
 
 #[derive(Deserialize)]
@@ -18,7 +18,7 @@ struct ConfigFileContent {
     tui: bool,
     cache: bool,
     case_sensitive: bool,
-    scroll_debounce: u128
+    scroll_debounce: u128,
 }
 
 impl UserConfig {
@@ -52,7 +52,7 @@ impl Default for UserConfig {
             tui: true,
             cache: false,
             case_sensitive: false,
-            scroll_debounce: 30_000
+            scroll_debounce: 30_000,
         }
     }
 }
