@@ -2,7 +2,7 @@ use crate::ui::event_action::Action;
 use crate::ui::framebuffer::Cell;
 use crate::ui::regions::region::{Region, RegionData, RegionType};
 use crate::ui::tui::{Colour, Log};
-use crate::utils::utils::bounds_loc;
+use crate::utils::utils::bounds_coords;
 use crossterm::event::Event;
 use std::cmp::max;
 
@@ -143,13 +143,17 @@ impl Region for TextRegion {
     }
 
     fn bounds_coords(&self, x: u16, y: u16) -> bool {
-        bounds_loc(self.x, self.y, self.width, self.height, x, y)
+        bounds_coords(self.x, self.y, self.width, self.height, x, y)
     }
 
     fn set_focus(&mut self, focus: bool) {
         self.focused = focus;
     }
 
+    fn is_focused(&self) -> bool {
+        self.focused
+    }
+    
     fn _type(&self) -> RegionType {
         RegionType::List
     }

@@ -7,6 +7,35 @@ pub struct Cell {
     pub bold: bool,
 }
 
+impl Cell {
+    pub fn new(char: char) -> Self {
+        Self {
+            char,
+            colour: Colour::White,
+            bold: false,
+        }
+    }
+
+    pub fn empty() -> Self {
+        Self {
+            char: ' ',
+            colour: Colour::White,
+            bold: false,
+        }
+    }
+
+    pub fn from_string(string: &String, colour: Colour) -> Vec<Self> {
+        string
+            .chars()
+            .map(|x| Cell {
+                char: x,
+                colour: colour.clone(),
+                bold: false,
+            })
+            .collect::<Vec<Cell>>()
+    }
+}
+
 #[derive(Default)]
 pub struct FrameBuffer {
     pub width: u16,

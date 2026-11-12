@@ -4,3 +4,4 @@ pub const BR_PIPE: char = '╯';
 pub const BL_PIPE: char = '╰';
 pub const HORIZONTAL_PIPE: char = '─';
 pub const VERTICAL_PIPE: char = '│';
+pub const FILLED_SQUARE: char = '■';

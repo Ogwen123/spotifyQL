@@ -1,21 +1,28 @@
+use crate::ui::char;
 use crate::ui::components::component::Component;
 use crate::ui::event_action::Action;
 use crate::ui::framebuffer::Cell;
+use crate::ui::framebuffer::FrameBuffer;
 use crate::ui::regions::region::{Region, RegionData, RegionType, ScrollTrack};
 use crate::ui::tui::{Colour, Log};
-use crate::utils::utils::micro_secs_now;
+use crate::utils::utils::{bounds_coords, micro_secs_now};
 use crossterm::event::{Event, KeyCode, KeyModifiers, MouseEventKind};
 
-pub struct Dialog {
+pub struct ComponentDialog {
+    pub id: String,
     pub name: String,
+    pub border_colour: Colour,
+    pub show: bool,
     pub width: u16,
     pub height: u16,
+    pub x: u16,
+    pub y: u16,
     pub z_index: i16,
     pub components: Vec<Box<dyn Component>>,
     pub vertical_scroll: ScrollTrack,
 }
 
-impl Dialog {
+impl ComponentDialog {
     const SCROLL_DEBOUNCE_MICRO: u128 = 30_000; // 30 milliseconds
 
     fn content_height(&self) -> u16 {
@@ -40,9 +47,26 @@ impl Dialog {
     }
 }
 
-impl Region for Dialog {
+impl Region for ComponentDialog {
     fn build_inner_buffer(&self) -> Vec<Cell> {
-        todo!()
+        let mut buffer: Vec<Cell> = Vec::new();
+
+        for (index, component) in self.components.iter().enumerate() {
+            buffer.append(&mut component.build_inner_buffer());
+
+            if index != self.components.len() {
+                buffer.append(&mut vec![
+                    Cell {
+                        char: char::HORIZONTAL_PIPE,
+                        colour: self.border_colour.clone(),
+                        bold: false
+                    };
+                    component.get_geometry().0 as usize
+                ])
+            }
+        }
+
+        buffer
     }
 
     fn handle_event(&mut self, event: Event, lb: &mut Vec<Log>) -> Action {
@@ -74,13 +98,23 @@ impl Region for Dialog {
     }
 
     fn bounds_coords(&self, x: u16, y: u16) -> bool {
-        todo!()
+        bounds_coords(self.x, self.y, self.width, self.height, x, y)
+    }
+    
+    fn set_focus(&mut self, focus: bool) {
+        self.show = focus;
     }
 
-    fn set_focus(&mut self, focus: bool) {}
+    fn is_focused(&self) -> bool {
+        self.show
+    }
 
     fn _type(&self) -> RegionType {
-        todo!()
+        RegionType::Dialog
+    }
+
+    fn is(&self, identifier: String) -> bool {
+        identifier == self.id
     }
 
     fn _debug(&self) {
@@ -92,14 +126,29 @@ impl Region for Dialog {
     }
 
     fn set_geometry(&mut self, x: u16, y: u16, width: u16, height: u16) {
-        todo!()
+        self.width = width;
+        self.height = height;
+        self.x = x;
+        self.y = y;
     }
 
     fn get_border_data(&self) -> (u16, u16, bool, &Colour, &Colour, &String) {
-        todo!()
+        (
+            self.width,
+            self.height,
+            self.show,
+            &self.border_colour,
+            &self.border_colour,
+            &self.name,
+        )
     }
 
     fn get_pos(&self) -> (u16, u16, i16) {
         (0, 0, self.z_index)
+    }
+
+    fn set_pos(&mut self, x: u16, y: u16) {
+        self.x = x;
+        self.y = y;
     }
 }

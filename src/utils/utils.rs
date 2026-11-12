@@ -26,13 +26,41 @@ pub fn micro_secs_now() -> u128 {
 }
 
 #[inline]
-pub fn bounds_loc(box_x: u16, box_y: u16, width: u16, height: u16, loc_x: u16, loc_y: u16) -> bool {
+pub fn bounds_coords(
+    box_x: u16,
+    box_y: u16,
+    width: u16,
+    height: u16,
+    loc_x: u16,
+    loc_y: u16,
+) -> bool {
     let t = box_y;
     let l = box_x;
     let b = box_y + height;
     let r = box_x + width;
 
     if loc_x > l && loc_x < r && loc_y > t && loc_y < b {
+        true
+    } else {
+        false
+    }
+}
+
+#[inline]
+pub fn bounds_coords_inclusive(
+    box_x: u16,
+    box_y: u16,
+    width: u16,
+    height: u16,
+    loc_x: u16,
+    loc_y: u16,
+) -> bool {
+    let t = box_y;
+    let l = box_x;
+    let b = box_y + height;
+    let r = box_x + width;
+
+    if loc_x >= l && loc_x <= r && loc_y >= t && loc_y <= b {
         true
     } else {
         false
@@ -53,8 +81,12 @@ pub fn get_clipboard_item(_lb: Option<&mut Vec<Log>>) -> String {
             return String::new();
         }
     };
-    
-    let text = match clipboard.get().clipboard(LinuxClipboardKind::Clipboard).text() {
+
+    let text = match clipboard
+        .get()
+        .clipboard(LinuxClipboardKind::Clipboard)
+        .text()
+    {
         Ok(res) => res,
         Err(err) => {
             if let Some(lb) = _lb {

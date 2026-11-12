@@ -124,9 +124,15 @@ pub trait Region {
     fn handle_event(&mut self, event: Event, lb: &mut Vec<Log>) -> Action;
     /// Calculates whether the region bounds the given coords.
     fn bounds_coords(&self, x: u16, y: u16) -> bool;
+    /// Used for setting focus in normal regions and updating show on dialog regions as the top dialog is the only thing that can be focused.
     fn set_focus(&mut self, focus: bool);
+    fn is_focused(&self) -> bool;
     fn _type(&self) -> RegionType;
     fn _debug(&self);
+    /// Used for identifying a region, uses name or id depending on impl
+    fn is(&self, identifier: String) -> bool {
+        false
+    }
     fn send_data(&mut self, data: RegionData);
     fn set_geometry(&mut self, x: u16, y: u16, width: u16, height: u16);
     /// Used for getting border data to allow build_region_buffer have a default implementation
@@ -134,5 +140,6 @@ pub trait Region {
     ///(`width`, `height`, `focused`, `border_colour`, `focused_border_colour`, `name`)
     fn get_border_data(&self) -> (u16, u16, bool, &Colour, &Colour, &String);
     fn get_pos(&self) -> (u16, u16, i16);
+    fn set_pos(&mut self, x: u16, y: u16) {}
     fn clear_buffer(&mut self) {}
 }

@@ -2,7 +2,7 @@ use crate::ui::event_action::Action;
 use crate::ui::framebuffer::Cell;
 use crate::ui::regions::region::{Region, RegionData, RegionType, ScrollTrack};
 use crate::ui::tui::{Colour, Log};
-use crate::utils::utils::{bounds_loc, micro_secs_now};
+use crate::utils::utils::{bounds_coords, micro_secs_now};
 use crossterm::event::{Event, KeyModifiers, MouseEventKind};
 
 pub struct TableRegion {
@@ -154,11 +154,15 @@ impl Region for TableRegion {
     }
 
     fn bounds_coords(&self, x: u16, y: u16) -> bool {
-        bounds_loc(self.x, self.y, self.width, self.height, x, y)
+        bounds_coords(self.x, self.y, self.width, self.height, x, y)
     }
 
     fn set_focus(&mut self, focus: bool) {
         self.focused = focus;
+    }
+
+    fn is_focused(&self) -> bool {
+        self.focused
     }
 
     fn _type(&self) -> RegionType {

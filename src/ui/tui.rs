@@ -5,7 +5,7 @@ use crate::query::run::{QueryTracker, TUIQueryStage};
 use crate::query::tokenise::tokenise;
 use crate::ui::event_action::{Action, PostHandleDirective};
 use crate::ui::framebuffer::FrameBuffer;
-use crate::ui::regions::component_dialog::Dialog;
+use crate::ui::regions::component_dialog::ComponentDialog;
 use crate::ui::regions::input_region::InputRegion;
 use crate::ui::regions::list_region::ListRegion;
 use crate::ui::regions::region::{Region, RegionData, RegionType};
@@ -246,6 +246,22 @@ impl TUI {
             Box::new(log_region),
         ];
 
+        let settings_dialog = ComponentDialog {
+            id: "settings".to_string(),
+            name: "Settings".to_string(),
+            border_colour: Colour::Purple,
+            show: false,
+            width: 100,
+            height: 15,
+            x: 0,
+            y: 0,
+            z_index: 0,
+            components: vec![],
+            vertical_scroll: (0, 0),
+        };
+
+        self.dialogs = vec![Box::new(settings_dialog)];
+
         self
     }
 
@@ -378,7 +394,12 @@ impl TUI {
 
             swap(&mut self.current, &mut self.previous)
         } else {
-            for region in &self.regions {
+            for region in self.regions.iter_mut().filter(|x| x.is_focused()) {
+                region.set_pos(
+                    (self.width / 2) - (region.get_border_data().0 / 2),
+                    (self.height / 2) - (region.get_border_data().1 / 2),
+                );
+
                 region.draw(&mut self.current)
             }
 
@@ -436,7 +457,11 @@ impl TUI {
                             return Ok(PostHandleDirective::None);
                         }
                         's' => {
-                            //open settings
+                            self.dialogs.iter_mut().for_each(|x| {
+                                if x.is(String::from("settings")) {
+                                    x.set_focus(true);
+                                }
+                            });
                         }
                         _ => {}
                     }
