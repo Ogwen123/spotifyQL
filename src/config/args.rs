@@ -1,10 +1,12 @@
 use std::env;
+use warp::fs::file;
 
 #[derive(PartialEq)]
 pub enum Command {
     Login,
     Logout,
     CLI,
+    CleanDisk
 }
 
 #[derive(PartialEq)]
@@ -43,6 +45,8 @@ impl RunContext {
                 ui_mode = UIMode::TUI
             } else if arg == "--file" {
                 file_output = args.next();
+            } else if arg == "cleandisk" {
+                command = Command::CleanDisk
             }
         }
 

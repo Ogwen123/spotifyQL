@@ -24,10 +24,27 @@ SELECT COUNT(name) FROM PLAYLISTS;
 ## Features
  - Holding control when scrolling on a scrollable region will disable debouncing and allow you to scroll much faster at the cost of accuracy
 
-## Attributes
-the data available is the following
+### Commands
+#### login
+Login to your spotify account
+#### logout
+Deletes all tokens from disk
+#### cleandisk
+Deletes cache, request_log and auth tokens from disk, leaves config in place.
 
-### Track Data
+### Args
+Any arguments that perform the same function as a config entry will be prioritied over the config entry.
+#### --tui
+Use the TUI
+#### --no-tui
+Use the CLI input loop
+#### --file
+Save the output to a file
+
+### Attributes
+The data available is the following
+
+#### Track Data
  - id: String
  - name: String
  - duration: Int
@@ -39,7 +56,7 @@ the data available is the following
 
 Track data is used when the data source is a specific playlist or saved album e.g. `PLAYLIST(pl1)`
 
-### Playlist Data
+#### Playlist Data
  - id: String
  - name: String
  - tracks_api: String
@@ -47,7 +64,7 @@ Track data is used when the data source is a specific playlist or saved album e.
 
 Playlist data is used when the data source is just `PLAYLISTS`
 
-### Album Data
+#### Album Data
  - id: String
  - name: String
  - track_count: u64
@@ -59,15 +76,6 @@ Playlist data is used when the data source is just `PLAYLISTS`
 
 Album data is used when the data source is just `ALBUMS`
 ## Implementation
-### Process
-1. tokenise input
-2. parse tokens into a struct
-3. fetch necessary data
-4. run parsed struct on fetched data
-5. format and output
-
-fetched data is cached in-memory so if the program is restarted all data needs to be refreshed, in-memory cached data has a TTL of 30 minutes.
-
 ### Dates
 Dates must be delimited by either `-` or `/` and must in the `dd/mm/yyyy` or `dd/mm/yy` layout.
 

@@ -260,7 +260,7 @@ impl TUI {
             vertical_scroll: (0, 0),
         };
 
-        self.dialogs = vec![Box::new(settings_dialog)];
+        //self.dialogs = vec![Box::new(settings_dialog)];
 
         self
     }
@@ -394,7 +394,7 @@ impl TUI {
 
             swap(&mut self.current, &mut self.previous)
         } else {
-            for region in self.regions.iter_mut().filter(|x| x.is_focused()) {
+            for region in self.regions.iter_mut() {
                 region.set_pos(
                     (self.width / 2) - (region.get_border_data().0 / 2),
                     (self.height / 2) - (region.get_border_data().1 / 2),
@@ -405,7 +405,7 @@ impl TUI {
 
             self.dialogs.sort_by_key(|x| x.get_pos().2);
 
-            for dialog in &self.dialogs {
+            for dialog in self.dialogs.iter_mut().filter(|x| x.is_focused()) {
                 dialog.draw(&mut self.current);
             }
 

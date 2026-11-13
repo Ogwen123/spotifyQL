@@ -9,6 +9,7 @@ use crate::{
     config::args::{Command, RunContext},
 };
 use app_context::AppContext;
+use spotifyQL::utils::file::clean_disk;
 
 mod api;
 mod app_context;
@@ -49,6 +50,10 @@ fn main() {
 
     if rc.command == Command::Login {
         if let Err(err) = login(&mut cx) {
+            fatal!("{}", err)
+        }
+    } else if rc.command == Command::CleanDisk {
+        if let Err(err) = clean_disk() {
             fatal!("{}", err)
         }
     } else if rc.command == Command::CLI {

@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::ui::char;
 use crate::ui::event_action::Action;
 use crate::ui::framebuffer::{Cell, FrameBuffer};
@@ -27,7 +28,7 @@ pub trait Region {
     fn build_region_buffer(&self) -> Vec<Cell> {
         let mut buffer: Vec<Cell> = Vec::new();
         let inner_buffer = self.build_inner_buffer();
-
+        
         let (width, height, focused, border_colour, focused_border_colour, name) =
             self.get_border_data();
 

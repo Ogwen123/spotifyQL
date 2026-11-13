@@ -9,6 +9,7 @@ use std::cmp::PartialEq;
 use std::sync::mpsc::{Sender, channel};
 use std::thread;
 use tokio::runtime::Runtime;
+use crate::utils::file::{write_file, File, WriteMode};
 
 #[derive(Debug)]
 pub struct APIQuery {
@@ -232,6 +233,17 @@ impl APIQuery {
         Ok(tracks)
     }
 
+    fn log_request(url: String, res: Result<String, String>) -> Result<(), String> {
+        let status = match res {
+            Ok(_) => String::from("successful"),
+            Err(err) => err
+        };
+
+        write_file(File::RequestLog, format!("{} {{{}}}\n", url, status), WriteMode::Append)?;
+
+        Ok(())
+    }
+
     /// Spawns a thread to send the API request async, returns data using a channel
     fn send_async(url: String, tx: Sender<Result<String, String>>, token: String) {
         thread::spawn(move || {
@@ -290,11 +302,17 @@ impl APIQuery {
 
         let final_url = build_url(self.url, params);
 
+        if cx.user_config.debug && !cx.user_config.tui {
+            println!("sending request to: {}", final_url);
+        }
+
         let (tx, rx) = channel::<Result<String, String>>();
-        // println!("{:?}", final_url);
-        Self::send_async(final_url, tx, cx.token.clone());
+
+        Self::send_async(final_url.clone(), tx, cx.token.clone());
 
         let res = rx.recv().expect("API request thread stopped unexpectedly.");
+
+        Self::log_request(final_url, res.clone())?;
 
         res
     }

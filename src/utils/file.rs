@@ -2,14 +2,16 @@ use crate::app_context::AppContext;
 use crate::query::data::KeyAccess;
 use crate::utils::utils::iso_str;
 use std::env::home_dir;
-use std::fs::{OpenOptions, create_dir_all, remove_file};
+use std::fs::{create_dir_all, remove_file, write, OpenOptions};
 use std::io::{Read, Write};
 use std::path::PathBuf;
+use warp::delete;
 
 pub enum File {
     Auth,
     Config,
     Cache,
+    RequestLog,
     Other(String),
 }
 
@@ -44,6 +46,7 @@ impl File {
             File::Auth => folder.push("auth.json"),
             File::Config => folder.push("config.json"),
             File::Cache => folder.push("cache.txt"),
+            File::RequestLog => folder.push("request_log.txt"),
             File::Other(res) => return Ok(PathBuf::from(res)),
         }
 
@@ -66,22 +69,24 @@ pub fn write_file(file: File, content: String, write_mode: WriteMode) -> Result<
 
     File::create_parent()?; // make sure the parent folders exist
 
-    let mut file = OpenOptions::new()
-        .create(true)
-        .write(true)
-        .truncate(if write_mode == WriteMode::Overwrite {
-            true
-        } else {
-            false
-        })
-        .open(path)
+    let mut oo: &mut OpenOptions = &mut OpenOptions::new();
+
+        oo.create(true)
+        .write(true);
+
+
+    match write_mode {
+        WriteMode::Overwrite => oo = oo.truncate(true),
+        WriteMode::Append => oo = oo.append(true)
+    }
+
+    let mut file = oo.open(path)
         .map_err(|_| {
             return "Could not open file in write mode (write, create, truncate).";
         })?;
 
     file.write_all(content.as_bytes())
         .map_err(|e| e.to_string())?;
-
     Ok(())
 }
 
@@ -148,4 +153,13 @@ where
         output.join("\n"),
         WriteMode::Overwrite,
     )
+}
+
+/// Delete auth.json, cache.txt and request_log.txt, does not touch config.json
+pub fn clean_disk() -> Result<(), String> {
+    delete_file(File::Auth)?;
+    delete_file(File::RequestLog)?;
+    delete_file(File::Cache)?;
+    
+    Ok(())
 }
